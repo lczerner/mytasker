@@ -63,7 +63,8 @@ export function App(props: AppProps) {
 
   const toast = useCallback((text: string, kind: Toast['kind'] = 'info') => {
     const id = Date.now() + Math.random();
-    setToasts((l) => [...l.slice(-3), { id, kind, text }]);
+    // The same message does not stack.
+    setToasts((l) => [...l.filter((x) => x.text !== text).slice(-3), { id, kind, text }]);
     setTimeout(() => setToasts((l) => l.filter((x) => x.id !== id)), kind === 'error' ? 8000 : 3500);
   }, []);
 
@@ -131,9 +132,11 @@ export function App(props: AppProps) {
       location.hash = h;
     },
     setQuery: (patch) => {
-      const q = { ...route.query, ...patch };
+      // Read the current hash (not the route of the last render): another handler can have changed it.
+      const cur = parseRoute(location.hash);
+      const q: Record<string, string | undefined> = { ...cur.query, ...patch };
       for (const k of Object.keys(q)) if (q[k] === undefined || q[k] === '') delete q[k];
-      location.hash = href(route.path, q as Record<string, string>);
+      location.hash = href(cur.path, q as Record<string, string>);
     },
     check: (type, payload, scope = DATA) => engine.check(me.keyId, scope, type, payload).status,
     act: async (type, payload, scope = DATA): Promise<AuditStatus> => {
@@ -159,6 +162,42 @@ export function App(props: AppProps) {
     userName: (id) => (id ? (model.users.get(id)?.name ?? t('common.unknownUser')) : t('common.none')),
     lock: props.onLock,
   };
+
+  // A click outside the task panel closes it (owner request). Exceptions: a click on another task
+  // (it opens that task), a click in a dialog or a message, a selection that started in the panel,
+  // and unsaved text in the panel (then a message, and the panel stays open).
+  useEffect(() => {
+    let downInside = false;
+    const down = (e: PointerEvent) => {
+      downInside = !!(e.target as Element | null)?.closest?.('.drawer');
+    };
+    const click = (e: MouseEvent) => {
+      const startedInside = downInside;
+      downInside = false;
+      // Keyboard clicks (Enter, Space) have detail 0: keyboard users close the panel with Esc.
+      if (e.detail === 0) return;
+      const el = e.target as Element | null;
+      const drawer = document.querySelector('.drawer');
+      if (!drawer || !el?.closest || !el.isConnected || startedInside || el.closest('.drawer, dialog, .toasts, [data-task]')) return;
+      const r = parseRoute(location.hash);
+      if (!r.query.task) return;
+      // Unsaved = a text field of the panel differs from its original value (data-orig).
+      const unsaved = [...drawer.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('textarea, input[type=text], input[type=url]')].some(
+        (f) => !f.closest('.picker') && f.value.trim() !== (f.dataset.orig ?? '').trim(),
+      );
+      if (unsaved) return toast(t('task.unsaved'), 'info');
+      const { task: id, ...q } = r.query;
+      location.hash = href(r.path, q);
+      focusTask(id);
+    };
+    // Capture phase: the listener runs before the clicked control changes the DOM.
+    document.addEventListener('pointerdown', down, true);
+    document.addEventListener('click', click, true);
+    return () => {
+      document.removeEventListener('pointerdown', down, true);
+      document.removeEventListener('click', click, true);
+    };
+  }, []);
 
   // Keyboard: N = new task, / = search, Esc = close the panel.
   useEffect(() => {

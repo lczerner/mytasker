@@ -154,6 +154,7 @@ Start-up banner: "2 úkoly po termínu · 1 úkol čeká na kontrolu". The page 
 |---|---|
 | `N` | New task |
 | `/` | Focus the search |
-| `Esc` | Close the panel or the dialog |
+| `Esc` | Close the panel or the dialog. In a text field of the panel: leave the field. |
+| Click outside the panel | Close the panel. A click on another task opens that task. With unsaved text in the panel, the panel stays open and a message explains why. |
 | `Tab`, `Shift+Tab` | Next or previous control. All controls have a visible focus. |
 | `Enter` on a card or a row | Open the task |

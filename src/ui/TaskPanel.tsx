@@ -87,7 +87,7 @@ function Header({ v, ro }: { v: TaskView; ro: boolean }) {
             void save();
           }}
         >
-          <input type="text" class="title-input" aria-label={t('task.title')} value={title} maxLength={LIMITS.title} required onInput={(e) => setTitle((e.target as HTMLInputElement).value)} />
+          <input type="text" class="title-input" aria-label={t('task.title')} data-orig={v.title} value={title} maxLength={LIMITS.title} required onInput={(e) => setTitle((e.target as HTMLInputElement).value)} />
           <button type="submit" disabled={busy}>
             {t('task.save')}
           </button>
@@ -217,7 +217,7 @@ function Description({ v, ro }: { v: TaskView; ro: boolean }) {
             if (r !== 'rejected') setEdit(false);
           }}
         >
-          <textarea rows={6} aria-label={t('task.description')} value={text} maxLength={LIMITS.description} onInput={(e) => setText((e.target as HTMLTextAreaElement).value)} />
+          <textarea rows={6} aria-label={t('task.description')} data-orig={v.description} value={text} maxLength={LIMITS.description} onInput={(e) => setText((e.target as HTMLTextAreaElement).value)} />
           <div class="row">
             <button type="submit">{t('task.save')}</button>
             <button type="button" class="link" onClick={() => (setText(v.description), setEdit(false))}>
@@ -277,7 +277,7 @@ function Subtasks({ v, ro }: { v: TaskView; ro: boolean }) {
                   if (r !== 'rejected') setEditing(null);
                 }}
               >
-                <input type="text" aria-label={t('task.subtaskEdit')} value={editText} maxLength={LIMITS.subtask} onInput={(e) => setEditText((e.target as HTMLInputElement).value)} />
+                <input type="text" aria-label={t('task.subtaskEdit')} data-orig={String(s.text)} value={editText} maxLength={LIMITS.subtask} onInput={(e) => setEditText((e.target as HTMLInputElement).value)} />
                 <button type="submit">{t('task.save')}</button>
               </form>
             )}
@@ -608,7 +608,7 @@ function Conversation({ v }: { v: TaskView }) {
                     if (r !== 'rejected') setEditing(null);
                   }}
                 >
-                  <textarea rows={3} aria-label={t('task.commentEdit')} value={editText} maxLength={LIMITS.comment} onInput={(e) => setEditText((e.target as HTMLTextAreaElement).value)} />
+                  <textarea rows={3} aria-label={t('task.commentEdit')} data-orig={String(c.text)} value={editText} maxLength={LIMITS.comment} onInput={(e) => setEditText((e.target as HTMLTextAreaElement).value)} />
                   <div class="row">
                     <button type="submit">{t('task.save')}</button>
                     <button type="button" class="link" onClick={() => setEditing(null)}>

@@ -124,6 +124,7 @@ const cs = {
   'task.save': 'Uložit',
   'task.cancel': 'Zrušit',
   'task.saved': 'Uloženo',
+  'task.unsaved': 'V panelu je neuložená změna. Uložte ji, nebo panel zavřete křížkem.',
   'task.due': 'Termín',
   'task.dueNone': 'bez termínu',
   'task.dueTime': 'Čas (nepovinný)',

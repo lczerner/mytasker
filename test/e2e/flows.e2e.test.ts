@@ -198,4 +198,45 @@ describe('more flows (demo over file://)', () => {
     expect(errors).toEqual([]);
     await page.close();
   }, 60_000);
+
+  it('a click outside the panel closes it; a card opens another task; unsaved text keeps the panel', async () => {
+    const { page, errors } = await open('alena');
+    await task(page, 'Objednat toner');
+    await page.waitForSelector('.drawer h2:has-text("Objednat toner")');
+    // A click on another card opens that task.
+    await task(page, 'Inventura skladu');
+    await page.waitForSelector('.drawer h2:has-text("Inventura skladu")');
+    // A click on an empty place of the page closes the panel.
+    await page.mouse.click(300, 860);
+    await page.waitForSelector('.drawer', { state: 'detached' });
+    // Unsaved text: the panel stays open and a message explains why.
+    await task(page, 'Inventura skladu');
+    await page.fill('.drawer textarea[placeholder^="Napsat komentář"]', 'Rozepsáno');
+    await page.mouse.click(300, 860);
+    await page.waitForSelector('.toast:has-text("neuložená změna")');
+    expect(await page.locator('.drawer').count()).toBe(1);
+    // The × still closes it.
+    await page.click('.drawer-x');
+    await page.waitForSelector('.drawer', { state: 'detached' });
+    // A selection that starts in the panel and ends outside does not close it.
+    await task(page, 'Objednat toner');
+    const h = (await page.locator('.drawer h2').boundingBox())!;
+    await page.mouse.move(h.x + 5, h.y + 5);
+    await page.mouse.down();
+    await page.mouse.move(300, 860);
+    await page.mouse.up();
+    expect(page.url()).toContain('task=');
+    // A keyboard click on "Upravit" of the due date keeps the panel open (and no message).
+    await page.focus('.drawer .task-head p.row button.link');
+    await page.keyboard.press('Enter');
+    await page.waitForSelector('.drawer input[type=date]');
+    expect(page.url()).toContain('task=');
+    // An editor that is open but not changed is not unsaved: a click outside closes the panel.
+    await page.click('.drawer h2 button:has-text("Upravit")');
+    await page.waitForSelector('.drawer .title-input');
+    await page.mouse.click(300, 860);
+    await page.waitForSelector('.drawer', { state: 'detached' });
+    expect(errors).toEqual([]);
+    await page.close();
+  }, 60_000);
 });
