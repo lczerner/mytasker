@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
-import { fmtDate, fmtDateTime, fmtRelative, isoToInputs, nTasks, nUnread, nVerifyWaiting, plu, pragueToIso, t } from '../../src/ui/i18n';
+import { fmtDate, fmtDateTime, fmtRelative, isoToInputs, nMoreWrites, nShowMore, nShownChanges, nTasks, nUnread, nVerifyWaiting, plu, pragueToIso, t } from '../../src/ui/i18n';
 
 describe('Czech formats', () => {
   it('formats dates as 19. 11. 2026 14:30 in Europe/Prague', () => {
@@ -49,5 +49,20 @@ describe('nUnread', () => {
     expect(nUnread(1)).toBe('1 nepřečtené');
     expect(nUnread(2)).toBe('2 nepřečtená');
     expect(nUnread(5)).toBe('5 nepřečtených');
+  });
+});
+
+describe('audit plurals', () => {
+  it('uses the Czech plural', () => {
+    expect(nShownChanges(1, 1)).toBe('Zobrazena 1 změna z 1');
+    expect(nShownChanges(0, 5)).toBe('Zobrazeno 0 změn z 5');
+    expect(nShownChanges(3, 40)).toBe('Zobrazeny 3 změny z 40');
+    expect(nShownChanges(40, 40)).toBe('Zobrazeno 40 změn z 40');
+    expect(nShowMore(1)).toBe('Zobrazit další 1');
+    expect(nShowMore(3)).toBe('Zobrazit další 3');
+    expect(nShowMore(200)).toBe('Zobrazit dalších 200');
+    expect(nMoreWrites(1)).toBe('a další 1 zápis');
+    expect(nMoreWrites(2)).toBe('a další 2 zápisy');
+    expect(nMoreWrites(7)).toBe('a dalších 7 zápisů');
   });
 });

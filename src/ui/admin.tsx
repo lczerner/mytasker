@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { DATA, ENROLL_FORMAT, LIMITS, ROLES, SETTING_RANGES, type Settings } from '../domain/constants';
 import { href, useApp } from './ctx';
 import { collator, fmtDateTime, fmtRelative, nFiles, nOpenTasksLoc, nTasks, opLabel, t, type Key } from './i18n';
+import { AuditPage, IntegrityPage } from './audit';
 import { Dialog, TagChip, useBusy } from './widgets';
 
 export function AdminPage({ page }: { page: string }) {
@@ -25,9 +26,9 @@ export function AdminPage({ page }: { page: string }) {
     case 'trash':
       return <Trash />;
     case 'audit':
-      return <Audit />;
+      return <AuditPage />;
     case 'integrity':
-      return <Integrity />;
+      return <IntegrityPage />;
     default:
       return <Users />;
   }
@@ -453,70 +454,4 @@ function Trash() {
   );
 }
 
-// ---- Audit and integrity (basic lists; Phase 5 adds filters and revert) ----------------------------
-
-function Audit() {
-  const app = useApp();
-  const rows = app.engine.audit.slice(-300).reverse();
-  return (
-    <section class="page">
-      <h1>{t('admin.audit')}</h1>
-      <div class="table-box">
-        <table class="audit">
-          <thead>
-            <tr>
-              <th scope="col">{t('admin.colTime')}</th>
-              <th scope="col">{t('admin.user')}</th>
-              <th scope="col">{t('admin.colChange')}</th>
-              <th scope="col">{t('admin.status')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((a) => (
-              <tr key={a.opId} class={a.status}>
-                <td class="nowrap" title={t('common.selfReported')}>
-                  {fmtDateTime(a.wallTime)}
-                </td>
-                <td>{app.userName(a.userId)}</td>
-                <td>
-                  {opLabel(a.type)}
-                  {a.itemTypes && a.type === 'Batch' ? <span class="muted small"> ({a.itemTypes.map(opLabel).join(', ')})</span> : null}
-                </td>
-                <td>{t(`audit.${a.status}` as Key)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
-
-function Integrity() {
-  const app = useApp();
-  const issues = app.engine.issues;
-  return (
-    <section class="page">
-      <h1>{t('admin.integrity')}</h1>
-      {issues.length === 0 ? (
-        <p class="empty">{t('admin.integrityOk')}</p>
-      ) : (
-        <ul class="issues">
-          {issues.map((i, n) => (
-            <li key={n}>
-              <strong>{t(`issue.${i.kind}` as Key)}</strong> {i.path && <span class="muted small">· {i.path}</span>}
-              {i.authorKeyId && <span class="muted small"> · {app.userName(app.engine.domain.keyOwner(app.engine.state, i.authorKeyId))}</span>}
-              <details class="small">
-                <summary>{t('admin.techDetail')}</summary>
-                <code>
-                  {i.kind}: {i.detail}
-                </code>
-              </details>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
-}
 

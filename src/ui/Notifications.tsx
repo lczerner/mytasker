@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { computeNotifications, initialReadState, markRead as addRead, unread, type Notification, type NotificationKind, type ReadState } from '../domain/notifications';
 import { dueState } from '../domain/view';
 import { href, useApp } from './ctx';
-import { fmtRelative, nUnread, nVerifyWaiting, plu, t, type Key } from './i18n';
+import { fmtRelative, nTasks, nUnread, nVerifyWaiting, t, type Key } from './i18n';
 
 /** Storage of small per-user data. Real folder: encrypted in IndexedDB. Demo: in memory. */
 export interface UserData {
@@ -219,7 +219,7 @@ export function StartBanner() {
       if (app.isVerifier && v.status === 'done') verify++;
     }
     const out: { text: string; link: string }[] = [];
-    if (overdue) out.push({ text: t('banner.overdue', { n: plu(overdue, ['úkol', 'úkoly', 'úkolů']) }), link: href(['mine']) });
+    if (overdue) out.push({ text: t('banner.overdue', { n: nTasks(overdue) }), link: href(['mine']) });
     if (verify) out.push({ text: nVerifyWaiting(verify), link: href(['review']) });
     return out;
   });

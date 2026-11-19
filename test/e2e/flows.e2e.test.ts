@@ -307,4 +307,69 @@ describe('more flows (demo over file://)', () => {
     expect(errors).toEqual([]);
     await page.close();
   }, 60_000);
+
+  it('history and audit: Czech details, revert with its result, filters; no revert for a non-admin', async () => {
+    const { page, errors } = await open('alena');
+    await task(page, 'Objednat toner');
+    await page.click('.drawer h2 button:has-text("Upravit")');
+    await page.fill('.drawer .title-input', 'Objednat toner (opraveno)');
+    await page.press('.drawer .title-input', 'Enter');
+    await page.waitForSelector('.drawer h2:has-text("Objednat toner (opraveno)")');
+    // The history shows the change in Czech: field, old value, new value.
+    await page.click('#tab-h');
+    const first = page.locator('.history > li').first();
+    expect(await first.textContent()).toContain('Úprava úkolu');
+    expect(await first.textContent()).toContain('Název: Objednat toner do tiskárny ve 2. patře → Objednat toner (opraveno)');
+    // The detail has the table "Co / Pole / Před / Po".
+    await first.locator('button.link').click();
+    await page.waitForSelector('.history .change-detail table.diff td.after:has-text("Objednat toner (opraveno)")');
+    // Revert: nobody changed the field since, so no warning; the title is the old one again.
+    await first.locator('button:has-text("Vrátit")').click();
+    await page.waitForSelector('dialog[open]:has-text("Od té doby nikdo tato pole nezměnil.")');
+    await page.click('dialog[open] button.danger');
+    await page.waitForSelector('.drawer h2:has-text("Objednat toner do tiskárny ve 2. patře")');
+    await page.waitForFunction(() => document.querySelector('.history > li')?.textContent?.includes('Vrácení změny'));
+
+    // The audit: the newest change first, with Czech text; the filters change the list.
+    await page.evaluate(() => (location.hash = '#/admin/audit'));
+    await page.waitForSelector('table.audit');
+    const row = page.locator('table.audit tbody tr').first();
+    expect(await row.textContent()).toContain('Vrácení změny');
+    expect(await row.textContent()).toContain('Alena Adminová');
+    const total = await page.locator('table.audit tbody tr').count();
+    await page.selectOption('select[aria-label="Autor"]', { label: 'Věra Malá' });
+    await page.waitForFunction((n) => document.querySelectorAll('table.audit tbody tr').length < n, total);
+    for (const r of await page.locator('table.audit tbody tr td:nth-child(2)').allTextContents()) expect(r).toBe('Věra Malá');
+    await page.selectOption('select[aria-label="Autor"]', '');
+    await page.selectOption('select[aria-label="Stav"]', 'rejected');
+    await page.waitForSelector('text=Žádné změny neodpovídají filtru.');
+    await page.selectOption('select[aria-label="Stav"]', '');
+    // The date filter: a range in the future is empty; "Do" today includes the change from a moment ago.
+    await page.fill('label:has-text("Od") input[type=date]', '2099-01-01');
+    await page.waitForSelector('text=Žádné změny neodpovídají filtru.');
+    await page.fill('label:has-text("Od") input[type=date]', '');
+    const today = await page.evaluate(() => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Prague' }).format(new Date()));
+    await page.fill('label:has-text("Do") input[type=date]', today);
+    await page.waitForSelector('table.audit tbody tr:first-child:has-text("Vrácení změny")');
+    await page.fill('label:has-text("Do") input[type=date]', '2000-01-01');
+    await page.waitForSelector('text=Žádné změny neodpovídají filtru.');
+    await page.fill('label:has-text("Do") input[type=date]', '');
+    // "jen tento úkol" filters by task; the chip removes the filter.
+    await page.locator('table.audit tbody tr').first().locator('a:has-text("jen tento úkol")').click();
+    await page.waitForSelector('.chips:has-text("Úkol: Objednat toner do tiskárny ve 2. patře")');
+    expect(await page.locator('table.audit tbody tr').count()).toBeGreaterThanOrEqual(3);
+    await page.click('.chips button[aria-label="Zrušit filtr úkolu"]');
+    await page.waitForSelector('.chips', { state: 'detached' });
+    expect(errors).toEqual([]);
+    await page.close();
+
+    // A non-admin sees the history, but no revert button.
+    const eva = await open('eva');
+    await task(eva.page, 'Objednat toner');
+    await eva.page.click('#tab-h');
+    await eva.page.waitForSelector('.history > li');
+    expect(await eva.page.locator('.history button:has-text("Vrátit")').count()).toBe(0);
+    expect(eva.errors).toEqual([]);
+    await eva.page.close();
+  }, 90_000);
 });

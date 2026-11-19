@@ -257,7 +257,7 @@ The replay uses the value of a setting at the point of the op in the order. Exam
 
 1. The admin selects an op in the history or in the audit log.
 2. The app computes the inverse (rules below).
-3. If a later applied op wrote 1 of the same fields, the app shows a warning with these ops. The admin must confirm.
+3. If a later applied op wrote 1 of the same fields, the app shows a warning with these fields: the value now and the value of the reverted op. The admin must confirm. The app plans the revert again after each change of the data while the dialog is open.
 4. The app writes a `Revert` op with `target` and `inverse`.
 5. The replay checks the target: it must be an applied op (not superseded or rejected) in the same scope, and it must sort before the `Revert`. Else the `Revert` is rejected. Then the replay computes the inverse again from the applied writes of the target, with the same rules. The `inverse` of the payload must be equal to it. Else the `Revert` is rejected. Thus a `Revert` cannot write a value that the target did not replace. For example, it cannot set `status = verified`.
 6. After the inverse, the replay applies the derived status rule (§9).

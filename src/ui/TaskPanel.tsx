@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
 // Task detail panel (drawer). Each change is 1 op at once.
-import { uuidv7, type Entity } from 'oplog-core';
+import { uuidv7, type AuditEntry, type Entity } from 'oplog-core';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { downloadBytes, imageUrl, loadBlob, storeBlob } from '../app/files';
 import { LIMITS, type Status } from '../domain/constants';
@@ -9,9 +9,10 @@ import { comparePos, keyBetween, planMove } from '../domain/fractional';
 import { TRANSITIONS, STATUS_OPS, type StatusOp } from '../domain/status';
 import { isBlockedFileName, downloadName, extensionOf, normalizeTagName } from '../domain/text';
 import type { TaskView } from '../domain/view';
-import { focusTask, useApp } from './ctx';
+import { ChangeDetail, changeLabel, entityLabel, fieldText, RevertDialog, tasksOf, valueText, visibleWrites } from './audit';
+import { focusTask, href, useApp } from './ctx';
 import { DoneDialog, DeleteDialog, ResumeDialog, ReturnDialog } from './dialogs';
-import { collator, FIELD_LABEL, fmtDateTime, fmtRelative, isoToInputs, opLabel, pragueToIso, statusLabel, t, type Key } from './i18n';
+import { collator, fmtDateTime, nMoreWrites, fmtRelative, isoToInputs, opLabel, pragueToIso, t, type Key } from './i18n';
 import { Markdown } from './Markdown';
 import { Avatar, DueLabel, Picker, StatusBadge, TagChip, useBusy } from './widgets';
 
@@ -538,7 +539,7 @@ function Tabs({ v }: { v: TaskView }) {
           {t('task.history')} <span class="count">{history.length}</span>
         </button>
       </div>
-      {tab === 'c' ? <Conversation v={v} /> : <History entries={history} />}
+      {tab === 'c' ? <Conversation v={v} /> : <History entries={history} taskId={v.id} />}
     </section>
   );
 }
@@ -656,67 +657,72 @@ function Conversation({ v }: { v: TaskView }) {
   );
 }
 
-/** A field value of the history in Czech: status labels, user names, dates. */
-function showValue(f: string, x: unknown, name: (id: string) => string): string {
-  if (x === null || x === undefined || x === '') return '—';
-  if (f === 'status' || f === 'statusBeforeDelete') return statusLabel(x as Status);
-  if (f.endsWith('By')) return name(String(x));
-  if (f === 'due' && typeof x === 'object') return fmtDateTime(String((x as { at: string }).at), Boolean((x as { allDay: boolean }).allDay));
-  if (f.endsWith('At') && typeof x === 'string') return fmtDateTime(x);
-  const s = String(x);
-  return s.length > 80 ? `${s.slice(0, 80)}…` : s;
+/** The audit entries that touch the task (its fields or its children), the newest first. */
+export function taskHistory(app: ReturnType<typeof useApp>, id: string): AuditEntry[] {
+  const st = app.engine.state;
+  return app.engine.audit.filter((a) => tasksOf(st, a).has(id)).reverse();
 }
 
-interface HistoryEntry {
-  opId: string;
-  type: string;
-  by: string;
-  at: string;
-  status: string;
-  reason?: string;
-  changes: { f: string; before: unknown; v: unknown }[];
+/** 1 line of a change: "Název: Starý → Nový", or "Podúkol „…“: splněno: ne → ano" for a child. */
+function changeLines(app: ReturnType<typeof useApp>, a: AuditEntry, taskId: string): string[] {
+  const st = app.engine.state;
+  return visibleWrites(a.writes).map((w) => {
+    const field = fieldText(w.f, w.e);
+    const what = w.e === 'task' && w.id === taskId ? field.charAt(0).toUpperCase() + field.slice(1) : `${entityLabel(st, a.scope, w.e, w.id, app.userName, false)}: ${field}`;
+    const before = w.existed ? valueText(st, w.f, w.before, app.userName, w.e) : '—';
+    return `${what}: ${before} → ${valueText(st, w.f, w.v, app.userName, w.e)}`;
+  });
 }
 
-/** Audit entries that touch the task (its fields or its children). Phase 5 adds revert and details. */
-export function taskHistory(app: ReturnType<typeof useApp>, id: string): HistoryEntry[] {
-  const out: HistoryEntry[] = [];
-  const isMine = (p: Record<string, any>) => p?.id === id || p?.taskId === id;
-  for (const a of app.engine.audit) {
-    if (a.scope !== 'data') continue;
-    const items = a.type === 'Batch' && Array.isArray(a.payload.ops) ? (a.payload.ops as { payload: Record<string, unknown> }[]).map((o) => o.payload) : [a.payload];
-    const touches = a.writes.some((w) => (w.e === 'task' && w.id === id) || (w.e !== 'task' && String(w.id).startsWith(`${id}/`))) || items.some(isMine) || a.writes.some((w) => app.engine.state.scopes.data?.[w.e]?.[w.id]?.taskId === id);
-    if (!touches) continue;
-    out.push({ opId: a.opId, type: a.type, by: a.userId ?? '', at: a.wallTime, status: a.status, reason: a.reason, changes: a.writes.filter((w) => w.e === 'task' && w.id === id && w.f !== 'assigneeCount').map((w) => ({ f: w.f, before: w.before, v: w.v })) });
-  }
-  return out.reverse();
-}
-
-function History({ entries }: { entries: HistoryEntry[] }) {
+function History({ entries, taskId }: { entries: AuditEntry[]; taskId: string }) {
   const app = useApp();
+  const [open, setOpen] = useState<string | null>(null);
+  const [revert, setRevert] = useState<AuditEntry | null>(null);
   return (
     <div role="tabpanel" id="panel-h" aria-labelledby="tab-h">
-    <ol class="history">
-      {entries.map((h) => (
-        <li key={h.opId} class={h.status}>
-          <span class="muted small" title={t('common.selfReported')}>
-            {fmtDateTime(h.at)}
-          </span>{' '}
-          <strong>{app.userName(h.by)}</strong> · {opLabel(h.type)}
-          {h.status !== 'applied' && <span class={`hist-status ${h.status}`}> · {t(`audit.${h.status}` as Key)}</span>}
-          {h.changes.filter((c) => FIELD_LABEL[c.f] !== '').length > 0 && (
-            <ul>
-              {h.changes
-                .filter((c) => FIELD_LABEL[c.f] !== '')
-                .map((c, i) => (
-                  <li key={i}>
-                    {FIELD_LABEL[c.f] ?? c.f}: {showValue(c.f, c.before, app.userName)} → {showValue(c.f, c.v, app.userName)}
-                  </li>
-                ))}
-            </ul>
-          )}
-        </li>
-      ))}
-    </ol>
+      <p class="muted small">{t('task.historyIntro')}</p>
+      <ol class="history">
+        {entries.map((a) => {
+          const lines = changeLines(app, a, taskId);
+          const isOpen = open === a.opId;
+          return (
+            <li key={a.opId} class={a.status}>
+              <span class="muted small" title={t('common.selfReported')}>
+                {fmtDateTime(a.wallTime)}
+              </span>{' '}
+              <strong>{app.userName(a.userId ?? '')}</strong> ·{' '}
+              <button type="button" class="link" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : a.opId)}>
+                {changeLabel(a)}
+              </button>
+              {a.status !== 'applied' && <span class={`hist-status ${a.status}`}> · {t(`audit.${a.status}` as Key)}</span>}
+              {app.isAdmin && a.status === 'applied' && (
+                <button type="button" class="small hist-revert" onClick={() => setRevert(a)}>
+                  {t('revert.button')}
+                </button>
+              )}
+              {lines.length > 0 && (
+                <ul>
+                  {lines.slice(0, isOpen ? lines.length : 6).map((l, i) => (
+                    <li key={i}>{l}</li>
+                  ))}
+                  {!isOpen && lines.length > 6 && <li class="muted">{nMoreWrites(lines.length - 6)}</li>}
+                </ul>
+              )}
+              {isOpen && (
+                <>
+                  <ChangeDetail a={a} />
+                  {app.isAdmin && (
+                    <a class="small" href={href(['admin', 'audit'], { task: taskId })}>
+                      {t('task.historyAudit')}
+                    </a>
+                  )}
+                </>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+      {revert && <RevertDialog entry={revert} onClose={() => setRevert(null)} />}
     </div>
   );
 }

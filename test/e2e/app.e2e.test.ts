@@ -84,7 +84,7 @@ describe('demo mode over file://', () => {
     await page.click('[data-task]:has-text("Připravit školení e2e")');
     await page.click('.drawer .task-head button:has-text("Zkontrolováno")');
     await page.waitForSelector('.drawer .task-head .status:has-text("Zkontrolováno")');
-    await page.waitForSelector('.drawer .note:has-text("Měnit ho může jen správce")');
+    await page.waitForSelector('.drawer .note:has-text("Změny jsou možné až poté")');
 
     // Admin pages (Alena) open without errors.
     await page.selectOption('.me select', 'u-alena');

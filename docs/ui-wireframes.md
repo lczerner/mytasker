@@ -11,7 +11,7 @@ Status: design draft (Phase 2). The labels are the Czech texts of the UI. All na
 │ Všechny úkoly 42 │ Štítky ▾ Řešitelé ▾ Stav ▾  ☐ Zkontrolované (21)  [Tabule | Tabulka]     │
 │ Moje úkoly     5•│ (faktury ×) (Eva Nová ×)  Zrušit filtry                                  │
 │ Ke kontrole    2 │                                                                          │
-│ Vytvořené mnou 7 │ ○ Nový 4      ◐ Přiřazeno 12   ⏸ Odloženo 3   ✓ Hotovo 2                  │
+│ Vytvořil(a) jsem 7 │ ○ Nový 4      ◐ Přiřazeno 12   ⏸ Odloženo 3   ✓ Hotovo 2                  │
 │                  │ ┌──────────┐  ┌──────────────┐ ┌───────────┐  ┌──────────┐               │
 │ ── Správa ──     │ │Objednat  │  │Revize smlouvy│ │Inventura  │  │Zpráva Q3 │               │
 │ Koš              │ │toner     │  │‼ 18. 11. 2026│ │           │  │☑ 4/4     │               │
@@ -23,7 +23,7 @@ Status: design draft (Phase 2). The labels are the Czech texts of the UI. All na
 │ Audit            │                                                                          │
 │ Integrita     ⚠1 │                                                                          │
 ├──────────────────┴─────────────────────────────────────────────────────────────────────────┤
-│ Eva Nová · ověřovatel · aktualizováno před 12 s                                              │
+│ Eva Nová · kontroluje úkoly · aktualizováno před 12 s                                         │
 └────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -148,12 +148,15 @@ Start-up banner: "2 úkoly po termínu · 1 úkol čeká na kontrolu". The page 
 
 ## 7. Admin screens
 
-- **Uživatelé**: a table of users (name, role, verifier, keys, status). Buttons: "Schválit žádost", "Ověřovatel ano/ne", "Správce ano/ne", "Odebrat uživatele", "Nový klíč".
+- **Uživatelé**: a table of users (name, role, verifier, keys, status). Buttons: "Schválit žádost", "Povolit kontrolu úkolů" / "Zrušit kontrolu úkolů", "Správce ano/ne", "Odebrat uživatele", "Nový klíč".
 - **Žádosti o přístup**: the files in `enroll/`, with the fingerprint in large letters and "Schválit".
 - **Štítky**: name, number of tasks, "Přejmenovat", "Sloučit do…", "Smazat".
 - **Nastavení**: the settings of `docs/data-model.md` §7. Each change is a `SetSetting` op.
-- **Audit**: all ops with filters (author, op type, time range, task, status of the op).
-- **Integrita**: rejected ops, chain gaps, forks, unknown files, blob hash errors.
+- **Audit**: all ops, the newest first, with filters: text, author, change type (also the items of a batch), status, time range, task (a chip, from the link "jen tento úkol" or from the task history). Each row shows the time, the author, the change in Czech (a batch shows its items, for example "Vytvoření úkolu, 2× Přidání řešitele"), the changed objects and the status. A click on the change opens the detail: scope, key, `seq`, op ID, signature, item notes, and a table "Co / Pole / Před / Po" with Czech field names and values. The list shows 100 rows, then "Zobrazit dalších 200".
+- **Vrátit** (admins only, applied ops only): the dialog shows the fields that later changes overwrote ("Teď" and "Hodnota z vracené změny"), or "Od té doby nikdo tato pole nezměnil.". Then it shows the values after the revert. An op that cannot be reverted shows a Czech reason and a disabled button.
+- **Integrita**: the issues grouped by kind, with the count, a Czech description and advice for each kind, and for each issue the file path, the author, `seq` and the technical details.
+
+The **history** tab of the task panel uses the same descriptions: each change with its Czech lines ("Název: Starý → Nový"), at most 6 lines until the user opens it, then the detail table. Admins see "Vrátit" and "Zobrazit v auditu".
 - **Koš**: deleted tasks with "Obnovit".
 - **Kontrolní body**: number of op files per scope, and "Vytvořit kontrolní bod".
 

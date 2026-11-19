@@ -45,7 +45,7 @@ const cs = {
   'gate.unlock.other': 'Použít jiný klíč',
   'gate.enroll.title': 'Žádost o přístup',
   'gate.enroll.sent': 'Žádost byla uložena. Sdělte správci tento otisk (telefonem nebo osobně):',
-  'gate.enroll.waiting': 'Čekáme na schválení. Aplikace to kontroluje každých {s} s.',
+  'gate.enroll.waiting': 'Čekáme na schválení. Aplikace to kontroluje automaticky (interval {s} s).',
   'gate.enroll.send': 'Odeslat žádost o přístup',
   'gate.removed': 'Váš přístup byl ukončen. Obraťte se na správce.',
   'gate.fingerprint': 'Otisk kořene důvěry',
@@ -54,7 +54,7 @@ const cs = {
   'nav.all': 'Všechny úkoly',
   'nav.mine': 'Moje úkoly',
   'nav.review': 'Ke kontrole',
-  'nav.created': 'Vytvořené mnou',
+  'nav.created': 'Vytvořil(a) jsem',
   'nav.admin': 'Správa',
   'nav.trash': 'Koš',
   'nav.users': 'Uživatelé',
@@ -87,8 +87,8 @@ const cs = {
   'top.lock': 'Zamknout',
   'top.changeFolder': 'Změnit složku',
   'top.updated': 'aktualizováno {when}',
-  'demo.banner': 'UKÁZKOVÝ REŽIM – syntetická data, nic se neukládá',
-  'demo.as': 'Přihlášen jako',
+  'demo.banner': 'UKÁZKOVÝ REŽIM – smyšlená data, nic se neukládá',
+  'demo.as': 'Přihlášen(a) jako',
   // ---- Views ----
   'view.board': 'Tabule',
   'view.table': 'Tabulka',
@@ -153,7 +153,7 @@ const cs = {
   'task.files': 'Přílohy a odkazy',
   'task.fileAdd': 'Přidat soubor',
   'task.linkAdd': 'Přidat odkaz',
-  'task.linkUrl': 'Adresa odkazu (začíná https: nebo mailto:)',
+  'task.linkUrl': 'Adresa odkazu (začíná http:, https: nebo mailto:)',
   'task.linkTitle': 'Popisek (nepovinný)',
   'task.download': 'Stáhnout',
   'task.fileRemove': 'Odebrat přílohu',
@@ -173,6 +173,8 @@ const cs = {
   'task.tagRemove': 'Odebrat štítek {name}',
   'task.conversation': 'Konverzace',
   'task.history': 'Historie',
+  'task.historyIntro': 'Všechny změny úkolu, nejnovější nahoře. Kliknutím na změnu zobrazíte podrobnosti. Čas je podle počítače autora.',
+  'task.historyAudit': 'Zobrazit v auditu',
   'task.commentPlaceholder': 'Napsat komentář… (@jméno pro zmínku)',
   'task.commentSend': 'Odeslat',
   'task.commentEdit': 'Upravit',
@@ -180,12 +182,12 @@ const cs = {
   'task.commentDeleted': 'Komentář byl smazán.',
   'task.commentEdited': 'upraveno',
   'task.returnReason': 'Důvod vrácení',
-  'task.readonly': 'Úkol je zkontrolovaný. Měnit ho může jen správce po znovuotevření.',
+  'task.readonly': 'Úkol je zkontrolovaný. Změny jsou možné až poté, co ho správce znovu otevře.',
   'task.notFound': 'Úkol nebyl nalezen.',
   // ---- Dialogs ----
   'dlg.new.title': 'Nový úkol',
   'dlg.new.create': 'Vytvořit',
-  'dlg.done.title': 'Označit jako hotové',
+  'dlg.done.title': 'Označit jako hotový',
   'dlg.done.open': 'Nesplněné podúkoly: {n} z {total}.',
   'dlg.done.date': 'Datum dokončení',
   'dlg.return.title': 'Vrátit k přepracování',
@@ -206,19 +208,19 @@ const cs = {
   'admin.role': 'Role',
   'admin.roleAdmin': 'správce',
   'admin.roleUser': 'uživatel',
-  'admin.verifier': 'Ověřovatel',
+  'admin.verifier': 'Kontroluje úkoly',
   'admin.keys': 'Klíče',
   'admin.status': 'Stav',
   'admin.active': 'aktivní',
-  'admin.removed': 'odebrán',
-  'admin.root': 'kořenový správce',
-  'admin.makeAdmin': 'Udělat správcem',
+  'admin.removed': 'odebrán(a)',
+  'admin.root': 'hlavní správce',
+  'admin.makeAdmin': 'Nastavit jako správce',
   'admin.makeUser': 'Odebrat práva správce',
-  'admin.verifierOn': 'Nastavit jako ověřovatele',
-  'admin.verifierOff': 'Zrušit roli ověřovatele',
+  'admin.verifierOn': 'Povolit kontrolu úkolů',
+  'admin.verifierOff': 'Zrušit kontrolu úkolů',
   'admin.remove': 'Odebrat uživatele',
-  'admin.removeConfirm': 'Uživatel {name} ztratí přístup. Jeho dosavadní změny zůstanou platné.',
-  'admin.removeTasks': 'Je řešitelem v {tasks}. Odebrat ho také z nich?',
+  'admin.removeConfirm': 'Uživatel {name} ztratí přístup. Dosavadní změny tohoto uživatele zůstanou platné.',
+  'admin.removeTasks': 'Uživatel je řešitelem v {tasks}. Odebrat ho také z řešitelů?',
   'admin.removeAlsoTasks': 'Ano, odebrat i z úkolů',
   'admin.removeOnly': 'Jen odebrat přístup',
   'admin.enroll': 'Žádosti o přístup',
@@ -228,13 +230,13 @@ const cs = {
   'admin.enrollApprove': 'Schválit',
   'admin.enrollCompare': 'Před schválením porovnejte otisk s uživatelem (telefonem nebo osobně).',
   'admin.tags': 'Štítky',
-  'admin.tagCount': 'Úkoly',
+  'admin.tagCount': 'Počet úkolů',
   'admin.tagRename': 'Přejmenovat',
   'admin.tagMerge': 'Sloučit do…',
   'admin.tagDelete': 'Smazat',
   'admin.settings': 'Nastavení',
   'admin.set.dueSoonDays': 'Upozornit na blížící se termín (dny předem)',
-  'admin.set.pollSeconds': 'Kontrola nových změn (sekundy)',
+  'admin.set.pollSeconds': 'Interval kontroly nových změn (s)',
   'admin.set.maxAttachmentMB': 'Maximální velikost přílohy (MB)',
   'admin.set.defaultTags': 'Výchozí štítky nového úkolu',
   'admin.checkpoints': 'Kontrolní body',
@@ -256,7 +258,7 @@ const cs = {
   'admin.fingerprint': 'Otisk',
   'admin.enrollAs': 'Schválit jako',
   'admin.enrollNewUser': 'Nový uživatel',
-  'admin.enrollNewKey': 'Nový klíč pro: {name}',
+  'admin.enrollNewKey': 'Nový klíč pro uživatele {name}',
   'admin.colTime': 'Čas',
   'admin.colChange': 'Změna',
   'admin.scope.roles': 'Uživatelé a nastavení',
@@ -277,14 +279,86 @@ const cs = {
   'issue.bad-signature': 'Neplatný podpis (soubor byl změněn, nebo ho zapsal někdo jiný)',
   'issue.unknown-key': 'Neznámý klíč (čeká na synchronizaci nebo na schválení)',
   'issue.chain-gap': 'Chybí předchozí změna (čeká na synchronizaci, nebo byl soubor smazán či změněn)',
-  'issue.chain-broken': 'Přerušený řetěz změn',
-  'issue.fork': 'Rozvětvení: 2 různé změny téhož autora na stejném místě',
+  'issue.chain-broken': 'Přerušený řetězec změn',
+  'issue.fork': 'Rozvětvení: autor má 2 různé změny se stejným pořadím',
   'issue.revoked': 'Změna po odvolání klíče',
   'issue.unauthorized': 'Změna bez oprávnění',
   'issue.invalid-payload': 'Neplatná změna',
   'issue.future-clock': 'Čas změny je v budoucnosti (špatné hodiny počítače)',
   'issue.bad-checkpoint': 'Neplatný kontrolní bod',
   'issue.domain': 'Vnitřní chyba aplikace u jedné změny',
+  'advice.unknown-file': 'Ve sdílené složce je soubor, který aplikace nezná. Často je to kopie, kterou OneDrive vytvořil při konfliktu. Aplikace soubor nepoužívá. Zkontrolujte ho a pak ho ze složky odstraňte.',
+  'advice.parse-error': 'Soubor změny nejde přečíst. Možná se ještě nesynchronizoval celý. Počkejte na synchronizaci. Pokud problém trvá, obnovte soubor z historie verzí OneDrive.',
+  'advice.misplaced': 'Obsah souboru neodpovídá jeho umístění. Někdo soubor přesunul nebo přejmenoval. Aplikace ho nepoužije. Vraťte soubor na původní místo, nebo ho obnovte z historie verzí OneDrive.',
+  'advice.bad-signature': 'Podpis nesouhlasí: soubor se po zápisu změnil. Aplikace změnu nepoužije. Obnovte původní verzi souboru z historie verzí OneDrive a zjistěte, kdo soubor upravil.',
+  'advice.unknown-key': 'Klíč autora zatím není známý. Obvykle se ještě nesynchronizovalo schválení uživatele. Počkejte na synchronizaci. Pokud problém trvá, zkontrolujte žádosti o přístup.',
+  'advice.chain-gap': 'Chybí některá dřívější změna autora. Obvykle OneDrive ještě nesynchronizoval všechny soubory. Počkejte. Pokud mezera trvá déle než den, obnovte chybějící soubor z koše OneDrive nebo z historie verzí OneDrive.',
+  'advice.chain-broken': 'Řetězec změn autora je přerušený: některý soubor se změnil nebo byl nahrazen, nebo se řetězec rozvětvil. Aplikace pozdější změny tohoto autora nepoužije. Obnovte původní soubor z historie verzí OneDrive. Pokud má autor i rozvětvení, postupujte podle rady u rozvětvení.',
+  'advice.fork': 'Autor má 2 různé změny se stejným pořadím. Možná příčina: stejný klíč na 2 počítačích najednou, nebo obnovená záloha. Pozdější změny tohoto autora se nepoužijí. Požádejte uživatele o nový klíč, schvalte jeho žádost a starý klíč odvolejte.',
+  'advice.revoked': 'Změna je podepsaná klíčem, který už byl odvolán. Aplikace ji nepoužije. Ověřte, že starý klíč nepoužívá nikdo neoprávněný.',
+  'advice.unauthorized': 'Autor na tuto změnu neměl oprávnění. Aplikace ji nepoužije. Možná příčina: autorovi mezitím někdo odebral oprávnění, nebo používá starší verzi aplikace. Zjistěte příčinu.',
+  'advice.invalid-payload': 'Obsah změny nemá platný formát. Možná příčina: jiná verze aplikace nebo ruční úprava souboru. Aplikace změnu nepoužije. Ověřte, že všichni používají stejnou verzi aplikace.',
+  'advice.future-clock': 'Čas změny je v budoucnosti: hodiny počítače autora jdou špatně. Aplikace změnu už použila. Kvůli budoucímu času může tato změna přepsat současné změny ostatních uživatelů. Zkontrolujte dotčené údaje v auditu a požádejte autora, ať si opraví nastavení hodin.',
+  'advice.bad-checkpoint': 'Kontrolní bod je neplatný a aplikace ho nepoužije. Data to neohrožuje, jen se pomaleji načítají. Vytvořte nový kontrolní bod.',
+  'advice.domain': 'Aplikace u této změny nahlásila vnitřní chybu. Změna se nepoužije. Pošlete technické podrobnosti technické podpoře aplikace.',
+  'integrity.intro': 'Problémy jsou seřazené podle druhu. U každého druhu je popis a doporučený postup.',
+  'integrity.author': 'autor',
+  'integrity.more': 'a další ({n})',
+  'ent.task': 'Úkol',
+  'ent.subtask': 'Podúkol',
+  'ent.ofTask': '(úkol {title})',
+  'ent.comment': 'Komentář',
+  'ent.attachment': 'Příloha',
+  'ent.link': 'Odkaz',
+  'ent.assignee': 'Řešitel',
+  'ent.taskTag': 'Štítek',
+  'ent.tag': 'Štítek',
+  'ent.blob': 'Soubor',
+  'ent.user': 'Uživatel',
+  'ent.key': 'Klíč',
+  'ent.setting': 'Nastavení',
+  'audit.intro': 'Všechny změny ve sdílené složce, nejnovější nahoře. Kliknutím na změnu zobrazíte podrobnosti. Čas je podle počítače autora.',
+  'audit.search': 'Hledat v auditu',
+  'audit.fUser': 'Autor',
+  'audit.fType': 'Změna',
+  'audit.fStatus': 'Stav',
+  'audit.fTask': 'Úkol',
+  'audit.fTaskRemove': 'Zrušit filtr úkolu',
+  'audit.any': 'vše',
+  'audit.from': 'Od',
+  'audit.to': 'Do',
+  'audit.none': 'Žádné změny neodpovídají filtru.',
+  'audit.revertOf': 'vrací změnu {id}…',
+  'audit.onlyTask': 'jen tento úkol',
+  'audit.notes': 'poznámky: {n}',
+  'audit.scope': 'Oblast',
+  'audit.scopeData': 'úkoly',
+  'audit.scopeRoles': 'uživatelé a nastavení',
+  'audit.key': 'klíč',
+  'audit.seq': 'pořadí',
+  'audit.sigOk': '✓ podpis platný',
+  'audit.reason': 'Důvod (anglicky)',
+  'audit.colEntity': 'Co',
+  'audit.colField': 'Pole',
+  'audit.colBefore': 'Před',
+  'audit.colAfter': 'Po',
+  'audit.payload': 'Obsah změny (technicky)',
+  'revert.button': 'Vrátit',
+  'revert.title': 'Vrátit změnu',
+  'revert.what': 'Vrátit změnu „{what}“, kterou provedl(a) {who} {when}.',
+  'revert.do': 'Vrátit změnu',
+  'revert.adminOnly': 'Změnu může vrátit jen správce.',
+  'revert.notApplied': 'Tato změna nebyla provedena, není co vracet.',
+  'revert.notRevertible': 'Tento druh změny nejde vrátit. Použijte opačnou akci (například odebrání uživatele nebo nový klíč).',
+  'revert.notPossible': 'Změnu teď nejde vrátit.',
+  'revert.rejected': 'Aplikace by vrácení odmítla.',
+  'revert.overwritten': 'Pozor: tato pole od té doby změnila pozdější změna. Vrácení tyto pozdější změny přepíše.',
+  'revert.changed': 'Údaje se mezitím změnily. Tabulky ukazují aktuální stav. Zkontrolujte je znovu.',
+  'revert.noConflict': 'Od té doby nikdo tato pole nezměnil.',
+  'revert.result': 'Po vrácení budou mít pole tyto hodnoty:',
+  'revert.colNow': 'Teď',
+  'revert.colTarget': 'Hodnota z vracené změny',
+  'revert.colNew': 'Nová hodnota',
   'footer.author': '© 2026 Lukáš Czerner',
   'footer.license': 'Licence MIT',
   'footer.licenseTitle': 'Licence',
@@ -311,28 +385,56 @@ export const statusLabel = (s: Status): string => t(`status.${s}` as Key);
 
 /** Czech names of op types (history and audit). */
 export const OP_LABEL: Record<string, string> = {
-  GrantUser: 'Schválení uživatele', UpdateUser: 'Změna jména uživatele', SetRole: 'Změna role', SetVerifier: 'Změna role ověřovatele', AddKey: 'Nový klíč', RevokeKey: 'Odvolání klíče', RemoveUser: 'Odebrání uživatele', SetSetting: 'Změna nastavení',
-  CreateTask: 'Vytvoření úkolu', UpdateTask: 'Úprava úkolu', PostponeTask: 'Odložení', ResumeTask: 'Pokračování', CompleteTask: 'Dokončení', VerifyTask: 'Kontrola', ReturnTask: 'Vrácení k přepracování', ReopenTask: 'Znovuotevření', DeleteTask: 'Smazání', RestoreTask: 'Obnovení z koše',
+  GrantUser: 'Schválení uživatele', UpdateUser: 'Změna jména uživatele', SetRole: 'Změna role', SetVerifier: 'Změna práva kontroly', AddKey: 'Nový klíč', RevokeKey: 'Odvolání klíče', RemoveUser: 'Odebrání uživatele', SetSetting: 'Změna nastavení',
+  CreateTask: 'Vytvoření úkolu', UpdateTask: 'Úprava úkolu', PostponeTask: 'Odložení', ResumeTask: 'Pokračování', CompleteTask: 'Dokončení', VerifyTask: 'Potvrzení kontroly', ReturnTask: 'Vrácení k přepracování', ReopenTask: 'Znovuotevření', DeleteTask: 'Smazání', RestoreTask: 'Obnovení z koše',
   AddAssignee: 'Přidání řešitele', RemoveAssignee: 'Odebrání řešitele', CreateTag: 'Nový štítek', AddTaskTag: 'Přidání štítku', RemoveTaskTag: 'Odebrání štítku', RenameTag: 'Přejmenování štítku', MergeTag: 'Sloučení štítků', DeleteTag: 'Smazání štítku',
-  AddSubtask: 'Nový podúkol', EditSubtask: 'Úprava podúkolu', CheckSubtask: 'Splnění podúkolu', MoveSubtask: 'Přesun podúkolu', RemoveSubtask: 'Odebrání podúkolu',
+  AddSubtask: 'Nový podúkol', EditSubtask: 'Úprava podúkolu', CheckSubtask: 'Změna splnění podúkolu', MoveSubtask: 'Přesun podúkolu', RemoveSubtask: 'Odebrání podúkolu',
   AddAttachment: 'Nová příloha', RemoveAttachment: 'Odebrání přílohy', PurgeBlob: 'Trvalé odstranění souboru', AddLink: 'Nový odkaz', EditLink: 'Úprava odkazu', RemoveLink: 'Odebrání odkazu',
-  AddComment: 'Komentář', EditComment: 'Úprava komentáře', DeleteComment: 'Smazání komentáře', Batch: 'Více změn najednou', Revert: 'Vrácení změny',
+  AddComment: 'Nový komentář', EditComment: 'Úprava komentáře', DeleteComment: 'Smazání komentáře', Batch: 'Více změn najednou', Revert: 'Vrácení změny',
 };
 export const opLabel = (type: string): string => OP_LABEL[type] ?? type;
 
 /** Czech names of task fields (history). */
-export const FIELD_LABEL: Record<string, string> = {
-  title: 'Název', description: 'Popis', status: 'Stav', due: 'Termín', completedAt: 'Dokončeno', completedBy: 'Dokončil(a)', verifiedAt: 'Zkontrolováno', verifiedBy: 'Zkontroloval(a)',
-  postponedAt: 'Odloženo', postponedBy: 'Odložil(a)', deletedAt: 'Smazáno', deletedBy: 'Smazal(a)', statusBeforeDelete: 'Stav před smazáním', completeRef: '', createdAt: 'Vytvořeno', createdBy: 'Vytvořil(a)',
-};
-
 export const nFiles = (n: number) => plu(n, ['soubor změn', 'soubory změn', 'souborů změn']);
 /** "1 otevřeném úkolu", "3 otevřených úkolech" (locative after "v"). */
 export const nOpenTasksLoc = (n: number) => `${n} ${n === 1 ? 'otevřeném úkolu' : 'otevřených úkolech'}`;
 
+// ---- Audit: field names and values ------------------------------------------------------------------
+
+/** Czech field names of the audit and the history. Empty = a technical field that the UI does not show. */
+export const FIELD_TEXT: Record<string, string> = {
+  title: 'název', description: 'popis', status: 'stav', due: 'termín', createdAt: 'vytvořeno', createdBy: 'vytvořil(a)', completedAt: 'dokončeno', completedBy: 'dokončil(a)',
+  verifiedAt: 'zkontrolováno', verifiedBy: 'zkontroloval(a)', postponedAt: 'odloženo', postponedBy: 'odložil(a)', deletedAt: 'smazáno', deletedBy: 'smazal(a)', statusBeforeDelete: 'stav před smazáním',
+  text: 'text', pos: 'pořadí', done: 'splněno', doneBy: 'splnil(a)', doneAt: 'čas splnění', name: 'název', mime: 'typ', size: 'velikost', uploadedBy: 'nahrál(a)', uploadedAt: 'nahráno',
+  url: 'adresa', on: 'zapnuto', by: 'změnil(a)', at: 'čas', mentions: 'zmínky', editedAt: 'upraveno', kind: 'druh', mergedInto: 'sloučeno do', purged: 'odstraněno', purgedBy: 'odstranil(a)', purgedAt: 'čas odstranění', reason: 'důvod',
+  displayName: 'jméno', role: 'role', verifier: 'kontroluje úkoly', revoked: 'odvolán', cutoff: 'hranice platnosti', value: 'hodnota', sha256: 'otisk souboru',
+  // Technical or derived fields: not shown.
+  completeRef: '', assigneeCount: '', norm: '', order: '', taskId: '', userId: '', tagId: '', root: '', publicKey: '', alg: '',
+};
+/** Status values of entities other than a task. */
+export const STATUS_OTHER: Record<string, string> = { active: 'aktivní', removed: 'odebráno', merged: 'sloučeno', comment: 'komentář', return: 'vrácení' };
+export const AUDIT_TEXT = {
+  onField: 'stav',
+  assigneeOn: 'přiřazen(a)',
+  assigneeOff: 'odebrán(a)',
+  tagOn: 'přidán',
+  tagOff: 'odebrán',
+  kB: 'kB',
+};
+
 // ---- Plurals (Czech: 1 = one, 2–4 = few, 5+ and 0 = other/many) ----------------------------
 
 const plural = new Intl.PluralRules('cs');
+
+/** "Zobrazena 1 změna z 5", "Zobrazeny 3 změny z 5", "Zobrazeno 40 změn z 40". */
+export const nShownChanges = (n: number, total: number): string => {
+  const c = plural.select(n);
+  return `${c === 'one' ? 'Zobrazena' : c === 'few' ? 'Zobrazeny' : 'Zobrazeno'} ${plu(n, ['změna', 'změny', 'změn'])} z ${total}`;
+};
+/** "Zobrazit další 1", "Zobrazit další 3", "Zobrazit dalších 200". */
+export const nShowMore = (n: number): string => `Zobrazit ${plural.select(n) === 'many' || plural.select(n) === 'other' ? 'dalších' : 'další'} ${n}`;
+/** "a další 1 zápis", "a další 3 zápisy", "a dalších 7 zápisů". */
+export const nMoreWrites = (n: number): string => `a ${plural.select(n) === 'one' || plural.select(n) === 'few' ? 'další' : 'dalších'} ${plu(n, ['zápis', 'zápisy', 'zápisů'])}`;
 
 /** "1 nepřečtené", "2 nepřečtená", "5 nepřečtených". */
 export const nUnread = (n: number): string => plu(n, ['nepřečtené', 'nepřečtená', 'nepřečtených']);
