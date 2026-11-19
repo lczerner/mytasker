@@ -34,17 +34,23 @@ export function TaskList({ kind }: { kind: ListKind }) {
   const sort = q.sort ?? (kind === 'mine' ? 'due' : 'created');
   const dir = q.dir === 'asc' || q.dir === 'desc' ? q.dir : kind === 'mine' || sort === 'due' || sort === 'title' ? 'asc' : 'desc';
 
+  // Verified tasks stay forever, so they are hidden by default (owner, 2026-11-19).
+  // The switch (verified=1) or the status filter "Zkontrolováno" shows them.
+  const showVerified = q.verified === '1' || fStatus.includes('verified');
   const base = useMemo(() => baseTasks(kind, views, me.userId), [views, kind, me.userId]);
-  const shown = useMemo(() => {
+  const { shown, verifiedMatching } = useMemo(() => {
     const terms = queryTerms(q.q ?? '');
-    return base.filter(
+    const matching = base.filter(
       (v) =>
         (!fTags.length || v.tags.some((tg) => fTags.includes(tg.id))) &&
         (!fWho.length || fWho.some((w) => (w === 'none' ? v.assignees.length === 0 : v.assignees.includes(w)))) &&
         (!fStatus.length || fStatus.includes(v.status)) &&
         (!terms.length || matches(search.get(v.id) ?? '', terms)),
     );
-  }, [base, q.tags, q.who, q.status, q.q, search]);
+    // N of the switch: the verified tasks that match all other filters (the same number in both states).
+    const verifiedMatching = matching.filter((v) => v.status === 'verified').length;
+    return { shown: showVerified ? matching : matching.filter((v) => v.status !== 'verified'), verifiedMatching };
+  }, [base, q.tags, q.who, q.status, q.q, search, showVerified]);
 
   const sorted = useMemo(() => sortTasks(shown, sort, dir, app.userName, now, settings.dueSoonDays), [shown, sort, dir, now]);
   const active = fTags.length + fWho.length + fStatus.length + (q.q ? 1 : 0);
@@ -65,7 +71,14 @@ export function TaskList({ kind }: { kind: ListKind }) {
           </button>
         </div>
       </div>
-      <Filters tags={fTags} who={fWho} status={fStatus} />
+      <div class="row wrap filter-row">
+        <Filters tags={fTags} who={fWho} status={fStatus} />
+        {(kind === 'all' || kind === 'created') && !fStatus.includes('verified') && (
+          <label class="toggle">
+            <input type="checkbox" checked={q.verified === '1'} onChange={() => setQuery({ verified: q.verified === '1' ? undefined : '1' })} /> {t('filter.showVerified', { n: verifiedMatching })}
+          </label>
+        )}
+      </div>
       {active > 0 && (
         <div class="chips" role="group" aria-label={t('filter.active')}>
           {q.q && <FilterChip label={`„${q.q}“`} onRemove={() => setQuery({ q: undefined })} />}
@@ -86,7 +99,7 @@ export function TaskList({ kind }: { kind: ListKind }) {
       {sorted.length === 0 ? (
         <p class="empty">{active ? t('view.emptyFiltered') : t('view.empty')}</p>
       ) : mode === 'board' ? (
-        <Board tasks={sorted} />
+        <Board tasks={sorted} columns={showVerified ? BOARD : BOARD.filter((s) => s !== 'verified')} />
       ) : (
         <Table tasks={sorted} sort={sort} dir={dir} />
       )}
@@ -173,10 +186,10 @@ export function sortTasks(list: TaskView[], sort: string, dir: string, name: (id
   return [...list].sort((a, b) => sign * c(a, b) || (a.id < b.id ? -1 : 1));
 }
 
-function Board({ tasks }: { tasks: TaskView[] }) {
+function Board({ tasks, columns }: { tasks: TaskView[]; columns: Status[] }) {
   return (
-    <div class="board">
-      {BOARD.map((s) => {
+    <div class="board" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(12rem, 1fr))` }}>
+      {columns.map((s) => {
         const col = tasks.filter((v) => v.status === s);
         return (
           <section key={s} class={`col col-${s}`} aria-label={statusLabel(s)}>

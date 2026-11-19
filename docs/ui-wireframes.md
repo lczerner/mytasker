@@ -8,16 +8,16 @@ Status: design draft (Phase 2). The labels are the Czech texts of the UI. All na
 ┌────────────────────────────────────────────────────────────────────────────────────────────┐
 │ ✓ Úkoly             [ 🔍 Hledat…  (/) ]          [+ Nový úkol (N)]  ⟳  🔔3  Eva Nová ▾     │
 ├──────────────────┬─────────────────────────────────────────────────────────────────────────┤
-│ Všechny úkoly 42 │ Štítky ▾  Řešitelé ▾  Stav ▾      [Tabule | Tabulka]                     │
+│ Všechny úkoly 42 │ Štítky ▾ Řešitelé ▾ Stav ▾  ☐ Zkontrolované (21)  [Tabule | Tabulka]     │
 │ Moje úkoly     5•│ (faktury ×) (Eva Nová ×)  Zrušit filtry                                  │
 │ Ke kontrole    2 │                                                                          │
-│ Vytvořené mnou 7 │ ○ Nový 4  ◐ Přiřazeno 12   ⏸ Odloženo 3   ✓ Hotovo 2   ✔✔ Zkontrolováno 21│
-│                  │ ┌──────────┐  ┌──────────────┐ ┌───────────┐  ┌──────────┐  ┌──────────┐ │
-│ ── Správa ──     │ │Objednat  │  │Revize smlouvy│ │Inventura  │  │Zpráva Q3 │  │…         │ │
-│ Koš              │ │toner     │  │‼ 18. 11. 2026│ │           │  │☑ 4/4     │  │          │ │
-│ Uživatelé        │ │(nákup)   │  │14:00 (právo) │ │(sklad)    │  │💬2 📎1   │  │          │ │
-│ Štítky           │ │          │  │☑ 2/5  💬3 📎1│ │           │  │ PD       │  │          │ │
-│ Nastavení        │ └──────────┘  │ EN  PD       │ └───────────┘  └──────────┘  └──────────┘ │
+│ Vytvořené mnou 7 │ ○ Nový 4      ◐ Přiřazeno 12   ⏸ Odloženo 3   ✓ Hotovo 2                  │
+│                  │ ┌──────────┐  ┌──────────────┐ ┌───────────┐  ┌──────────┐               │
+│ ── Správa ──     │ │Objednat  │  │Revize smlouvy│ │Inventura  │  │Zpráva Q3 │               │
+│ Koš              │ │toner     │  │‼ 18. 11. 2026│ │           │  │☑ 4/4     │               │
+│ Uživatelé        │ │(nákup)   │  │14:00 (právo) │ │(sklad)    │  │💬2 📎1   │               │
+│ Štítky           │ │          │  │☑ 2/5  💬3 📎1│ │           │  │ PD       │               │
+│ Nastavení        │ └──────────┘  │ EN  PD       │ └───────────┘  └──────────┘               │
 │ Žádosti        1 │               └──────────────┘                                           │
 │ Kontrolní body   │                                                                          │
 │ Audit            │                                                                          │
@@ -31,6 +31,7 @@ Status: design draft (Phase 2). The labels are the Czech texts of the UI. All na
 - Dates always have the year: `18. 11. 2026`, with the time if the task has one. A task with no time (`due.allDay`) shows only the date.
 - `‼` = overdue (red background, icon and text "po termínu"). Due soon = amber, icon `⏰` and text "brzy".
 - Status columns have an icon and a label. The status is clear without color.
+- Verified tasks are hidden by default (Q-25): the board shows 4 columns, and the filter row has the switch "Zobrazit zkontrolované (N)". With the switch, or with the status filter "Zkontrolováno", the column "Zkontrolováno" and the verified tasks show. The sidebar counts do not count verified tasks.
 - The board has no drag and drop in the first version (Q-15). The status changes in the task panel. Reason: a drop makes an op with no confirmation, and keyboard use is difficult.
 - The "Správa" section shows only to admins. "Ke kontrole" shows only to verifiers and admins.
 

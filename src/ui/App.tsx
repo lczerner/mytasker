@@ -193,7 +193,8 @@ export function App(props: AppProps) {
   const listKinds: ListKind[] = ['all', 'mine', 'review', 'created'];
   const mine = baseTasks('mine', model.views, me.userId);
   const overdueMine = mine.filter((v) => dueState(v, now, model.settings.dueSoonDays) === 'overdue').length;
-  const count = (k: ListKind) => baseTasks(k, model.views, me.userId).length;
+  // Verified tasks are hidden by default, so the counts do not include them.
+  const count = (k: ListKind) => baseTasks(k, model.views, me.userId).filter((v) => v.status !== 'verified').length;
   const issues = isAdmin ? engine.issues.length : 0;
   const myName = ctx.userName(me.userId);
 

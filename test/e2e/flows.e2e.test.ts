@@ -66,7 +66,8 @@ describe('more flows (demo over file://)', () => {
     await page.waitForSelector('.drawer .task-head .status:has-text("Nový")');
     expect(await page.textContent('.drawer .task-head')).toContain('1. 2. 2030');
     await page.keyboard.press('Escape');
-    // An admin reopens a verified task.
+    // An admin reopens a verified task (verified tasks are hidden by default: switch them on).
+    await page.check('label.toggle input');
     await task(page, 'Aktualizovat seznam kontaktů');
     await page.click('.drawer .task-head button:has-text("Znovu otevřít")');
     await page.waitForSelector('.drawer .task-head .status:has-text("Přiřazeno")');
@@ -163,6 +164,37 @@ describe('more flows (demo over file://)', () => {
     await page.click('button[aria-label="Načíst změny"]');
     await page.waitForTimeout(300);
     expect(await page.inputValue('label:has-text("dny předem") input')).toBe('7');
+    expect(errors).toEqual([]);
+    await page.close();
+  }, 60_000);
+
+  it('verified tasks are hidden by default; the switch or the status filter shows them', async () => {
+    const { page, errors } = await open('alena');
+    const cards = () => page.locator('[data-task]').count();
+    expect(await page.locator('.col-verified').count()).toBe(0);
+    expect(await page.locator('[data-task]:has-text("Aktualizovat seznam kontaktů")').count()).toBe(0);
+    const hidden = Number((await page.textContent('label.toggle'))!.match(/\((\d+)\)/)![1]);
+    expect(hidden).toBe(2);
+    const before = await cards();
+    const sidebar = Number((await page.textContent('nav a[href="#/all"] .badge'))!.trim());
+    expect(sidebar).toBe(before);
+    await page.check('label.toggle input');
+    await page.waitForSelector('.col-verified');
+    expect(await cards()).toBe(before + 2);
+    expect(page.url()).toContain('verified=1');
+    // N counts only the verified tasks that match the other filters, in both states of the switch.
+    await page.fill('input[type=search]', 'kontaktu');
+    await page.waitForFunction(() => document.querySelectorAll('[data-task]').length === 1);
+    expect(await page.textContent('label.toggle')).toContain('(1)');
+    await page.uncheck('label.toggle input');
+    await page.waitForFunction(() => document.querySelectorAll('[data-task]').length === 0);
+    expect(await page.textContent('label.toggle')).toContain('(1)');
+    await page.click('.chips button:has-text("Zrušit filtry")');
+    // The status filter "Zkontrolováno" alone shows only the verified tasks.
+    await page.click('summary:has-text("Stav")');
+    await page.check('.dd-menu label:has-text("Zkontrolováno") input');
+    await page.waitForFunction(() => document.querySelectorAll('[data-task]').length === 2);
+    expect(await page.locator('label.toggle').count()).toBe(0);
     expect(errors).toEqual([]);
     await page.close();
   }, 60_000);

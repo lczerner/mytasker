@@ -349,7 +349,13 @@ h1 .count,
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+}
+.filter-row {
   margin-bottom: 0.5rem;
+  gap: 1rem;
+}
+.toggle {
+  color: var(--muted);
 }
 .dd {
   position: relative;
@@ -476,7 +482,7 @@ h1 .count,
 /* ---- Board ---- */
 .board {
   display: grid;
-  grid-template-columns: repeat(5, minmax(12rem, 1fr));
+  /* The columns come from an inline style: 4 or 5, depending on the verified switch (Q-25). */
   gap: 0.75rem;
   overflow-x: auto;
   padding-bottom: 0.5rem;

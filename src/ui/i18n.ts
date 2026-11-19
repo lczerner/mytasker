@@ -84,6 +84,7 @@ const cs = {
   'filter.status': 'Stav',
   'filter.unassigned': 'nepřiřazeno',
   'filter.clear': 'Zrušit filtry',
+  'filter.showVerified': 'Zobrazit zkontrolované ({n})',
   'filter.remove': 'Odebrat filtr {name}',
   'col.title': 'Název',
   'col.status': 'Stav',
