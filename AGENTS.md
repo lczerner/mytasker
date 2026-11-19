@@ -28,10 +28,11 @@ Status: first version (Phase 2). Phase 6 completes the repository map, the comma
 
 | Path | Content |
 |---|---|
-| `src/domain/` | Op catalogue, permission matrix, `authorize`, status state machine, search, notifications. No DOM. |
+| `src/domain/` | The `Domain` for `oplog-core` (`domain.ts`), op catalogue (`catalog.ts`), permission matrix (`permissions.ts`), status state machine (`status.ts`), state helpers, fractional index, text rules, task views, search, notifications. No DOM. |
+| `../oplog-core` | Shared core (separate repository): canonical JSON, crypto, HLC, verify, replay, engine, storage adapters. |
 | `src/app/` | Browser services: session, key file, encrypted cache, files. |
 | `src/ui/` | Preact UI, `i18n.ts`, CSS. |
-| `test/` | `unit`, `property`, `simulation`, `e2e`, `perf`, `fixtures` (synthetic only). |
+| `test/` | `unit` (state machine and `authorize` matrices, domain rules), `property` (convergence), `simulation` (multi-user on disk, attacks), `e2e`, `perf`, `fixtures` (synthetic only). `helpers.ts` makes a synthetic team. |
 | `docs/` | Architecture, data model, wireframes, review checklist, ADRs, open questions. |
 | `scripts/` | `check-build.mjs` (build check), `release.mjs` (release package). |
 | `release/` | `create-folders.sh` (empty folder skeleton). `release/app/` is generated and git-ignored. |
@@ -52,7 +53,19 @@ npm run test:e2e       # build + browser tests (CHROMIUM=/path/to/chromium)
 npm run release        # release/app/: index.html, LICENSE, VERSION, SHA256SUMS
 ```
 
-Not available yet: `npm run simulate` and `npm run perf` need the tests of Phase 3, and `npm run test:e2e` needs the tests of Phase 4. Until then, these commands fail with "No test files found". `make demo` prints a URL, but the demo mode comes in Phase 4.
+Not available yet: `npm run perf` (Phase 7) and `npm run test:e2e` (Phase 4) fail with "No test files found". `make demo` prints a URL, but the demo mode comes in Phase 4. `SIM_SEED` and `SIM_ROUNDS` change the simulation run.
+
+## 5a. Checklist: add a new op type or status
+
+1. Ask the owner first if the change affects permissions, the state machine, data meaning or the op format.
+2. `src/domain/catalog.ts`: the definition (scopes, exact schema, `check`, `effects`, `revertible`). `effects` must be pure and deterministic. A rule that depends on the status returns `superseded`, not an error (`docs/data-model.md` §6.1).
+3. `src/domain/permissions.ts`: a row in `PERMISSIONS`.
+4. `test/unit/authorize.test.ts`: the expected rights in the independent lists.
+5. A new status or transition: `src/domain/status.ts` and the matrix `EXPECTED` in `test/unit/status.test.ts`.
+6. Revert: a create op needs a case in `removeWrites` (`src/domain/domain.ts`). A derived field needs `isDerived`.
+7. Notifications (`src/domain/notifications.ts`) and the UI labels (`src/ui/i18n.ts`, Phase 4).
+8. `docs/data-model.md`: the catalogue row (payload, who, effects, inverse).
+9. Run the definition of done.
 
 ## 6. Working rules
 

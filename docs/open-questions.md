@@ -4,7 +4,9 @@ Each open question has a proposal. When the owner answers, the question moves to
 
 ## 1. Open
 
-No open questions.
+| ID | Question | Proposal |
+|---|---|---|
+| Q-23 | The security review of `oplog-core` (Phase 3) needed 3 new rules of the op format. No op files exist yet. Do you approve them? 1. `hlc.t` ≤ 253 402 300 799 999 (the year 9999) and `hlc.c` ≤ 2 147 483 647. 2. `sig` must be the canonical base64url text. 3. An op is nested at most 32 levels deep. Also: the `Revert` payload has no field `overwritten`. | Approve. Without rules 1 and 2, 1 crafted op file can block the writes of all clients or fake a fork. Without rule 3, clients can disagree about 1 file. |
 
 ## 2. Answered
 

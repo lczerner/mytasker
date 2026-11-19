@@ -11,7 +11,7 @@ On 2026-11-19 I tested Chromium 155: all `file://` pages share 1 storage origin 
 
 1. The private key is in a key file in a personal folder, never in the shared folder. AES-256-GCM wraps the PKCS#8 key. The wrapping key comes from the passphrase: PBKDF2-SHA256, 600 000 iterations, a random salt.
 2. At unlock, the key becomes a non-extractable `CryptoKey` in the memory of the page.
-3. A random AES-256-GCM key encrypts the local cache (verified ops, state, read state of notifications). The passphrase-derived key wraps it. An optional copy of the wrapped private key in IndexedDB is permitted, because it is also wrapped.
+3. A random AES-256-GCM key encrypts the local cache (verified ops and the read state of notifications, never the replayed state). The passphrase-derived key wraps it. An optional copy of the wrapped private key in IndexedDB is permitted, because it is also wrapped.
 4. `localStorage` keeps only data that is not secret: the last filter and the view mode.
 5. The folder handle is stored in IndexedDB. The owner accepts the risk (Q-22, `docs/security-model.md` §4).
 

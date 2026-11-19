@@ -47,22 +47,21 @@ flowchart TB
   end
 ```
 
-The `Domain` interface of `oplog-core` (draft):
+The `Domain` interface of `oplog-core` (`oplog-core/src/domain.ts`). mytasker implements it in `src/domain/domain.ts`:
 
-```ts
-interface Domain {
-  scopes: ScopeDef[];                       // name, folder, who writes it
-  catalog: Record<string, OpDef>;           // payload schema + effects()
-  authorize(env: Envelope, ctx: AuthCtx): AuthResult;
-  initState(trustRoot: TrustRoot): State;   // root users and keys
-  guard?(state: State, env: Envelope, writes: Write[]): string | null;
-  normalize?(state: State, touched: EntityRef[]): Write[]; // derived status rule
-  cutoffsOf(state: State): Map<string, Cutoff>;            // revocation fixpoint
-  isRevocation(env: Envelope): boolean;     // full replay needed
-}
-```
+| Member | Content in mytasker |
+|---|---|
+| `scopeDir`, `scopeFromDir`, `discoverScopes` | The scopes `roles` and `data`, each in the folder with the same name |
+| `catalog` | The op catalogue (`src/domain/catalog.ts`, `docs/data-model.md` §5) |
+| `authorize` | The permission matrix (`src/domain/permissions.ts`, `docs/data-model.md` §6) |
+| `rootState`, `keyOwner`, `keysIn`, `isAdmin` | Users and keys. The root admins of the trust root are protected (`root: true`). |
+| `revocations`, `isRevocation` | Cutoffs from `RevokeKey` and `RemoveUser` |
+| `normalize` | The derived status rules (`docs/data-model.md` §9) and the count `assigneeCount` |
+| `checkState` | No cycle of merged tags |
+| `removeWrites` | The writes for a `Revert` of a create op (`docs/data-model.md` §8) |
+| `isDerived` | `task.assigneeCount`: a `Revert` does not write it, `normalize` computes it again |
 
-`effects()` can return `{ superseded: reason }`. The replay records it in the audit log with the status `superseded`. `system-vzdelavani` has `no-effect`. `superseded` is a new audit status in `oplog-core`.
+`effects()` can return `{ superseded: reason }`. The replay records it in the audit log with the status `superseded`. `system-vzdelavani` has only `no-effect`. `superseded` is a new audit status in `oplog-core`. An error in domain code rejects only that op (issue kind `domain`).
 
 ## 3. Folder layout and OneDrive permissions
 
@@ -139,9 +138,9 @@ flowchart TD
 ```
 
 - **Polling**: the default is every 15 seconds (setting `pollSeconds`). The UI also has a refresh button. If `FileSystemObserver` exists (Chromium 155 has it), the app uses it, and polling is a fallback.
-- **Cache**: the client keeps verified ops and the read state of notifications in IndexedDB. The cache is encrypted (ADR 0006). A file is verified 1 time. The cache records the SHA-256 of `app/trust-root.json`. If the trust root changes, the client discards the cached state and does a full replay. The cached verified ops stay valid, because the signature check does not depend on the trust root.
+- **Cache**: the client keeps verified ops (never the state) and the read state of notifications in IndexedDB. The cache is encrypted (ADR 0006). A file is verified 1 time. The state is always replayed from the ops. If the trust root changes, the engine does a full replay.
 - **Replay**: the full replay is in memory, from the trust root. New ops that sort after the last applied op are applied incrementally. Else the engine does a full replay. Tests check that both paths give the same state.
-- **Checkpoints**: an admin writes a signed pack of the original ops (ADR 0007). A new client reads 1 large file instead of many small files.
+- **Checkpoints**: an admin writes a signed pack of the original ops (ADR 0007). A new client reads 1 large file instead of many small files. The engine uses the ops of a pack only if the pack signature is valid and its author is an admin. Else it reads the op files. Thus a pack cannot hide or replace a valid op file.
 - **Chain errors**: a missing `seq` (gap) stops the chain of this author at the gap. The ops after the gap wait. Usually the gap is a file that OneDrive did not sync yet. If the gap stays, the integrity view shows it.
 - **HLC along a chain**: the HLC of each op must be greater than the HLC of the previous op of the same author and scope. Else the chain is broken at that op (`docs/data-model.md` §4). This check is in `oplog-core`.
 - **Revocation**: the replay applies the cutoffs of all revocations to all ops of a key, with a fixpoint (`docs/data-model.md` §6).
@@ -169,7 +168,7 @@ sequenceDiagram
   N->>N: the app shows the user as active
 ```
 
-The fingerprint is the 16 characters of the key ID after the `k`, in uppercase, in 4 groups. Example: the key ID `k7qd2mxapf4nwz3bh5rk6tyae` has the fingerprint `7QD2-MXAP-F4NW-Z3BH`.
+The fingerprint is the 20 characters of the key ID after the `k`, in uppercase, in 5 groups (100 bits, the same as in `system-vzdelavani`). Example: the key ID `k7qd2mxapf4nwz3bh5rk6tyae` has the fingerprint `7QD2-MXAP-F4NW-Z3BH-5RK6`.
 
 Bootstrap of the first admin:
 

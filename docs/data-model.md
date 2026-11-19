@@ -43,15 +43,15 @@ All entities have an `id`. Entities are never removed from the state. A removed 
 
 | Entity | Fields |
 |---|---|
-| `task` | `title`, `description`, `status`, `due`, `createdAt`, `createdBy`, `completedAt`, `completedBy`, `verifiedAt`, `verifiedBy`, `postponedAt`, `postponedBy`, `deletedAt`, `deletedBy`, `statusBeforeDelete` |
+| `task` | `title`, `description`, `status`, `due`, `createdAt`, `createdBy`, `completedAt`, `completedBy`, `completeRef` (`<opId>/<item>` of the `CompleteTask`), `assigneeCount` (derived), `verifiedAt`, `verifiedBy`, `postponedAt`, `postponedBy`, `deletedAt`, `deletedBy`, `statusBeforeDelete` |
 | `assignee` | ID = `<taskId>/<userId>`. `taskId`, `userId`, `on` (bool), `by`, `at` |
-| `tag` | `name`, `status` (`active`, `merged`, `deleted`), `mergedInto` (tag ID or null) |
+| `tag` | `name`, `status` (`active`, `merged`, `deleted`), `mergedInto` (tag ID or null), `norm` (normalized name, §10.3), `order` (position of the creating op in the total order) |
 | `taskTag` | ID = `<taskId>/<tagId>`. `taskId`, `tagId`, `on` (bool) |
 | `subtask` | `taskId`, `text`, `pos` (fractional index), `done`, `doneBy`, `doneAt`, `status` (`active` or `removed`) |
-| `attachment` | `taskId`, `sha256`, `name`, `mime`, `size`, `uploadedBy`, `status` (`active` or `removed`) |
-| `blob` | ID = SHA-256 of the content. `purged` (bool), `purgedBy`, `reason` |
+| `attachment` | `taskId`, `sha256`, `name`, `mime`, `size`, `uploadedBy`, `status` (`active` or `removed`), `uploadedAt` |
+| `blob` | ID = SHA-256 of the content. `purged` (bool), `purgedBy`, `reason`, `purgedAt` |
 | `link` | `taskId`, `url`, `title`, `status` (`active` or `removed`) |
-| `comment` | `taskId`, `text`, `mentions` (user IDs), `createdBy`, `createdAt`, `editedAt`, `status` (`active` or `deleted`) |
+| `comment` | `taskId`, `text`, `mentions` (user IDs), `createdBy`, `createdAt`, `editedAt`, `kind` (`comment`, or `return` for the comment of a `ReturnTask`), `status` (`active` or `deleted`) |
 
 Times on disk are ISO 8601 UTC strings. The UI shows them in the time zone Europe/Prague.
 
@@ -82,7 +82,7 @@ The same rule applies in `roles`: a `GrantUser` with a `userId` or a `keyId` tha
 - `prevHash` is the SHA-256 of the canonical JSON of the previous op of the same author in the same scope. The first op has `null`.
 - `sig` is an Ed25519 signature over the RFC 8785 (JCS) canonical JSON of the envelope without `sig`.
 - Total order: `(hlc.t, hlc.c, authorKeyId, seq, scope)`.
-- The HLC must increase along the chain of an author: the HLC of `seq n+1` must be greater than the HLC of `seq n`. Else the op and the rest of the chain are `chain-broken`. The engine starts its HLC from the maximum of all known ops, its own last op included, so an honest client always obeys this rule.
+- The HLC must increase along the chain of an author: the HLC of `seq n+1` must be greater than the HLC of `seq n`. Else the op and the rest of the chain are `chain-broken`. The engine starts its HLC from the maximum of all valid ops (signature and chain checked) and its own last op, so an honest client always obeys this rule. Files that are not valid do not move the clock. Limits: `hlc.t` ≤ 253 402 300 799 999 (the year 9999), `hlc.c` ≤ 2 147 483 647. A larger value makes the op invalid.
 - Clock skew (known limit): an op from a computer with a clock far in the future sorts after the concurrent ops of all other users, so it wins their "last writer wins" conflicts. A client that reads this op moves its own HLC forward to it (HLC rule). Thus the ops that a client writes after it reads the future op sort after it, and the order stays correct. But all HLC values stay ahead of the real time until the real time reaches them. A deterministic replay cannot correct this, because it cannot use the local time.
 - The integrity view shows the cause with 2 checks (`future-clock`). They do not change the replay result.
   1. Deterministic: the `hlc.t` of the op is more than 1 hour after its own `wallTime`, **and** greater than the `hlc.t` of each op that sorts before it. Honest clients copy the HLC of the future op, so their ops are never greater than it, and they do not get the flag. This check also finds an op with a false HLC and an honest `wallTime`. The flag stays after the real time passes the false time.
@@ -181,6 +181,7 @@ All ops in `roles` need the role `admin`. The replay rejects a write to a `root`
 - An op on a `deleted` task has no effect (superseded), except `RestoreTask` and `Revert`.
 - A `verified` task is read-only (Q-6): only `AddComment`, `EditComment`, `DeleteComment`, `ReopenTask`, `DeleteTask` and `Revert` have an effect. Other ops are superseded. Only an admin can delete a `verified` task (Q-21).
 - Text values: no control characters except line breaks in multi-line texts. The replay validates this.
+- The fields `id`, `taskId`, `tagId`, `userId` and `into` must not contain `/`. These IDs are parts of composite keys (`<taskId>/<userId>`, `<taskId>/<tagId>`), and a `/` can make 2 different pairs give the same key.
 - `sha256` values are exactly 64 lowercase hex characters. The replay validates this before any code uses the value in a path.
 - Text limits: title 200 characters, description 20 000, comment 10 000, subtask 500, tag name 40, link URL 2 000.
 
@@ -228,7 +229,7 @@ The UI calls the same guards to show or hide controls.
 2. The key is not revoked for this `seq` (see below).
 3. For `Batch`: each item (§5.5). For `Revert`: §8.
 
-`authorize` does **not** check the status of the user. A removed user's ops at or below the cutoff stay valid, also if they sort after `RemoveUser`. Reason: an offline user can sync old ops after the removal.
+`authorize` does **not** check the status of the user for the rights of a normal user. Admin and verifier rights apply only to an `active` user. (An honest client never writes ops for a removed user, so this difference shows only with ops of a revoked key.) A removed user's ops at or below the cutoff stay valid, also if they sort after `RemoveUser`. Reason: an offline user can sync old ops after the removal.
 
 **Revocation is by `seq` cutoff, not by order.** `RevokeKey` and `RemoveUser` set a cutoff `{ roles, data }` for a key. The cutoff applies to **all** ops of the key, also to ops that sort before the `RevokeKey` op. Otherwise an attacker with a stolen key can write ops with an old HLC. The replay does this with a fixpoint (same as `system-vzdelavani`):
 
@@ -261,6 +262,8 @@ The replay uses the value of a setting at the point of the op in the order. Exam
 5. The replay checks the target: it must be an applied op (not superseded or rejected) in the same scope, and it must sort before the `Revert`. Else the `Revert` is rejected. Then the replay computes the inverse again from the applied writes of the target, with the same rules. The `inverse` of the payload must be equal to it. Else the `Revert` is rejected. Thus a `Revert` cannot write a value that the target did not replace. For example, it cannot set `status = verified`.
 6. After the inverse, the replay applies the derived status rule (§9).
 7. If the inverse would make a `mergedInto` cycle of tags, the `Revert` is superseded (§10.3).
+
+A `Revert` writes the `before` values and does not check other rules. Example: a `Revert` of `RemoveAssignee` assigns the user again, also if an admin removed that user later. Only an admin can write a `Revert`, and the warning of step 3 shows later changes, so this is not an escalation. The admin must check the result.
 
 Rules for the inverse:
 
@@ -311,14 +314,15 @@ stateDiagram-v2
 | `ReturnTask` | `done` | `assigned` or `new` | `completedAt = null`, `completedBy = null`, a comment |
 | `ReopenTask` | `verified` | `assigned` or `new` | `verifiedAt = null`, `verifiedBy = null`, `completedAt = null`, `completedBy = null` |
 | `DeleteTask` | all except `deleted`. Guard: from `verified`, only an admin (§6.1). | `deleted` | `statusBeforeDelete`, `deletedAt`, `deletedBy` |
-| `RestoreTask` | `deleted` | `statusBeforeDelete` | `deletedAt = null`, `deletedBy = null` |
+| `RestoreTask` | `deleted` | `statusBeforeDelete` | `deletedAt = null`, `deletedBy = null`, `statusBeforeDelete = null` |
 
 Assignee changes on a `postponed` or `done` task do not change the status. Assignee changes on a `verified` task are superseded (§5.6).
 
 **Derived status rules.** After each applied op in `data`, the replay makes sure of these rules for each task that the op touched. The rules also apply after a `Revert`.
 
+0. `assigneeCount` is the number of assignees with `on = true`. Only this rule writes it. A `Revert` does not write it (`isDerived`).
 1. If the status is `new` or `assigned`: it is `assigned` when the task has at least 1 assignee, and `new` when it has none. Thus a revert cannot leave an `assigned` task with no assignee.
-2. If the status is `new`, `assigned` or `postponed`: `completedAt`, `completedBy`, `verifiedAt` and `verifiedBy` are `null`.
+2. If the status is `new`, `assigned` or `postponed`: `completedAt`, `completedBy`, `completeRef`, `verifiedAt` and `verifiedBy` are `null`.
 3. If the status is `done`: `verifiedAt` and `verifiedBy` are `null`.
 
 Example: an admin reverts a `CompleteTask` after a `VerifyTask`. The status becomes `assigned`, and rule 2 clears the verification fields. The audit log records these writes as part of the `Revert`.

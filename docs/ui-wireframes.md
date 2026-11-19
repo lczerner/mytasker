@@ -111,7 +111,7 @@ Click a column header to sort. Click again to reverse. The sort uses Czech colla
 └────────────────────────────────────────────────┘
 ┌ Žádost o přístup ──────────────────────────────┐
 │ Žádost byla uložena. Sdělte správci otisk:     │
-│        K7QD-2MXA-PF4N-WZ3B                     │
+│     7QD2-MXAP-F4NW-Z3BH-5RK6                   │
 │ Čekáme na schválení… (kontrola každých 15 s)   │
 └────────────────────────────────────────────────┘
 ```
