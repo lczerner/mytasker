@@ -9,6 +9,8 @@ export type Scope = (typeof SCOPES)[number];
 
 /** Name of the key file format (oplog-core KeyFile.format). */
 export const KEY_FILE_FORMAT = 'mytasker-key';
+/** Format name of an enrollment request (oplog-core EnrollmentRequest.format). */
+export const ENROLL_FORMAT = 'mytasker-enroll';
 
 export const STATUSES = ['new', 'assigned', 'postponed', 'done', 'verified', 'deleted'] as const;
 export type Status = (typeof STATUSES)[number];

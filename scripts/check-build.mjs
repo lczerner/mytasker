@@ -9,7 +9,6 @@
 //     except the file itself
 //
 // CHROMIUM=/path/to/chromium overrides the browser. SKIP_BROWSER=1 skips step 4 (other values do not).
-// TODO(Phase 4): wait for the start screen and the demo mode, not for the placeholder.
 // TODO(Phase 6): check the license notices of the bundled packages.
 import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -39,7 +38,10 @@ const { chromium } = await import('playwright-core');
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM ?? '/usr/bin/chromium' });
 try {
   const fileUrl = 'file://' + resolve(dist, 'index.html');
-  for (const [name, url, selector] of [['start', fileUrl, '#app > *']]) {
+  for (const [name, url, selector] of [
+    ['start', fileUrl, '.gate h1'],
+    ['demo', fileUrl + '?demo', '.board'],
+  ]) {
     const page = await browser.newPage();
     const errors = [];
     const requests = [];
@@ -47,8 +49,8 @@ try {
     page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
     page.on('request', (r) => requests.push(r.url()));
     await page.goto(url);
-    await page.waitForSelector(selector, { timeout: 20_000 });
-    const text = await page.textContent(selector);
+    await page.waitForSelector(selector, { timeout: 30_000 });
+    const text = (await page.textContent(selector)).slice(0, 60);
     const external = requests.filter((u) => !u.startsWith('file://') && !u.startsWith('data:') && !u.startsWith('blob:'));
     if (errors.length) fail(`${name}: console errors: ${errors.join(' | ')}`);
     if (external.length) fail(`${name}: network requests: ${external.join(', ')}`);

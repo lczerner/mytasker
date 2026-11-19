@@ -130,7 +130,7 @@ describe('multi-user simulation', () => {
       // Revocation in the middle of the run: jan's key is valid only up to his current seq.
       if (round === Math.floor(ROUNDS / 2)) {
         const jan = users[4];
-        const head = jan.engine.heads().find((h) => h.scope === 'data' && h.keyId === jan.keyId)?.seq ?? 0;
+        const head = jan.engine.validHeads().find((h) => h.scope === 'data' && h.keyId === jan.keyId)?.seq ?? 0;
         await admin.r('RemoveUser', { userId: jan.userId, cutoffs: { [jan.keyId]: { roles: 0, data: head } } });
       }
     }

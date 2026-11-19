@@ -30,8 +30,8 @@ Status: first version (Phase 2). Phase 6 completes the repository map, the comma
 |---|---|
 | `src/domain/` | The `Domain` for `oplog-core` (`domain.ts`), op catalogue (`catalog.ts`), permission matrix (`permissions.ts`), status state machine (`status.ts`), state helpers, fractional index, text rules, task views, search, notifications. No DOM. |
 | `../oplog-core` | Shared core (separate repository): canonical JSON, crypto, HLC, verify, replay, engine, storage adapters. |
-| `src/app/` | Browser services: session, key file, encrypted cache, files. |
-| `src/ui/` | Preact UI, `i18n.ts`, CSS. |
+| `src/app/` | Browser services: session (folder handle, key file, encrypted cache), files and attachments, IndexedDB, demo data. |
+| `src/ui/` | Preact UI: start screens (`Gate.tsx`), shell (`App.tsx`), task list, task panel, dialogs, admin screens, safe Markdown, `i18n.ts` (all texts), `styles.css`. |
 | `test/` | `unit` (state machine and `authorize` matrices, domain rules), `property` (convergence), `simulation` (multi-user on disk, attacks), `e2e`, `perf`, `fixtures` (synthetic only). `helpers.ts` makes a synthetic team. |
 | `docs/` | Architecture, data model, wireframes, review checklist, ADRs, open questions. |
 | `scripts/` | `check-build.mjs` (build check), `release.mjs` (release package). |
@@ -53,7 +53,7 @@ npm run test:e2e       # build + browser tests (CHROMIUM=/path/to/chromium)
 npm run release        # release/app/: index.html, LICENSE, VERSION, SHA256SUMS
 ```
 
-Not available yet: `npm run perf` (Phase 7) and `npm run test:e2e` (Phase 4) fail with "No test files found". `make demo` prints a URL, but the demo mode comes in Phase 4. `SIM_SEED` and `SIM_ROUNDS` change the simulation run.
+`npm run test:e2e` runs the demo flows, the real flow with OPFS (new installation, enrollment, approval) and the layout test. `make demo` builds and prints the URL of the demo mode (`?demo`, `?demo=petr`, `?demo=large`). `npm run perf` comes in Phase 7. `SIM_SEED` and `SIM_ROUNDS` change the simulation run.
 
 ## 5a. Checklist: add a new op type or status
 

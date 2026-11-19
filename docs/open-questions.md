@@ -4,9 +4,7 @@ Each open question has a proposal. When the owner answers, the question moves to
 
 ## 1. Open
 
-| ID | Question | Proposal |
-|---|---|---|
-| Q-23 | The security review of `oplog-core` (Phase 3) needed 3 new rules of the op format. No op files exist yet. Do you approve them? 1. `hlc.t` ≤ 253 402 300 799 999 (the year 9999) and `hlc.c` ≤ 2 147 483 647. 2. `sig` must be the canonical base64url text. 3. An op is nested at most 32 levels deep. Also: the `Revert` payload has no field `overwritten`. | Approve. Without rules 1 and 2, 1 crafted op file can block the writes of all clients or fake a fork. Without rule 3, clients can disagree about 1 file. |
+No open questions.
 
 ## 2. Answered
 
@@ -39,3 +37,5 @@ Each open question has a proposal. When the owner answers, the question moves to
 | Q-20 | Can an admin assign the `verifier` flag to themselves, and is every admin a verifier? | Proposal accepted: Admins can verify (the task matrix says so). The `verifier` flag is for non-admin users. | 2026-11-19 |
 | Q-21 | Can the creator delete a `verified` task? | No. Only an admin can delete a `verified` task. | 2026-11-19 |
 | Q-22 | Must the app store the folder handle? How to treat attachments that a browser runs as pages? | Store the handle. The owner accepts the risk (`docs/security-model.md` §4). Block attachments of HTML, SVG and similar types in the UI and in the replay. Download names of other types get `.txt` if the extension is not on the safe list. | 2026-11-19 |
+| Q-23 | 3 new op-format rules from the security review of `oplog-core`: HLC limits (`hlc.t` ≤ the year 9999, `hlc.c` ≤ 2 147 483 647), only the canonical base64url text of `sig`, at most 32 levels of nesting. Also: no field `overwritten` in a `Revert` payload. | Approved. | 2026-11-19 |
+| Q-24 | Any user can save a file under the next op number of another user and block all writes of that user forever. How to fix it? | Option A: change the chain rule in `oplog-core`. The chain follows the `prevHash` links, the numbers must increase but can have gaps, and files that are not validly signed ops of the author are skipped (integrity issue). The writer takes the smallest free number above its last valid op. `system-vzdelavani` gets it with its migration to `oplog-core`. | 2026-11-19 |

@@ -21,7 +21,7 @@ Status: design (Phase 2). Phase 6 completes this document. A `Q-` number refers 
 ## 2. Protections
 
 1. **Signatures.** Each op has an Ed25519 signature of its author. A changed op file fails the check.
-2. **Hash chains.** Each op has the hash of the previous op of the author. A deleted, changed or inserted op breaks the chain. 2 ops with the same `seq` are a fork. The integrity view shows each case.
+2. **Hash chains.** Each op has the hash of the previous op of the author. A deleted or changed op stops the chain at the next op (`chain-gap`). 2 valid ops after the same op are a fork. A NEW file that another person saves under the next number of an author is not a valid op of that author: the chain skips it, and the author writes the next free number. A changed or deleted EXISTING op still stops the chain at the next op until somebody restores the file from the OneDrive version history (ADR 0014).
 3. **`authorize` in every client.** Each client checks each op against the permission matrix at its point in the order. A user who can write to `roles/` because of a wrong OneDrive setting still cannot change roles.
 4. **Revocation by `seq` cutoff.** The cutoff applies to all ops of the key, in any order (`docs/data-model.md` §6).
 5. **Trust root.** `app/trust-root.json` defines the root admins. The app shows the fingerprints.

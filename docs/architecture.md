@@ -106,7 +106,7 @@ sequenceDiagram
   U->>E: write(type, payload)
   E->>A: check against the current state
   A-->>E: ok or reason
-  E->>E: envelope: seq+1, prevHash, HLC, wallTime
+  E->>E: envelope: smallest free seq above the own last op, prevHash, HLC, wallTime
   E->>E: JCS + Ed25519 signature
   E->>F: create data/ops/<keyId>/<seq>.json (fail if it exists)
   E->>E: apply to the state (incremental replay)
@@ -141,7 +141,7 @@ flowchart TD
 - **Cache**: the client keeps verified ops (never the state) and the read state of notifications in IndexedDB. The cache is encrypted (ADR 0006). A file is verified 1 time. The state is always replayed from the ops. If the trust root changes, the engine does a full replay.
 - **Replay**: the full replay is in memory, from the trust root. New ops that sort after the last applied op are applied incrementally. Else the engine does a full replay. Tests check that both paths give the same state.
 - **Checkpoints**: an admin writes a signed pack of the original ops (ADR 0007). A new client reads 1 large file instead of many small files. The engine uses the ops of a pack only if the pack signature is valid and its author is an admin. Else it reads the op files. Thus a pack cannot hide or replace a valid op file.
-- **Chain errors**: a missing `seq` (gap) stops the chain of this author at the gap. The ops after the gap wait. Usually the gap is a file that OneDrive did not sync yet. If the gap stays, the integrity view shows it.
+- **Chains** (ADR 0014): only validly signed ops of the author are members of the chain. Any other file in the author folder (garbage, a changed op, a misplaced copy) is an integrity issue, and the chain skips it. The chain follows the `prevHash` links. `seq` must increase but can have gaps. An op whose previous op is missing or changed waits (`chain-gap`). Usually the missing file is not synced yet. If the gap stays, the integrity view shows it. 2 valid ops with the same `seq` or the same `prevHash` are a fork. The writer takes the smallest free number above its own last valid op, so a file of another person under the next number does not block it.
 - **HLC along a chain**: the HLC of each op must be greater than the HLC of the previous op of the same author and scope. Else the chain is broken at that op (`docs/data-model.md` §4). This check is in `oplog-core`.
 - **Revocation**: the replay applies the cutoffs of all revocations to all ops of a key, with a fixpoint (`docs/data-model.md` §6).
 
