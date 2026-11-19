@@ -1,0 +1,34 @@
+{
+  "name": "mytasker",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Serverless task management for a small team (Úkoly) on a shared OneDrive folder",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/check-build.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "simulate": "vitest run test/simulation",
+    "test:e2e": "vite build && vitest run -c vitest.e2e.config.ts",
+    "perf": "PERF=1 vitest run test/perf",
+    "release": "node scripts/release.mjs"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.6",
+    "@types/node": "^26.6.6",
+    "fast-check": "^4.10.2",
+    "playwright-core": "^1.65.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vite-plugin-singlefile": "^2.3.4",
+    "vitest": "^5.1.0"
+  },
+  "dependencies": {
+    "preact": "^11.2.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT"
+}

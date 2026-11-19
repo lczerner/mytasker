@@ -1,0 +1,28 @@
+# --- Real user data: NEVER commit ---
+# Any JSON outside the explicitly allowed paths
+*.json
+!package.json
+!package-lock.json
+!tsconfig*.json
+!.vscode/*.json
+!test/fixtures/**/*.json
+!.claude/settings.json
+# Local copies of the shared folder, keys and scratch data (anchored to the repository root)
+/data/
+/roles/
+/enroll/
+/local/
+*.local.*
+*.key.json
+*.sigkey
+
+# --- Build and tooling ---
+node_modules/
+dist/
+coverage/
+release/app/
+test-results/
+playwright-report/
+.vite/
+*.log
+.DS_Store
