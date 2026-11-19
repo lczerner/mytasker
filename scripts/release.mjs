@@ -7,16 +7,12 @@
 import { createHash } from 'node:crypto';
 import { execSync } from 'node:child_process';
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { gitCommit } from './commit.mjs';
 
 execSync('npm run build', { stdio: 'inherit' });
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
-let commit = 'unknown';
-try {
-  commit = execSync('git rev-parse --short HEAD', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
-  if (execSync('git status --porcelain', { encoding: 'utf8' }).trim()) commit += '-dirty';
-} catch {
-  /* no git or no commit yet */
-}
+// The same helper as the build: VERSION and the information bar show the same commit.
+const commit = gitCommit();
 mkdirSync('release/app', { recursive: true });
 const files = ['index.html', 'LICENSE'];
 copyFileSync('dist/index.html', 'release/app/index.html');

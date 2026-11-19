@@ -11,6 +11,7 @@ import { ENROLL_FORMAT, LIMITS } from '../domain/constants';
 import { domain } from '../domain/domain';
 import { settingsOf, userIsActive } from '../domain/state';
 import { App } from './App';
+import { Footer } from './Footer';
 import { t, type Key } from './i18n';
 
 type Root = FileSystemDirectoryHandle;
@@ -204,15 +205,18 @@ function debounce(f: () => void, ms: number): () => void {
 
 function Screen({ title, children }: { title: string; children: preact.ComponentChildren }) {
   return (
-    <main class="gate">
-      <div class="gate-box">
-        <p class="brand">
-          <span aria-hidden="true">✓</span> {t('appName')}
-        </p>
-        <h1>{title}</h1>
-        {children}
-      </div>
-    </main>
+    <>
+      <main class="gate">
+        <div class="gate-box">
+          <p class="brand">
+            <span aria-hidden="true">✓</span> {t('appName')}
+          </p>
+          <h1>{title}</h1>
+          {children}
+        </div>
+      </main>
+      <Footer />
+    </>
   );
 }
 

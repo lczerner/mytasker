@@ -32,7 +32,8 @@ Status: design draft (Phase 2). The labels are the Czech texts of the UI. All na
 - `‼` = overdue (red background, icon and text "po termínu"). Due soon = amber, icon `⏰` and text "brzy".
 - Status columns have an icon and a label. The status is clear without color.
 - Verified tasks are hidden by default (Q-25): the board shows 4 columns, and the filter row has the switch "Zobrazit zkontrolované (N)". With the switch, or with the status filter "Zkontrolováno", the column "Zkontrolováno" and the verified tasks show. The sidebar counts do not count verified tasks.
-- The board has no drag and drop in the first version (Q-15). The status changes in the task panel. Reason: a drop makes an op with no confirmation, and keyboard use is difficult.
+- The board has no drag and drop in the first version (Q-15).
+- An information bar is fixed at the bottom of all screens, also of the start screens: "Úkoly <version> (<commit>) · © 2026 Lukáš Czerner · Licence MIT". The bar has 1 line. Below 520 px it hides the author. "Licence MIT" opens a dialog with the license text from the bundle (no network). The messages show above the bar. The status changes in the task panel. Reason: a drop makes an op with no confirmation, and keyboard use is difficult.
 - The "Správa" section shows only to admins. "Ke kontrole" shows only to verifiers and admins.
 
 ## 2. Table view

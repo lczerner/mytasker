@@ -239,4 +239,38 @@ describe('more flows (demo over file://)', () => {
     expect(errors).toEqual([]);
     await page.close();
   }, 60_000);
+
+  it('the information bar shows the version, the author and the license', async () => {
+    const { page, errors } = await open('eva');
+    expect(await page.textContent('footer.footer')).toMatch(/Úkoly \d+\.\d+\.\d+ \(([0-9a-f]{7,}(-dirty)?|unknown)\)/);
+    expect(await page.textContent('footer.footer')).toContain('© 2026 Lukáš Czerner');
+    await page.click('footer.footer button:has-text("Licence MIT")');
+    await page.waitForSelector('dialog[open] pre.license:has-text("MIT License")');
+    // The dialog is not in the bar, so it has the normal font size of the dialogs.
+    expect(await page.locator('footer.footer dialog').count()).toBe(0);
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('dialog[open]', { state: 'detached' });
+    expect(errors).toEqual([]);
+    await page.close();
+  });
+
+  it('the information bar is on the start screen, and at 360 px it has 1 line and covers no content', async () => {
+    const page = await browser.newPage({ viewport: { width: 360, height: 640 } });
+    await page.goto(`file://${DIST}`);
+    await page.waitForSelector('.gate h1');
+    expect(await page.textContent('footer.footer')).toContain('Licence MIT');
+    // No scrollbar on the short start screen.
+    expect(await page.evaluate(() => document.scrollingElement!.scrollHeight <= window.innerHeight + 1)).toBe(true);
+    await page.goto(`file://${DIST}?demo=eva#/all`);
+    await page.waitForSelector('.board');
+    const r = await page.evaluate(() => {
+      window.scrollTo(0, document.body.scrollHeight);
+      const bar = document.querySelector('footer.footer')!.getBoundingClientRect();
+      const last = document.querySelector('.layout')!.getBoundingClientRect();
+      return { barH: bar.height, barTop: bar.top, end: last.bottom };
+    });
+    expect(r.barH).toBeLessThan(30);
+    expect(r.end).toBeLessThanOrEqual(r.barTop + 1);
+    await page.close();
+  }, 60_000);
 });

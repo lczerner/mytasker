@@ -4,6 +4,7 @@ import { defineConfig, type Plugin } from 'vite';
 import preact from '@preact/preset-vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 import { readFileSync } from 'node:fs';
+import { gitCommit } from './scripts/commit.mjs';
 
 // Strict CSP for the built file. No network: connect-src 'none', no remote sources.
 // 'unsafe-inline' is necessary because all JS and CSS are inline in 1 file.
@@ -23,6 +24,7 @@ export const CSP = [
 
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 
+
 function csp(): Plugin {
   return {
     name: 'inject-csp',
@@ -35,6 +37,6 @@ function csp(): Plugin {
 
 export default defineConfig({
   plugins: [preact({ prerender: { enabled: false } }), viteSingleFile({ removeViteModuleLoader: true }), csp()],
-  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
+  define: { __APP_VERSION__: JSON.stringify(pkg.version), __APP_COMMIT__: JSON.stringify(gitCommit()) },
   build: { target: 'es2022', assetsInlineLimit: 100_000_000, cssCodeSplit: false, modulePreload: false, outDir: 'dist', emptyOutDir: true },
 });

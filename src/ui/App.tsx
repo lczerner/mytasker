@@ -10,6 +10,7 @@ import { buildTaskViews, dueState } from '../domain/view';
 import { AdminPage } from './admin';
 import { Ctx, focusTask, href, parseRoute, type AppCtx, type Me, type Model, type Toast, type UserInfo } from './ctx';
 import { NewTaskDialog } from './dialogs';
+import { Footer } from './Footer';
 import { collator, fmtRelative, t, type Key } from './i18n';
 import { baseTasks, TaskList, type ListKind } from './TaskList';
 import { TaskPanel } from './TaskPanel';
@@ -336,6 +337,7 @@ export function App(props: AppProps) {
         {route.query.task && <TaskPanel key={route.query.task} id={route.query.task} />}
       </div>
       {newTask && <NewTaskDialog onClose={() => setNewTask(false)} />}
+      <Footer />
       <div class="toasts" role="status" aria-live="polite">
         {toasts.map((x) => (
           <div key={x.id} class={`toast toast-${x.kind}`}>

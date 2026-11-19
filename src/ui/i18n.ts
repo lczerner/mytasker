@@ -270,6 +270,9 @@ const cs = {
   'issue.future-clock': 'Čas změny je v budoucnosti (špatné hodiny počítače)',
   'issue.bad-checkpoint': 'Neplatný kontrolní bod',
   'issue.domain': 'Vnitřní chyba aplikace u jedné změny',
+  'footer.author': '© 2026 Lukáš Czerner',
+  'footer.license': 'Licence MIT',
+  'footer.licenseTitle': 'Licence',
   // ---- Misc ----
   'common.yes': 'ano',
   'common.no': 'ne',
