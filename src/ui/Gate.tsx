@@ -5,7 +5,24 @@ import { createEnrollment, enrollmentPath, Engine, FileExistsError, fingerprint,
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { openTextFile, saveTextFile } from '../app/files';
 import {
-  checkSupport, createKey, forgetKeyFile, forgetRoot, installIdOf, isInside, loadCache, parseKeyFile, pickRoot, rootPermission, savedRoot, saveCache, storedKeyFile, storeKeyFile, unlock, type Unlocked,
+  checkSupport,
+  createKey,
+  forgetKeyFile,
+  forgetRoot,
+  installIdOf,
+  isInside,
+  loadCache,
+  loadUserData,
+  parseKeyFile,
+  pickRoot,
+  rootPermission,
+  savedRoot,
+  saveCache,
+  saveUserData,
+  storedKeyFile,
+  storeKeyFile,
+  unlock,
+  type Unlocked,
 } from '../app/session';
 import { ENROLL_FORMAT, LIMITS } from '../domain/constants';
 import { domain } from '../domain/domain';
@@ -190,6 +207,7 @@ export function Gate() {
           demo={false}
           onChange={debounce(() => void saveCache(step.engine, step.u, step.installId), 3000)}
           onLock={() => location.reload()}
+          userData={{ load: (name) => loadUserData(step.u, step.installId, name), save: (name, value) => saveUserData(step.u, step.installId, name, value) }}
         />
       );
   }

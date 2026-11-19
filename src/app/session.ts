@@ -140,14 +140,11 @@ interface UserBox {
 
 const userId = (rootName: string, keyId: string, name: string) => `user:${rootName}:${keyId}:${name}`;
 
+/** Returns undefined if no record exists. Throws for an IndexedDB or a decryption error. */
 export async function loadUserData<T>(u: Unlocked, rootName: string, name: string): Promise<T | undefined> {
-  try {
-    const rec = await idbGet<UserBox>(userId(rootName, u.keyFile.keyId, name));
-    if (!rec) return undefined;
-    return await decryptJson<T>(await unwrapAesKey(rec.wrapped, u.kek), rec.box);
-  } catch {
-    return undefined;
-  }
+  const rec = await idbGet<UserBox>(userId(rootName, u.keyFile.keyId, name));
+  if (!rec) return undefined;
+  return await decryptJson<T>(await unwrapAesKey(rec.wrapped, u.kek), rec.box);
 }
 
 export async function saveUserData(u: Unlocked, rootName: string, name: string, value: unknown): Promise<void> {

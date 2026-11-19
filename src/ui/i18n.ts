@@ -69,6 +69,21 @@ const cs = {
   'top.new': 'Nový úkol',
   'top.refresh': 'Načíst změny',
   'top.notifications': 'Upozornění',
+  'notif.allRead': 'Vše přečteno',
+  'notif.empty': 'Žádná upozornění.',
+  'notif.new': 'Nové:',
+  'notif.dot': 'Nepřečtená upozornění',
+  'notif.unknownTask': 'neznámý úkol',
+  'notif.due': 'Blíží se termín',
+  'notif.overdue': 'Po termínu',
+  'notif.assigned': 'Přiřazeno vám',
+  'notif.comment': 'Nový komentář',
+  'notif.mention': 'Zmínka v komentáři',
+  'notif.returned': 'Vráceno k přepracování',
+  'notif.superseded': 'Vaše změna nebyla použita (úkol se mezitím změnil)',
+  'notif.verify': 'Čeká na kontrolu',
+  'banner.overdue': '{n} po termínu',
+  'banner.close': 'Zavřít přehled',
   'top.lock': 'Zamknout',
   'top.changeFolder': 'Změnit složku',
   'top.updated': 'aktualizováno {when}',
@@ -318,6 +333,14 @@ export const nOpenTasksLoc = (n: number) => `${n} ${n === 1 ? 'otevřeném úkol
 // ---- Plurals (Czech: 1 = one, 2–4 = few, 5+ and 0 = other/many) ----------------------------
 
 const plural = new Intl.PluralRules('cs');
+
+/** "1 nepřečtené", "2 nepřečtená", "5 nepřečtených". */
+export const nUnread = (n: number): string => plu(n, ['nepřečtené', 'nepřečtená', 'nepřečtených']);
+
+/** "1 úkol čeká", "2 úkoly čekají", "5 úkolů čeká" na kontrolu. */
+export function nVerifyWaiting(n: number): string {
+  return `${plu(n, ['úkol', 'úkoly', 'úkolů'])} ${plural.select(n) === 'few' ? 'čekají' : 'čeká'} na kontrolu`;
+}
 
 /** Czech plural forms: [one, few, many]. Example: plural(3, ['úkol', 'úkoly', 'úkolů']) → "3 úkoly". */
 export function plu(n: number, forms: [string, string, string]): string {

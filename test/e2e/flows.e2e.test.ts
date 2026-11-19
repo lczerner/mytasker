@@ -273,4 +273,38 @@ describe('more flows (demo over file://)', () => {
     expect(r.end).toBeLessThanOrEqual(r.barTop + 1);
     await page.close();
   }, 60_000);
+
+  it('notifications: the bell count, the page title, the start banner, mark as read, open a task', async () => {
+    const { page, errors } = await open('vera');
+    await page.waitForSelector('.bell-n');
+    const n = Number(await page.textContent('.bell-n'));
+    expect(n).toBeGreaterThan(2);
+    expect(await page.title()).toBe(`(${n}) Úkoly`);
+    expect(await page.textContent('.start-banner')).toContain('2 úkoly čekají na kontrolu');
+    // The view "Ke kontrole" has a dot: a task of the view has an unread notification.
+    expect(await page.locator('nav a[href="#/review"] .dot').count()).toBe(1);
+    await page.click('.bell button');
+    await page.waitForSelector('#notif-list li.unread');
+    // A click on 1 notification opens its task and marks it as read.
+    const first = page.locator('#notif-list li.unread a').first();
+    const title = (await first.locator('.notif-title').textContent())!;
+    await first.click();
+    await page.waitForSelector(`.drawer h2:has-text("${title}")`);
+    await page.waitForFunction((x) => document.querySelector('.bell-n')?.textContent === String(x), n - 1);
+    await page.waitForFunction((x) => document.title === `(${x}) Úkoly`, n - 1);
+    // "Vše přečteno" marks all as read; Esc closes the list and the focus goes back to the bell.
+    await page.click('.bell button');
+    await page.click('#notif-list button:has-text("Vše přečteno")');
+    await page.waitForSelector('.bell-n', { state: 'detached' });
+    await page.waitForFunction(() => document.title === 'Úkoly');
+    expect(await page.locator('#notif-list li.unread').count()).toBe(0);
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('#notif-list', { state: 'detached' });
+    expect(await page.evaluate(() => document.activeElement?.closest('.bell') !== null)).toBe(true);
+    // The banner closes with its ×.
+    await page.click('.start-banner button');
+    await page.waitForSelector('.start-banner', { state: 'detached' });
+    expect(errors).toEqual([]);
+    await page.close();
+  }, 60_000);
 });

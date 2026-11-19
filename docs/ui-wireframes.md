@@ -138,6 +138,14 @@ Tento prohlížeč aplikaci Úkoly nepodporuje. Otevřete soubor v aktuálním M
 
 Start-up banner: "2 úkoly po termínu · 1 úkol čeká na kontrolu". The page title: `(3) Úkoly`.
 
+- The bell in the header shows the number of unread notifications. A click opens the list. A click outside the list or `Esc` closes it.
+- The list shows the unread notifications first, then the newest read ones, at most 50.
+- A click on a notification opens its task and marks the notification as read. "Vše přečteno" marks all as read.
+- The page title shows the number of unread notifications.
+- A view in the sidebar gets a dot `•` when a task of the view has an unread notification.
+- The start banner shows 1 time after the start: the overdue tasks of the user, and for verifiers the tasks to verify. Each part is a link to its view. The `×` closes the banner.
+- The demo starts with all events unread, so that the list has content. The demo keeps the read state only in memory.
+
 ## 7. Admin screens
 
 - **Uživatelé**: a table of users (name, role, verifier, keys, status). Buttons: "Schválit žádost", "Ověřovatel ano/ne", "Správce ano/ne", "Odebrat uživatele", "Nový klíč".

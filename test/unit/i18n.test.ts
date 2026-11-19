@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
-import { fmtDate, fmtDateTime, fmtRelative, isoToInputs, nTasks, plu, pragueToIso, t } from '../../src/ui/i18n';
+import { fmtDate, fmtDateTime, fmtRelative, isoToInputs, nTasks, nUnread, nVerifyWaiting, plu, pragueToIso, t } from '../../src/ui/i18n';
 
 describe('Czech formats', () => {
   it('formats dates as 19. 11. 2026 14:30 in Europe/Prague', () => {
@@ -31,5 +31,23 @@ describe('Czech formats', () => {
 
   it('fills parameters', () => {
     expect(t('task.fileTooBig', { mb: 25 })).toBe('Soubor je větší než povolený limit 25 MB.');
+  });
+});
+
+describe('nVerifyWaiting', () => {
+  it('uses the Czech plural of the noun and of the verb', () => {
+    expect(nVerifyWaiting(1)).toBe('1 úkol čeká na kontrolu');
+    expect(nVerifyWaiting(2)).toBe('2 úkoly čekají na kontrolu');
+    expect(nVerifyWaiting(4)).toBe('4 úkoly čekají na kontrolu');
+    expect(nVerifyWaiting(5)).toBe('5 úkolů čeká na kontrolu');
+    expect(nVerifyWaiting(21)).toBe('21 úkolů čeká na kontrolu');
+  });
+});
+
+describe('nUnread', () => {
+  it('uses the Czech plural', () => {
+    expect(nUnread(1)).toBe('1 nepřečtené');
+    expect(nUnread(2)).toBe('2 nepřečtená');
+    expect(nUnread(5)).toBe('5 nepřečtených');
   });
 });

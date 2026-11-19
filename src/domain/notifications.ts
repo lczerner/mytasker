@@ -91,3 +91,59 @@ function taskOf(p: Record<string, any>): string | null {
 export function unread(list: readonly Notification[], read: ReadonlySet<string>, baseline: string): Notification[] {
   return list.filter((n) => !read.has(n.id) && (n.kind === 'due' || n.kind === 'overdue' || n.kind === 'verify' || n.at >= baseline));
 }
+
+/** The read state of the notifications of 1 user (stored locally, encrypted). */
+export interface ReadState {
+  /** Events before this time count as read: the first start of the app, later moved by markRead. */
+  baseline: string;
+  /** The notifications that the user marked as read, with their time, the oldest mark first. */
+  read: { id: string; at: string }[];
+}
+
+/** The read state keeps at most this number of entries (the oldest go first). */
+export const READ_MAX = 2000;
+
+/** True for a notification that is an event (it has a time and counts against the baseline). */
+const isEvent = (kind: NotificationKind) => kind !== 'due' && kind !== 'overdue' && kind !== 'verify';
+
+/**
+ * The read state after a load. `stored` undefined means "no record": the first start, so the
+ * baseline is now. An invalid record also starts again. The caller must not call this after a load
+ * error: then it keeps the stored record and does not save.
+ */
+export function initialReadState(stored: unknown, now: number): { state: ReadState; save: boolean } {
+  const s = stored as Partial<ReadState> | undefined;
+  const okEntry = (x: unknown) => !!x && typeof (x as { id: unknown }).id === 'string' && typeof (x as { at: unknown }).at === 'string';
+  if (s && typeof s.baseline === 'string' && Array.isArray(s.read) && s.read.every(okEntry)) return { state: { baseline: s.baseline, read: s.read }, save: false };
+  return { state: { baseline: new Date(now).toISOString(), read: [] }, save: true };
+}
+
+/**
+ * Marks notifications as read. An entry is not removed when its notification leaves the list,
+ * because the same ID can come back (for example a returned task is overdue again).
+ * Above `max` entries the oldest go. The baseline then moves past the time of each removed event,
+ * so that a removed event stays read. New entries are added in time order (oldest first).
+ */
+export function markRead(rs: ReadState, items: readonly Pick<Notification, 'id' | 'at' | 'kind'>[], max = READ_MAX): ReadState {
+  const have = new Set(rs.read.map((x) => x.id));
+  const add: { id: string; at: string; kind: NotificationKind }[] = [];
+  for (const n of [...items].sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0))) {
+    if (have.has(n.id)) continue;
+    have.add(n.id);
+    add.push(n);
+  }
+  if (!add.length) return rs;
+  const kinds = new Map(add.map((n) => [n.id, n.kind]));
+  const merged = [...rs.read, ...add.map(({ id, at }) => ({ id, at }))];
+  if (merged.length <= max) return { baseline: rs.baseline, read: merged };
+  const removed = merged.slice(0, merged.length - max);
+  let baseline = rs.baseline;
+  for (const r of removed) {
+    // An entry from an older version has no kind here: the ID prefix is the kind.
+    const kind = kinds.get(r.id) ?? (r.id.split(':')[0] as NotificationKind);
+    if (!isEvent(kind)) continue;
+    const after = new Date(Date.parse(r.at) + 1).toISOString();
+    if (Number.isFinite(Date.parse(r.at)) && after > baseline) baseline = after;
+  }
+  return { baseline, read: merged.slice(merged.length - max) };
+}

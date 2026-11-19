@@ -11,6 +11,7 @@ import { AdminPage } from './admin';
 import { Ctx, focusTask, href, parseRoute, type AppCtx, type Me, type Model, type Toast, type UserInfo } from './ctx';
 import { NewTaskDialog } from './dialogs';
 import { Footer } from './Footer';
+import { Bell, StartBanner, useNotifications, type UserData } from './Notifications';
 import { collator, fmtRelative, t, type Key } from './i18n';
 import { baseTasks, TaskList, type ListKind } from './TaskList';
 import { TaskPanel } from './TaskPanel';
@@ -38,6 +39,8 @@ export interface AppProps {
   /** Called after each change of the known ops (to save the encrypted cache). */
   onChange?: () => void;
   onLock(): void;
+  /** Small per-user data (read state of notifications). Real folder: encrypted. Demo: in memory. */
+  userData: UserData;
   /** Demo only: switch the demo user. */
   demoUsers?: { id: string; name: string }[];
   onDemoUser?: (id: string) => void;
@@ -179,7 +182,7 @@ export function App(props: AppProps) {
       if (e.detail === 0) return;
       const el = e.target as Element | null;
       const drawer = document.querySelector('.drawer');
-      if (!drawer || !el?.closest || !el.isConnected || startedInside || el.closest('.drawer, dialog, .toasts, [data-task]')) return;
+      if (!drawer || !el?.closest || !el.isConnected || startedInside || el.closest('.drawer, dialog, .toasts, .notif-pop, [data-task]')) return;
       const r = parseRoute(location.hash);
       if (!r.query.task) return;
       // Unsaved = a text field of the panel differs from its original value (data-orig).
@@ -238,12 +241,52 @@ export function App(props: AppProps) {
   const issues = isAdmin ? engine.issues.length : 0;
   const myName = ctx.userName(me.userId);
 
-  useEffect(() => {
-    document.title = overdueMine > 0 ? `(${overdueMine}) ${t('appName')}` : t('appName');
-  }, [overdueMine]);
-
   return (
     <Ctx.Provider value={ctx}>
+      <Shell {...props} ctx={ctx} overdueMine={overdueMine} count={count} issues={issues} myName={myName} page={page} listKinds={listKinds} search={search} setHash={setHash} newTask={newTask} setNewTask={setNewTask} toasts={toasts} refresh={refresh} updated={updated} hash={hash} />
+    </Ctx.Provider>
+  );
+}
+
+/** The visible app. Inside the context provider, so it can use the hooks that read the context. */
+interface ShellProps extends AppProps {
+  ctx: AppCtx;
+  overdueMine: number;
+  count: (k: ListKind) => number;
+  issues: number;
+  myName: string;
+  page: string;
+  listKinds: ListKind[];
+  search: preact.RefObject<HTMLInputElement | null>;
+  setHash: (h: string) => void;
+  newTask: boolean;
+  setNewTask: (b: boolean) => void;
+  toasts: Toast[];
+  refresh: (m?: 'quick' | 'full') => Promise<void>;
+  updated: number;
+  hash: string;
+}
+
+function Shell(props: ShellProps) {
+  const { ctx, overdueMine, count, issues, myName, page, listKinds, search, setHash, newTask, setNewTask, toasts, refresh, updated, hash } = props;
+  const { me, demo, route, isAdmin, isVerifier, now } = ctx;
+  const notif = useNotifications(props.userData);
+  // A view gets a dot when a task of the view has an unread notification.
+  const dotViews = useMemo(() => {
+    const ids = new Set(notif.unread.map((n) => n.taskId).filter((x): x is string => !!x));
+    const out = new Set<ListKind>();
+    if (ids.size) for (const k of ['mine', 'review', 'created'] as const) if (baseTasks(k, ctx.views, me.userId).some((v) => ids.has(v.id) && v.status !== 'verified')) out.add(k);
+    return out;
+  }, [notif.unread, ctx.views, me.userId]);
+  const dot = (k: ListKind) => dotViews.has(k);
+  const unreadN = notif.unread.length;
+
+  useEffect(() => {
+    document.title = unreadN > 0 ? `(${unreadN}) ${t('appName')}` : t('appName');
+  }, [unreadN]);
+
+  return (
+    <>
       {demo && <div class="demo-banner">{t('demo.banner')}</div>}
       <header class="top">
         <a class="brand" href="#/all">
@@ -264,8 +307,8 @@ export function App(props: AppProps) {
             value={route.query.q ?? ''}
             onInput={(e) => {
               const v = (e.target as HTMLInputElement).value;
-              const p = listKinds.includes(page as ListKind) ? route.path : ['all'];
-              const h = href(p, { ...(listKinds.includes(page as ListKind) ? route.query : {}), q: v || undefined });
+              const path = listKinds.includes(page as ListKind) ? route.path : ['all'];
+              const h = href(path, { ...(listKinds.includes(page as ListKind) ? route.query : {}), q: v || undefined });
               // Replace the history entry: "Back" must not go back 1 character at a time.
               history.replaceState(null, '', h);
               setHash(h);
@@ -278,6 +321,7 @@ export function App(props: AppProps) {
         <button type="button" onClick={() => refresh('full')} aria-label={t('top.refresh')} title={t('top.refresh')}>
           ↻
         </button>
+        <Bell model={notif} />
         <span class="me">
           {demo && props.demoUsers ? (
             <label>
@@ -300,6 +344,7 @@ export function App(props: AppProps) {
           )}
         </span>
       </header>
+      {notif.ready && <StartBanner />}
       <div class="layout">
         <nav class="side" aria-label={t('nav.main')}>
           <ul>
@@ -309,7 +354,14 @@ export function App(props: AppProps) {
                 <li key={k}>
                   <a href={href([k])} aria-current={page === k ? 'page' : undefined}>
                     <span>{t(`nav.${k}` as Key)}</span>
-                    <span class={`badge ${k === 'mine' && overdueMine ? 'alert' : ''}`}>{count(k)}</span>
+                    <span class={`badge ${k === 'mine' && overdueMine ? 'alert' : ''}`}>
+                      {count(k)}
+                      {notif.ready && dot(k) && (
+                        <span class="dot" title={t('notif.dot')}>
+                          •
+                        </span>
+                      )}
+                    </span>
                   </a>
                 </li>
               ))}
@@ -345,7 +397,7 @@ export function App(props: AppProps) {
           </div>
         ))}
       </div>
-    </Ctx.Provider>
+    </>
   );
 }
 

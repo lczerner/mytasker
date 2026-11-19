@@ -234,6 +234,34 @@ describe('real flow with a folder (OPFS instead of the native dialogs, http://12
     await page.evaluate(() => (location.hash = '#/all'));
     await page.waitForSelector('[data-task]:has-text("První úkol")');
     expect(await page.locator('nav .side-head').count()).toBe(0);
+
+    // Petr comments on the task of Alena. Alena gets 1 notification (after her first start).
+    await page.click(`[data-task]:has-text("První úkol")`);
+    await page.fill('.drawer textarea[placeholder^="Napsat komentář"]', 'Hotovo zítra.');
+    await page.click('.drawer button:has-text("Odeslat")');
+    await page.waitForSelector('.drawer .comments li:has-text("Hotovo zítra.")');
+    const unlockAlena = async () => {
+      await page.evaluate(() => localStorage.setItem('e2e-open', 'alena-adminova.ukoly-key.json'));
+      await page.evaluate(() => (location.hash = '#/all'));
+      await page.reload();
+      await page.click('button:has-text("Použít jiný klíč")');
+      await page.click('button:has-text("Otevřít soubor s klíčem")');
+      await page.fill('input[type=password]', 'heslo-pro-test-1');
+      await page.click('button:has-text("Odemknout")');
+      await page.waitForSelector('.bell[data-ready]');
+    };
+    await unlockAlena();
+    await page.waitForSelector('.bell-n');
+    expect(await page.textContent('.bell-n')).toBe('1');
+    expect(await page.getAttribute('.bell button', 'aria-label')).toBe('Upozornění: 1 nepřečtené');
+    await page.click('.bell button');
+    await page.click('#notif-list button:has-text("Vše přečteno")');
+    await page.waitForSelector('.bell-n', { state: 'detached' });
+    // The read state is saved (encrypted) and stays after a new start. Wait until no save is pending.
+    await page.waitForSelector('.bell[data-saved]');
+    await unlockAlena();
+    await page.waitForSelector('.bell[data-ready]');
+    expect(await page.locator('.bell-n').count()).toBe(0);
     expect(errors).toEqual([]);
     await ctx.close();
   }, 120_000);

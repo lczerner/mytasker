@@ -5,6 +5,7 @@ import { render } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { createDemo, DEMO_USERS, type Demo } from '../app/demo';
 import { App } from './App';
+import type { UserData } from './Notifications';
 import { Gate } from './Gate';
 import { t } from './i18n';
 import './styles.css';
@@ -36,6 +37,7 @@ function DemoRoot({ size, first }: { size: 'small' | 'large'; first: string }) {
         setUser(id);
       }}
       onLock={() => location.reload()}
+      userData={demoUserData(u.id)}
     />
   );
 }
@@ -47,3 +49,13 @@ if (params.has('demo')) {
   const first = DEMO_USERS.find((u) => u.id === `u-${v}`)?.id ?? DEMO_USERS[0].id;
   render(<DemoRoot size={v === 'large' ? 'large' : 'small'} first={first} />, root);
 } else render(<Gate />, root);
+
+/** Demo: the per-user data stays in memory (nothing is saved). */
+const demoData = new Map<string, unknown>();
+function demoUserData(user: string): UserData {
+  return {
+    // The demo starts with all events unread (baseline ''), so the notifications have content.
+    load: async <T,>(name: string) => (demoData.get(`${user}:${name}`) ?? (name === 'notifications' ? { baseline: '', read: [] } : undefined)) as T | undefined,
+    save: async (name: string, value: unknown) => void demoData.set(`${user}:${name}`, value),
+  };
+}
