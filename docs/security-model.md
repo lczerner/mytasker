@@ -1,6 +1,6 @@
 # Security model
 
-Status: design (Phase 2). Phase 6 completes this document. A `Q-` number refers to `docs/open-questions.md`.
+Status: complete for version 0.1 (Phase 6). A `Q-` number refers to `docs/open-questions.md`. The manual procedures are in `docs/operations.md`.
 
 ## 1. Assets and actors
 
@@ -37,6 +37,7 @@ An XSS in this app can use the unlocked signing key. It can then write ops in th
 4. All other attachments download through a `blob:` URL with the type `application/octet-stream` and the `download` attribute.
 5. **Active file types** (Q-22): the UI and the replay block attachments that a browser can run as a page (`.html`, `.svg` and others, listed in `docs/data-model.md` §11). The download name of every other attachment gets the extra extension `.txt` if its extension is not on a list of safe types. Reason: §4.
 6. Links open in a new tab with `rel="noopener noreferrer"`.
+7. **The built-in guides** (`docs/user-guide.md`, `docs/admin-guide.md`) are part of the build, not user input. Their parser (`src/ui/docs.ts`) also makes Preact nodes only. In addition to the task Markdown, it permits headings, notes and local links `#/…` with a short list of safe characters. A unit test checks that it refuses other schemes. The guides contain no external URLs (the build check refuses them).
 
 ## 4. The shared `file://` origin
 
@@ -52,10 +53,10 @@ On 2026-11-19 I tested Chromium 155: all local HTML files share 1 storage origin
 - **All users can read all data.** The data in the shared folder is not encrypted. Teams with secret tasks need separate shared folders (Q-1).
 - **A malicious admin can do everything.** An admin can change the app, the trust root and all roles. The audit log shows the ops of the admin, but an admin with access to `app/` can replace the app.
 - **The time is self-reported.** `wallTime` and the HLC come from the author's computer. An op from a computer with a clock far in the future wins the conflicts with concurrent ops (`docs/data-model.md` §4). The integrity view shows most such ops (`future-clock`, `docs/data-model.md` §4), but it cannot prevent the effect.
-- **Role changes are by order.** A demoted admin or verifier can backdate ops between the own last op and the role change. A root admin must also revoke the key (`docs/data-model.md` §6).
+- **Role changes are by order.** A demoted admin or verifier can backdate ops between the own last op and the role change. A root admin must also revoke the key (`docs/data-model.md` §6, `docs/operations.md` §4.3).
 - **The stored folder handle** is readable by other local HTML files (§4, accepted risk).
 - **The app file is a supply-chain point.** A changed `app/index.html` can steal passphrases. `app/SHA256SUMS` and `app/VERSION` help an admin check a release. Only admins can write to `app/`.
 - **The `file://` storage origin** is shared (§4).
 - **XSS** can use the unlocked key (§3).
-- **Key loss.** A user who loses the key file or the passphrase cannot write. The admin enrolls a new key. For a root admin, see `docs/architecture.md` §6.1.
+- **Key loss.** A user who loses the key file or the passphrase cannot write. The admin revokes the old key (**Odvolat klíč**) and approves a new key. For a root admin, see `docs/operations.md` §4.2.
 - **Notifications** show only while the app is open (ADR 0013).

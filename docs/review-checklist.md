@@ -18,7 +18,7 @@ The reviewer reads the surrounding code for context, and the design docs of the 
 | Ops, replay, permissions, status machine, revert, conflicts | `docs/data-model.md`, `docs/architecture.md` |
 | Keys, cache, CSP, folder access, attachments, Markdown | `docs/security-model.md`, ADR 0006, ADR 0011 |
 | Generic op-log code | `../oplog-core` and its docs, ADR 0001 |
-| UI | `docs/ui-wireframes.md`, `src/ui/i18n.ts`, the CSS |
+| UI | `docs/ui-wireframes.md`, `src/ui/i18n.ts`, the CSS, and the guides `docs/user-guide.md` and `docs/admin-guide.md` (they must match the UI: button names, steps, rules) |
 | Design decisions | `docs/decisions/`, `docs/open-questions.md` |
 
 ## Checklist (in order of priority)

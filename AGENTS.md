@@ -1,6 +1,6 @@
 # AGENTS.md – instructions for coding agents
 
-Status: first version (Phase 2). Phase 6 completes the repository map, the commands and the checklists.
+Status: complete for version 0.1 (Phase 6).
 
 ## 1. Purpose
 
@@ -31,13 +31,14 @@ Status: first version (Phase 2). Phase 6 completes the repository map, the comma
 | `src/domain/` | The `Domain` for `oplog-core` (`domain.ts`), op catalogue (`catalog.ts`), permission matrix (`permissions.ts`), status state machine (`status.ts`), state helpers, fractional index, text rules, task views, search, notifications. No DOM. |
 | `../oplog-core` | Shared core (separate repository): canonical JSON, crypto, HLC, verify, replay, engine, storage adapters. |
 | `src/app/` | Browser services: session (folder handle, key file, encrypted cache), files and attachments, IndexedDB, demo data. |
-| `src/ui/` | Preact UI: start screens (`Gate.tsx`), shell (`App.tsx`), task list, task panel, dialogs, admin screens, safe Markdown, `i18n.ts` (all texts), `styles.css`. |
+| `src/ui/` | Preact UI: start screens (`Gate.tsx`), shell (`App.tsx`), task list, task panel, dialogs, admin screens (`admin.tsx`), audit, revert and integrity (`audit.tsx`), notifications (`Notifications.tsx`), built-in guides (`Help.tsx`, parser `docs.ts`), information bar (`Footer.tsx`), safe Markdown (`markdown.ts`), `i18n.ts` (all texts), `styles.css`. |
 | `test/` | `unit` (state machine and `authorize` matrices, domain rules), `property` (convergence), `simulation` (multi-user on disk, attacks), `e2e`, `perf`, `fixtures` (synthetic only). `helpers.ts` makes a synthetic team. |
-| `docs/` | Architecture, data model, wireframes, review checklist, ADRs, open questions. |
-| `scripts/` | `check-build.mjs` (build check), `release.mjs` (release package). |
+| `docs/` | User guide and admin guide (Czech, built into the app), operations, architecture, data model, security model, wireframes, review checklist, ADRs, open questions. |
+| `scripts/` | `check-build.mjs` (build check, also the third-party notices), `release.mjs` (release package), `commit.mjs` (the commit of a build). |
 | `release/` | `create-folders.sh` (empty folder skeleton). `release/app/` is generated and git-ignored. |
 | `.claude/agents/mt-reviewer.md` | Claude Code subagent for the expert review (uses `docs/review-checklist.md`). |
 | `Makefile` | Wrapper targets. `make help` lists them. |
+| `README.md`, `LICENSE`, `THIRD-PARTY-NOTICES.md` | Overview, license, licenses of the bundled packages. A new runtime dependency needs a section in `THIRD-PARTY-NOTICES.md` (the build check fails without it). |
 
 ## 5. Commands
 
@@ -50,7 +51,7 @@ npm run typecheck
 npm run build          # dist/index.html + build check (needs Chromium, SKIP_BROWSER=1 skips it)
 npm run simulate
 npm run test:e2e       # build + browser tests (CHROMIUM=/path/to/chromium)
-npm run release        # release/app/: index.html, LICENSE, VERSION, SHA256SUMS
+npm run release        # release/app/: index.html, LICENSE, THIRD-PARTY-NOTICES.md, VERSION, SHA256SUMS
 ```
 
 `npm run test:e2e` runs the demo flows, the real flow with OPFS (new installation, enrollment, approval) and the layout test. `make demo` builds and prints the URL of the demo mode (`?demo`, `?demo=petr`, `?demo=large`). `npm run perf` comes in Phase 7. `SIM_SEED` and `SIM_ROUNDS` change the simulation run.
@@ -63,15 +64,16 @@ npm run release        # release/app/: index.html, LICENSE, VERSION, SHA256SUMS
 4. `test/unit/authorize.test.ts`: the expected rights in the independent lists.
 5. A new status or transition: `src/domain/status.ts` and the matrix `EXPECTED` in `test/unit/status.test.ts`.
 6. Revert: a create op needs a case in `removeWrites` (`src/domain/domain.ts`). A derived field needs `isDerived`.
-7. Notifications (`src/domain/notifications.ts`) and the UI labels (`src/ui/i18n.ts`, Phase 4).
-8. `docs/data-model.md`: the catalogue row (payload, who, effects, inverse).
+7. Notifications (`src/domain/notifications.ts`), the UI labels (`src/ui/i18n.ts`) and the Czech audit texts (`FIELD_TEXT` in `src/ui/i18n.ts`).
+8. `docs/data-model.md`: the catalogue row (payload, who, effects, inverse). The guides (`docs/user-guide.md`, `docs/admin-guide.md`) if users or admins see the change.
 9. Run the definition of done.
 
 ## 6. Working rules
 
 1. **Stop and ask** the owner before you change the op format, the permission matrix or the status state machine. Record the question and the answer in `docs/open-questions.md`.
 2. **Temporary files** (probes, screenshots, test folders) go to a temporary directory outside the repository.
-3. **Language.** Docs, comments and commit messages: English in Simplified Technical English style. UI text: Czech, in `src/ui/i18n.ts`. The user guide `docs/user-guide.md`: Czech.
+3. **Language.** Docs, comments and commit messages: English in Simplified Technical English style. UI text: Czech, in `src/ui/i18n.ts`. The guides `docs/user-guide.md` and `docs/admin-guide.md`: Czech.
+4. **The guides are part of the app.** The build bundles them, and the app shows them (**Nápověda**, **Příručka správce**). Keep them correct for the current version: use the exact button names from `src/ui/i18n.ts`. Their parser (`src/ui/docs.ts`) supports headings, paragraphs, notes (`> `), flat lists (no nested lists) and links inside the app (`#/help?s=<section>`). Do not use external URLs (the build check refuses them). `test/unit/docs.test.ts` checks these rules and the links.
 
 ## 7. Git workflow
 
@@ -88,6 +90,6 @@ npm run release        # release/app/: index.html, LICENSE, VERSION, SHA256SUMS
 
 - `npm run typecheck`, `npm test` (includes the property test and the simulation) and `npm run build` pass.
 - `npm run test:e2e` passes for UI changes.
-- Docs are updated: `docs/*.md`, an ADR for a significant decision, `docs/open-questions.md`, `docs/user-guide.md` for user-visible changes.
+- Docs are updated: `docs/*.md`, an ADR for a significant decision, `docs/open-questions.md`, `docs/user-guide.md` and `docs/admin-guide.md` for visible changes.
 - No real user data in `git status`.
 - The expert review (§7, step 3) ran before each commit.

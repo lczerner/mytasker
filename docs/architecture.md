@@ -187,13 +187,13 @@ The replay rejects ops that change a root user or a root key. Thus `RevokeKey` a
 2. The admin sets `cutoffs` on the old root key: the last valid `seq` in each scope. For a compromised key, use the last `seq` that the admin trusts.
 3. All clients show the new fingerprints. Each user compares them with the admin out-of-band.
 
-Recommendation (`docs/operations.md`, Phase 6): make 2 root admins at bootstrap, so the loss of 1 key does not stop the administration.
+Recommendation: make 2 root admins soon after the bootstrap, so the loss of 1 key does not stop the administration (`docs/operations.md` §4.1). The app cannot change the trust root. The procedures §4.1 and §4.2 change the file by hand, and `test/unit/operations.test.ts` tests them.
 
 ### 6.2 Removal of a user and key loss
 
 Removal of a user: the admin writes `RemoveUser` with a cutoff for each key. The old ops of the user stay valid. The app then offers to remove the user from open tasks (a `Batch` of `RemoveAssignee`).
 
-Key loss: the admin writes `RevokeKey` for the old key and the user enrolls a new key (`AddKey`).
+Key loss: the admin writes `RevokeKey` for the old key (**Odvolat klíč** in **Správa → Uživatelé**) and the user enrolls a new key (`AddKey`).
 
 ## 7. Status state machine
 

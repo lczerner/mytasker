@@ -1,0 +1,122 @@
+# Operations
+
+This document is for the maintainer and for technical admins. It describes the build, the release, the installation and the manual procedures that the app cannot do.
+
+The admins use the Czech admin guide for the daily work. It is part of the app (**Příručka správce**, `docs/admin-guide.md`). The users use the Czech user guide (**Nápověda**, `docs/user-guide.md`). If you change a procedure, update the guide and this document together.
+
+## 1. Build and test
+
+Requirements: Node.js 22 or later, the sibling repository `../oplog-core`, and Chromium for the build check and the e2e tests.
+
+```sh
+make install          # npm ci
+make check            # typecheck, unit + property + simulation tests, build with the build check
+npm run test:e2e      # browser tests (CHROMIUM=/path/to/chromium)
+make demo             # build, then print the URL of the demo mode
+```
+
+`make help` lists all targets.
+
+## 2. Release
+
+1. Make sure that `make check` and `npm run test:e2e` pass on `master`, and that `git status` is clean.
+2. Increase `version` in `package.json` if the release has changes for the users.
+3. Run `make release`. The result is in `release/app/`:
+   - `index.html`: the app, with all code, styles and guides inside.
+   - `LICENSE` and `THIRD-PARTY-NOTICES.md`.
+   - `VERSION`: the version and the commit, for example `0.1.0 (a44e002)`.
+   - `SHA256SUMS`: the SHA-256 of the files above.
+4. If `VERSION` shows `-dirty`, the build used uncommitted files. Do not distribute such a package.
+5. Give the content of `release/app/` to the admins. The admin guide, chapter 9, describes the update.
+
+`app/index.html` in the shared folder is the supply-chain point of the system (`docs/security-model.md`). Copy the release only from a trusted computer, and compare `SHA256SUMS` before the copy.
+
+## 3. Installation
+
+The admin guide, chapter 2, describes the installation in Czech. Short form:
+
+1. Make the folder skeleton: `release/create-folders.sh <root>` (or make the folders by hand: `app`, `roles/ops`, `roles/checkpoints`, `data/ops`, `data/checkpoints`, `data/files`, `enroll`).
+2. Copy `release/app/*` to `<root>/app/`.
+3. Set the OneDrive permissions (`docs/architecture.md` §3).
+4. The first admin opens `app/index.html` and clicks **Vytvořit novou instalaci**. The app writes `app/trust-root.json`.
+5. Approve a second admin as soon as possible. Then make that admin a second root admin (§4.1).
+
+For a local test without OneDrive: `make test-folder` makes `~/mytasker-test` with the current release.
+
+## 4. Manual procedures for the trust root
+
+`app/trust-root.json` is not an op. The app cannot change it. Only a person with write access to `app/` can change it. The format:
+
+```json
+{
+  "v": 1,
+  "roots": [
+    { "userId": "…", "displayName": "…", "keyId": "k…", "alg": "Ed25519", "publicKey": "…", "cutoffs": null }
+  ]
+}
+```
+
+Rules for each change:
+
+- Make a copy of the old file before you change it.
+- Keep the old root entries. Do not remove a root entry: the old ops of that key must stay valid.
+- After the change, each user must reload the app (F5). The app reads the file again on the next full scan.
+- A change of the file changes the fingerprints on the start screen. Tell the users about the change, so that they can compare the fingerprints with you.
+- The encrypted cache and the read state of the notifications use a hash of the file as their ID. After the change, each computer reads all ops 1 time again. The old event notifications (comments, assignments) count as read. The state notifications (due, overdue, to verify) show again as unread.
+
+`test/unit/operations.test.ts` tests the procedures of §4.1 and §4.2 (with a second root admin, and for the only admin).
+
+### 4.1 Make a second root admin
+
+Use this after the installation, so that the loss of 1 root key does not stop the administration.
+
+1. The second admin enrolls as a normal user. A root admin approves the request and clicks **Nastavit jako správce**.
+2. Find the `userId`, the `keyId` and the `publicKey` of the second admin. Open **Správa → Audit**, select the change "Schválení uživatele" of this admin, and open **Obsah změny (technicky)**. Copy the 3 values exactly.
+3. Add a root entry for the second admin to `app/trust-root.json`, with these values and `"cutoffs": null`.
+4. Do a full scan (button **↻**) and reload the app. **Správa → Uživatelé** shows "hlavní správce" for the second admin.
+
+### 4.2 Replace a lost or stolen root key
+
+A root key cannot be revoked with an op. A person with write access to `app/` does this. No approval in the app is necessary: the app knows a root key from `app/trust-root.json` alone.
+
+1. Find the last trusted `seq` of the old key in each scope (`roles` and `data`):
+   - If another admin can open the app: **Správa → Audit**, filter by the author, and open the detail of the newest trusted change. It shows the order number (`pořadí`).
+   - Else: the highest file number in `roles/ops/<old keyId>/` and in `data/ops/<old keyId>/` (for example `0000000017.json` is `seq` 17). For a stolen key, use the highest number that was there before the theft (the OneDrive version history shows when each file came).
+2. Set `"cutoffs": { "roles": <seq>, "data": <seq> }` on the root entry of the old key. Do not remove the entry.
+3. If the owner of the old key continues as an admin: the owner opens the app, clicks **Použít jiný klíč**, then **Jsem nový uživatel / mám nový počítač**, and creates a new key. The app writes a request file in `enroll/` and shows the fingerprint on the screen **Žádost o přístup**.
+   - **Compare the fingerprint before you continue**, also if you are the owner. All users can write to `enroll/`, so a request file with the same name can come from another person. The fingerprint is the characters 2 to 21 of `keyId` in the file, in upper case, in groups of 4 (`docs/architecture.md` §6). If it is different, stop.
+   - Copy `keyId` and `publicKey` from that file. Add a root entry with these 2 values, the **same `userId` as the old root entry**, and `"cutoffs": null`. Then delete the request file.
+4. Do a full scan (**↻**) and reload the app on each computer. Ops of the old key above the cutoff are now invalid. **Správa → Integrita** lists them. The owner opens the app with the new key: no approval is necessary.
+   - Known limit: **Správa → Uživatelé** does not show "odvolán" for a root key with a cutoff in `trust-root.json`. Use the integrity view and the audit to check the result.
+
+This procedure also works if the lost key belonged to the only admin. Then make a second root admin at once (§4.1).
+
+### 4.3 An admin who is not trusted
+
+Role changes apply by order, not by cutoff (`docs/data-model.md` §6.2). An admin who is not trusted can write an op with an old time before the change of the role. Thus a **root admin** must do all steps:
+
+1. **Odebrat práva správce** for that admin (and **Zrušit kontrolu úkolů** if necessary).
+2. **Odvolat klíč** for each key of that admin.
+3. If the person stays in the team: the person enrolls a new key, and you approve it as a new key for the existing user.
+4. Check the newest changes of that admin in the audit, and revert unwanted changes.
+
+A non-root admin must not do this: the admin who is not trusted can then revoke the key of that admin with an old time, and the replay reports an integrity issue.
+
+## 5. Repair of the op files
+
+The rule: never change or delete an op file. A repair restores the original file.
+
+- **`chain-gap` that stays for more than 1 day, `chain-broken`, `bad-signature`:** an op file is missing or changed. Restore the original version from the OneDrive version history or the OneDrive recycle bin. The integrity view shows the path. After the restore, do a full scan.
+- **`fork`:** 2 different ops with the same author and `seq`. The cause is the same key on 2 computers at the same time, or a restored backup of the key folder. The ops after the fork are not applied. Revoke the key (the cutoff is below the fork) and let the user enroll a new key. Do not delete one of the 2 files: other computers can already have applied it.
+- **`unknown-file`:** usually a OneDrive conflict copy (the computer name is in the file name). The app ignores it. Check the content, then delete the file.
+- **A file of another author under the next number of a user** (ADR 0014): the chain skips such a file. No repair is necessary. Delete the file.
+
+## 6. Backup and restore
+
+- OneDrive keeps a version history and a recycle bin. That covers most accidents.
+- Copy the full shared folder to a different safe location 1 time each month. The ops are immutable, so an incremental copy is sufficient.
+- To restore a full folder: copy the backup into an empty shared folder. Each client then reads the ops from the start. Ops that the users wrote after the backup are lost, except the ops that are still on their computers in the encrypted cache. The cache does not write ops back to the folder.
+
+## 7. Performance
+
+Phase 7 measures the performance with large data sets. Until then: make a checkpoint (**Správa → Kontrolní body**) when the number of op files outside checkpoints is more than about 2 000.

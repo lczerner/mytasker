@@ -8,6 +8,7 @@ import { buildSearchIndex } from '../domain/search';
 import { rolesOf, settingsOf, userIsAdmin, userIsVerifier } from '../domain/state';
 import { buildTaskViews, dueState } from '../domain/view';
 import { AdminPage } from './admin';
+import { HelpPage } from './Help';
 import { Ctx, focusTask, href, parseRoute, type AppCtx, type Me, type Model, type Toast, type UserInfo } from './ctx';
 import { NewTaskDialog } from './dialogs';
 import { Footer } from './Footer';
@@ -223,6 +224,9 @@ export function App(props: AppProps) {
       if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
         setNewTask(true);
+      } else if (e.key === '?') {
+        e.preventDefault();
+        location.hash = href(['help']);
       } else if (e.key === '/') {
         e.preventDefault();
         search.current?.focus();
@@ -384,15 +388,37 @@ function Shell(props: ShellProps) {
               </ul>
             </>
           )}
+          <ul class="side-help">
+            <li>
+              <a href={href(['help'])} aria-current={page === 'help' && route.path[1] !== 'admin' ? 'page' : undefined} title="?">
+                <span>{t('help.user')}</span>
+              </a>
+            </li>
+            {isAdmin && (
+              <li>
+                <a href={href(['help', 'admin'])} aria-current={page === 'help' && route.path[1] === 'admin' ? 'page' : undefined}>
+                  <span>{t('help.admin')}</span>
+                </a>
+              </li>
+            )}
+          </ul>
           <p class="side-foot muted small">{t('top.updated', { when: fmtRelative(new Date(updated).toISOString(), now) })}</p>
         </nav>
         <main id="main" tabIndex={-1} data-route={hash}>
-          {listKinds.includes(page as ListKind) ? <TaskList kind={page as ListKind} /> : page === 'admin' ? <AdminPage page={route.path[1] ?? 'users'} /> : <TaskList kind="all" />}
+          {listKinds.includes(page as ListKind) ? (
+            <TaskList kind={page as ListKind} />
+          ) : page === 'admin' ? (
+            <AdminPage page={route.path[1] ?? 'users'} />
+          ) : page === 'help' ? (
+            <HelpPage guide={route.path[1] === 'admin' ? 'admin' : 'user'} />
+          ) : (
+            <TaskList kind="all" />
+          )}
         </main>
         {route.query.task && <TaskPanel key={route.query.task} id={route.query.task} />}
       </div>
       {newTask && <NewTaskDialog onClose={() => setNewTask(false)} />}
-      <Footer />
+      <Footer helpHref={href(['help'])} />
       <div class="toasts" role="status" aria-live="polite">
         {toasts.map((x) => (
           <div key={x.id} class={`toast toast-${x.kind}`}>

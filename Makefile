@@ -41,7 +41,7 @@ perf: ## Measure cold start and refresh time
 
 check: typecheck test build ## Run the checks before each commit (add "make e2e" for UI changes)
 
-release: ## Build release/app/ (index.html, LICENSE, VERSION, SHA256SUMS)
+release: ## Build release/app/ (index.html, LICENSE, THIRD-PARTY-NOTICES.md, VERSION, SHA256SUMS)
 	npm run release
 
 test-folder: release ## Make a local test "shared folder" in TEST_DIR with the current release

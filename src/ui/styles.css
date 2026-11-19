@@ -974,6 +974,96 @@ table.diff td.after {
   max-width: 60rem;
 }
 
+button.link.danger-link {
+  color: var(--danger);
+}
+
+/* ---- Help (built-in guides) ---- */
+.side-help {
+  margin-top: 1rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.5rem;
+}
+.help-switch {
+  margin-bottom: 1rem;
+}
+.doc {
+  display: grid;
+  grid-template-columns: minmax(12rem, 16rem) minmax(0, 46rem);
+  gap: 2rem;
+  align-items: start;
+}
+.doc-toc {
+  position: sticky;
+  top: 4.5rem;
+  font-size: 0.9rem;
+}
+.doc-toc h2 {
+  font-size: 0.95rem;
+  margin: 0 0 0.4rem;
+}
+.doc-toc ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+.doc-toc li {
+  margin: 0.2rem 0;
+}
+.doc-body {
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.doc-body h1 {
+  margin-top: 0;
+}
+.doc-body h2 {
+  margin-top: 2rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--line);
+  /* Below the sticky header. */
+  scroll-margin-top: 4.5rem;
+}
+.doc-body h3 {
+  margin-top: 1.25rem;
+  scroll-margin-top: 4.5rem;
+}
+.doc-body h1:focus,
+.doc-body h2:focus,
+.doc-body h3:focus {
+  outline: none;
+}
+.doc-body code {
+  background: var(--bg);
+  padding: 0 0.25rem;
+  border-radius: 4px;
+}
+.doc-note {
+  background: var(--warn-bg);
+  color: var(--warn-text);
+  border-left: 4px solid var(--warn-text);
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+}
+.help-dialog {
+  max-height: 65vh;
+  overflow: auto;
+}
+.help-dialog .doc {
+  grid-template-columns: minmax(0, 1fr);
+}
+.help-dialog .doc-toc {
+  position: static;
+}
+@media (max-width: 1100px) {
+  .doc {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .doc-toc {
+    position: static;
+  }
+}
+
 /* ---- Notifications ---- */
 .bell {
   position: relative;

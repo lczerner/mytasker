@@ -311,12 +311,12 @@ export function ChangeDetail({ a }: { a: AuditEntry }) {
           </table>
           {writes.length > 300 && <p class="muted small">{nMoreWrites(writes.length - 300)}</p>}
         </div>
-      ) : (
-        <details class="small">
-          <summary>{t('audit.payload')}</summary>
-          <pre class="diff-json">{JSON.stringify(a.payload, null, 1).slice(0, 2000)}</pre>
-        </details>
-      )}
+      ) : null}
+      {/* Always available: the technical content, for example the IDs for docs/operations.md §4.1. */}
+      <details class="small" open={writes.length === 0}>
+        <summary>{t('audit.payload')}</summary>
+        <pre class="diff-json">{JSON.stringify(a.payload, null, 1).slice(0, 4000)}</pre>
+      </details>
     </div>
   );
 }

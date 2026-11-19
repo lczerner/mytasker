@@ -160,12 +160,22 @@ The **history** tab of the task panel uses the same descriptions: each change wi
 - **Koš**: deleted tasks with "Obnovit".
 - **Kontrolní body**: number of op files per scope, and "Vytvořit kontrolní bod".
 
+## 7a. Help (built-in guides)
+
+- The page `#/help` shows the user guide, `#/help/admin` the admin guide (admins only, ADR 0015). The left column is the table of contents, the right column the text. Below 1100 px, the table of contents is above the text.
+- `?s=<section>` scrolls to a section. A click in the table of contents replaces the history entry.
+- Admins see a switch "Nápověda | Příručka správce" above the guide.
+- The sidebar has the links **Nápověda** and, for admins, **Příručka správce**, below the views. The information bar has **Nápověda**.
+- The start screens open the user guide in a dialog (the link in the information bar).
+- **Správa → Uživatelé**: each key that is not revoked, not a root key and not the own key has **Odvolat klíč**. The dialog explains the effect and that a revocation cannot be undone.
+
 ## 8. Keyboard
 
 | Key | Action |
 |---|---|
 | `N` | New task |
 | `/` | Focus the search |
+| `?` | Open the user guide (**Nápověda**) |
 | `Esc` | Close the panel or the dialog. In a text field of the panel: leave the field. |
 | Click outside the panel | Close the panel. A click on another task opens that task. With unsaved text in the panel, the panel stays open and a message explains why. |
 | `Tab`, `Shift+Tab` | Next or previous control. All controls have a visible focus. |

@@ -401,4 +401,64 @@ describe('more flows (demo over file://)', () => {
     expect(errors).toEqual([]);
     await page.close();
   });
+
+  it('help: ? opens the user guide, the table of contents scrolls, the admin guide is for admins only', async () => {
+    const { page, errors } = await open('eva');
+    await page.keyboard.press('?');
+    await page.waitForSelector('.doc-body h1:has-text("Uživatelská příručka")');
+    expect(page.url()).toContain('#/help');
+    // A non-admin has no admin guide: no link, and the route shows the refusal.
+    expect(await page.locator('nav a[href="#/help/admin"]').count()).toBe(0);
+    expect(await page.locator('.help-switch').count()).toBe(0);
+    await page.click('.doc-toc a:has-text("Stavy úkolu")');
+    await page.waitForFunction(() => location.hash.includes('s=stavy-ukolu'));
+    await page.waitForFunction(() => {
+      const h = document.querySelector('[data-section="stavy-ukolu"]')!.getBoundingClientRect();
+      return h.top >= 0 && h.top < 200;
+    });
+    await page.evaluate(() => (location.hash = '#/help/admin'));
+    await page.waitForSelector('text=Tuto stránku může otevřít jen správce.');
+    expect(errors).toEqual([]);
+    await page.close();
+
+    const admin = await open('alena');
+    await admin.page.click('nav a[href="#/help/admin"]');
+    await admin.page.waitForSelector('.doc-body h1:has-text("Příručka správce")');
+    // A local link in the admin guide opens the user guide.
+    await admin.page.click('.doc-body a[href="#/help"]');
+    await admin.page.waitForSelector('.doc-body h1:has-text("Uživatelská příručka")');
+    expect(admin.errors).toEqual([]);
+    await admin.page.close();
+
+    // The start screen: the help opens in a dialog.
+    const start = await browser.newPage({ viewport: { width: 1200, height: 800 } });
+    await start.goto(`file://${DIST}`);
+    await start.waitForSelector('.gate h1');
+    await start.click('footer button:has-text("Nápověda")');
+    await start.waitForSelector('dialog[open] .doc-body h1:has-text("Uživatelská příručka")');
+    await start.close();
+  }, 60_000);
+
+  it('an admin revokes a key: confirmation, "odvolán", an audit entry; no button for the own key or the root key', async () => {
+    const { page, errors } = await open('alena', '#/admin/users');
+    await page.waitForSelector('table');
+    const row = (name: string) => page.locator('tr', { hasText: name });
+    expect(await row('Alena Adminová').locator('button:has-text("Odvolat klíč")').count()).toBe(0);
+    await row('Petr Dvořák').locator('button:has-text("Odvolat klíč")').click();
+    await page.waitForSelector('dialog[open]:has-text("Odvolání nejde vrátit.")');
+    await page.click('dialog[open] button.danger');
+    await page.waitForSelector('dialog[open]', { state: 'detached' });
+    await row('Petr Dvořák').locator('text=odvolán').waitFor();
+    expect(await row('Petr Dvořák').locator('button:has-text("Odvolat klíč")').count()).toBe(0);
+    await page.evaluate(() => (location.hash = '#/admin/audit'));
+    await page.waitForSelector('table.audit tbody tr:first-child:has-text("Odvolání klíče")');
+    // The cutoff keeps the earlier changes of Petr valid: none of them is rejected (a cutoff of 0 would reject all).
+    await page.selectOption('select[aria-label="Autor"]', { label: 'Petr Dvořák' });
+    await page.waitForFunction(() => [...document.querySelectorAll('table.audit tbody tr td:nth-child(2)')].every((td) => td.textContent === 'Petr Dvořák'));
+    expect(await page.locator('table.audit tbody tr').count()).toBeGreaterThan(0);
+    await page.selectOption('select[aria-label="Stav"]', 'rejected');
+    await page.waitForSelector('text=Žádné změny neodpovídají filtru.');
+    expect(errors).toEqual([]);
+    await page.close();
+  }, 60_000);
 });

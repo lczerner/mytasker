@@ -12,7 +12,7 @@ beforeAll(async () => {
 });
 afterAll(async () => browser?.close());
 
-const PAGES = ['#/all', '#/all?view=table', '#/mine?view=table', '#/admin/users', '#/admin/tags', '#/admin/audit', '#/admin/integrity', '#/admin/settings'];
+const PAGES = ['#/all', '#/all?view=table', '#/mine?view=table', '#/admin/users', '#/admin/tags', '#/admin/audit', '#/admin/integrity', '#/admin/settings', '#/help', '#/help/admin'];
 
 /** Elements whose content is wider than the element, and that do not clip or scroll on purpose. */
 async function leaks(page: Page): Promise<string[]> {

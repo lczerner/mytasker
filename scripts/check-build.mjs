@@ -7,9 +7,10 @@
 //  3. the CSP meta tag is present with connect-src 'none'
 //  4. Chromium opens it over file:// with no errors, and the page makes no request
 //     except the file itself
+//  5. THIRD-PARTY-NOTICES.md has a section "## <name> <version>" for each runtime dependency
+//     (installed version), and the app contains the notices (license dialog)
 //
 // CHROMIUM=/path/to/chromium overrides the browser. SKIP_BROWSER=1 skips step 4 (other values do not).
-// TODO(Phase 6): check the license notices of the bundled packages.
 import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -31,7 +32,15 @@ if (/<link[^>]+href=/i.test(html)) fail('external <link href> found');
 const csp = /<meta http-equiv="Content-Security-Policy" content="([^"]+)"/.exec(html);
 if (!csp) fail('CSP meta tag missing');
 for (const d of ["connect-src 'none'", "default-src 'none'", "form-action 'none'", "base-uri 'none'"]) if (!csp[1].includes(d)) fail(`CSP lacks ${d}`);
+const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+const notices = readFileSync('THIRD-PARTY-NOTICES.md', 'utf8');
+for (const name of Object.keys(pkg.dependencies ?? {})) {
+  const version = JSON.parse(readFileSync(resolve('node_modules', name, 'package.json'), 'utf8')).version;
+  if (!notices.includes(`## ${name} ${version}\n`)) fail(`THIRD-PARTY-NOTICES.md lacks the section "## ${name} ${version}"`);
+}
+if (!html.includes('# Third-party notices')) fail('the app does not contain THIRD-PARTY-NOTICES.md');
 console.log(`ok: 1 file, ${(html.length / 1024).toFixed(0)} kB, no external URLs, CSP: ${csp[1]}`);
+console.log(`ok: notices for ${Object.keys(pkg.dependencies ?? {}).join(', ')}`);
 
 if (process.env.SKIP_BROWSER === '1') process.exit(0);
 const { chromium } = await import('playwright-core');

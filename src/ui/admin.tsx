@@ -39,6 +39,7 @@ export function AdminPage({ page }: { page: string }) {
 function Users() {
   const app = useApp();
   const [removing, setRemoving] = useState<string | null>(null);
+  const [revoking, setRevoking] = useState<{ keyId: string; userId: string } | null>(null);
   const users = [...app.users.values()].sort((a, b) => (a.status === b.status ? collator.compare(a.name, b.name) : a.status === 'active' ? -1 : 1));
   const keys = Object.values(app.engine.state.scopes.roles?.key ?? {});
   return (
@@ -75,6 +76,14 @@ function Users() {
                       <div key={k.id}>
                         <code>{fingerprint(k.id)}</code>
                         {k.cutoff ? <span class="muted"> ({t('admin.keyRevoked')})</span> : null}
+                        {!k.cutoff && !k.root && u.status === 'active' && k.id !== app.me.keyId && (
+                          <>
+                            {' '}
+                            <button type="button" class="link small danger-link" onClick={() => setRevoking({ keyId: k.id, userId: u.id })}>
+                              {t('admin.keyRevoke')}
+                            </button>
+                          </>
+                        )}
                       </div>
                     ))}
                   </td>
@@ -101,7 +110,38 @@ function Users() {
         </table>
       </div>
       {removing && <RemoveUserDialog userId={removing} onClose={() => setRemoving(null)} />}
+      {revoking && <RevokeKeyDialog keyId={revoking.keyId} userId={revoking.userId} onClose={() => setRevoking(null)} />}
     </section>
+  );
+}
+
+/** Revokes 1 key (lost or stolen). The cutoff is the newest known op of the key in each scope. */
+function RevokeKeyDialog({ keyId, userId, onClose }: { keyId: string; userId: string; onClose: () => void }) {
+  const app = useApp();
+  const [busy, setBusy, isBusy] = useBusy();
+  const seq = (scope: string) => app.engine.validHeads().find((h) => h.keyId === keyId && h.scope === scope)?.seq ?? 0;
+  const revoke = async () => {
+    if (isBusy()) return;
+    setBusy(true);
+    // Read the newest ops first, so that the cutoff includes all valid ops that this computer can see.
+    await app.refresh('full');
+    const cutoff = { roles: seq(ROLES), data: seq(DATA) };
+    if ((await app.act('RevokeKey', { keyId, cutoff }, ROLES)) === 'applied') onClose();
+    else setBusy(false);
+  };
+  return (
+    <Dialog title={t('admin.keyRevoke')} onClose={onClose}>
+      <p>{t('admin.keyRevokeText', { name: app.userName(userId), key: fingerprint(keyId) })}</p>
+      <p class="warn">{t('admin.keyRevokeWarn')}</p>
+      <div class="row end">
+        <button type="button" onClick={onClose} autoFocus>
+          {t('dlg.cancel')}
+        </button>
+        <button type="button" class="danger" disabled={busy} onClick={() => void revoke()}>
+          {t('admin.keyRevoke')}
+        </button>
+      </div>
+    </Dialog>
   );
 }
 
