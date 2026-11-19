@@ -196,6 +196,8 @@ describe('real flow with a folder (OPFS instead of the native dialogs, http://12
     await page.fill('dialog input[type=text]', 'První úkol');
     await page.click('dialog button:has-text("Vytvořit")');
     await page.waitForSelector('.drawer h2:has-text("První úkol")');
+    // After the dialog, the focus is in the new task panel.
+    await page.waitForFunction(() => document.activeElement?.closest('.drawer') !== null);
 
     // A new user on the same computer (the same OPFS): a new key and a request.
     await page.reload();

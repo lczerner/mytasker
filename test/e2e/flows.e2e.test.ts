@@ -372,4 +372,33 @@ describe('more flows (demo over file://)', () => {
     expect(eva.errors).toEqual([]);
     await eva.page.close();
   }, 90_000);
+
+  it('keyboard: the skip link, and the focus goes back to the opener after a dialog closes', async () => {
+    const { page, errors } = await open('alena');
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press('Tab');
+    expect(await page.evaluate(() => document.activeElement?.textContent)).toBe('Přejít na obsah');
+    await page.keyboard.press('Enter');
+    expect(await page.evaluate(() => document.activeElement?.id)).toBe('main');
+    // The license dialog: Esc closes it, and the focus is on its button again.
+    await page.focus('footer.footer button');
+    await page.keyboard.press('Enter');
+    await page.waitForSelector('dialog[open]');
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('dialog[open]', { state: 'detached' });
+    await page.waitForFunction(() => document.activeElement?.closest('footer') !== null && document.activeElement?.tagName === 'BUTTON');
+    // A status dialog removes its opener (the button "Hotovo"): the focus goes to the task panel.
+    await task(page, 'Uspořádat poradu týmu');
+    await page.waitForSelector('.drawer h2:has-text("Uspořádat poradu týmu")');
+    await page.focus('.drawer .row.wrap button:has-text("Hotovo")');
+    await page.keyboard.press('Enter');
+    await page.waitForSelector('dialog[open]');
+    await page.focus('dialog[open] button.primary');
+    await page.keyboard.press('Enter');
+    await page.waitForSelector('dialog[open]', { state: 'detached' });
+    await page.waitForSelector('.drawer .status-done');
+    await page.waitForFunction(() => document.activeElement?.closest('.drawer') !== null);
+    expect(errors).toEqual([]);
+    await page.close();
+  });
 });

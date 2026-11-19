@@ -55,6 +55,7 @@ const cs = {
   'nav.mine': 'Moje úkoly',
   'nav.review': 'Ke kontrole',
   'nav.created': 'Vytvořil(a) jsem',
+  'nav.skip': 'Přejít na obsah',
   'nav.admin': 'Správa',
   'nav.trash': 'Koš',
   'nav.users': 'Uživatelé',

@@ -287,6 +287,9 @@ function Shell(props: ShellProps) {
 
   return (
     <>
+      <a class="skip-link" href="#main" onClick={(e) => (e.preventDefault(), document.getElementById('main')?.focus())}>
+        {t('nav.skip')}
+      </a>
       {demo && <div class="demo-banner">{t('demo.banner')}</div>}
       <header class="top">
         <a class="brand" href="#/all">
@@ -383,7 +386,7 @@ function Shell(props: ShellProps) {
           )}
           <p class="side-foot muted small">{t('top.updated', { when: fmtRelative(new Date(updated).toISOString(), now) })}</p>
         </nav>
-        <main id="main" data-route={hash}>
+        <main id="main" tabIndex={-1} data-route={hash}>
           {listKinds.includes(page as ListKind) ? <TaskList kind={page as ListKind} /> : page === 'admin' ? <AdminPage page={route.path[1] ?? 'users'} /> : <TaskList kind="all" />}
         </main>
         {route.query.task && <TaskPanel key={route.query.task} id={route.query.task} />}

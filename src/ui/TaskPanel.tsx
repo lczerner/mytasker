@@ -359,7 +359,7 @@ function Files({ v, ro }: { v: TaskView; ro: boolean }) {
       </ul>
       {!ro && (
         <div class="row wrap">
-          <input ref={fileInput} type="file" class="sr-only" tabIndex={-1} onChange={(e) => {
+          <input ref={fileInput} type="file" class="sr-only" tabIndex={-1} aria-hidden="true" aria-label={t('task.fileAdd')} onChange={(e) => {
             const f = (e.target as HTMLInputElement).files?.[0];
             (e.target as HTMLInputElement).value = '';
             if (f) void upload(f);

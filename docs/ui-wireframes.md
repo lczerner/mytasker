@@ -169,4 +169,6 @@ The **history** tab of the task panel uses the same descriptions: each change wi
 | `Esc` | Close the panel or the dialog. In a text field of the panel: leave the field. |
 | Click outside the panel | Close the panel. A click on another task opens that task. With unsaved text in the panel, the panel stays open and a message explains why. |
 | `Tab`, `Shift+Tab` | Next or previous control. All controls have a visible focus. |
+| `Tab` on a new page | The first stop is the link "Přejít na obsah". `Enter` moves the focus to the main content. |
+| Close a dialog | The focus goes back to the control that opened the dialog. |
 | `Enter` on a card or a row | Open the task |

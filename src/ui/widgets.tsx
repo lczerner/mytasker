@@ -85,13 +85,25 @@ export function Dialog({ title, onClose, children, wide }: { title: string; onCl
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const d = ref.current!;
+    // The control that opened the dialog gets the focus back when the dialog closes.
+    const opener = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null;
+    // If the opener is removed (for example a status button after the status change), the task panel gets the focus.
+    const container = opener?.closest<HTMLElement>('.drawer') ?? null;
     if (!d.open) d.showModal();
     const cancel = (e: Event) => {
       e.preventDefault();
       onClose();
     };
     d.addEventListener('cancel', cancel);
-    return () => d.removeEventListener('cancel', cancel);
+    return () => {
+      d.removeEventListener('cancel', cancel);
+      // After the close, the opener can be gone: then its panel, if it is still there, else nothing.
+      requestAnimationFrame(() => {
+        if (document.activeElement !== document.body && document.activeElement !== null) return;
+        if (opener?.isConnected) opener.focus();
+        else if (container?.isConnected) container.focus();
+      });
+    };
   }, []);
   return (
     <dialog ref={ref} class={wide ? 'wide' : ''} aria-label={title}>
