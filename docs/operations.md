@@ -6,11 +6,11 @@ The admins use the Czech admin guide for the daily work. It is part of the app (
 
 ## 1. Build and test
 
-Requirements: Node.js 22 or later, the sibling repository `../oplog-core`, and Chromium for the build check and the e2e tests.
+Requirements: Node.js 22 or later, Chromium for the build check and the e2e tests, and the private repository `oplog-core` in `../oplog-core` at the commit of `.oplog-core-ref` (README, "Quick start").
 
 ```sh
 make install          # npm ci
-make check            # typecheck, unit + property + simulation tests, build with the build check
+make check            # oplog-core check, typecheck, unit + property + simulation tests, build check, SBOM
 npm run test:e2e      # browser tests (CHROMIUM=/path/to/chromium)
 make demo             # build, then print the URL of the demo mode
 ```
@@ -19,13 +19,14 @@ make demo             # build, then print the URL of the demo mode
 
 ## 2. Release
 
-1. Make sure that `make check` and `npm run test:e2e` pass on `master`, and that `git status` is clean.
-2. Increase `version` in `package.json` if the release has changes for the users.
+1. Make sure that the CI of `master` is green, and that the local `master` is clean and up to date (`git switch master && git pull --ff-only`). Then run `make check` and `npm run test:e2e`.
+2. If the release has changes for the users, increase `version` in `package.json` first, in a pull request (AGENTS.md §7).
 3. Run `make release`. The result is in `release/app/`:
    - `index.html`: the app, with all code, styles and guides inside.
    - `LICENSE` and `THIRD-PARTY-NOTICES.md`.
    - `VERSION`: the version and the commit, for example `0.1.0 (a44e002)`.
    - `SHA256SUMS`: the SHA-256 of the files above.
+   - `release/sbom/runtime.cdx.json` and `release/sbom/build.cdx.json`: the SBOMs of this release (`make sbom`, AGENTS.md §7.2). Give them to the admins with the package if they ask for them.
 4. If `VERSION` shows `-dirty`, the build used uncommitted files. Do not distribute such a package.
 5. Give the content of `release/app/` to the admins. The admin guide, chapter 9, describes the update.
 

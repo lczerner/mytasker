@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: MIT
 // Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
-// Builds the release package in release/app/: index.html, LICENSE, THIRD-PARTY-NOTICES.md, VERSION, SHA256SUMS.
+// Builds the release package in release/app/: index.html, LICENSE, THIRD-PARTY-NOTICES.md, VERSION, SHA256SUMS,
+// and the SBOMs in release/sbom/ (runtime + build, CycloneDX).
 // Copy the CONTENT of release/app/ into <SharedRoot>/app/ (admins only).
 import { createHash } from 'node:crypto';
 import { execSync } from 'node:child_process';
@@ -9,6 +10,8 @@ import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { gitCommit } from './commit.mjs';
 
 execSync('npm run build', { stdio: 'inherit' });
+// The SBOMs of this release (release/sbom/), with their checks (runtime packages and notices).
+execSync('node scripts/sbom.mjs cyclonedx', { stdio: 'inherit' });
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 // The same helper as the build: VERSION and the information bar show the same commit.
 const commit = gitCommit();

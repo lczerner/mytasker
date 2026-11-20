@@ -14,14 +14,21 @@
 
 ## Quick start (development)
 
-Requirements: Node.js 22 or later, the sibling repository `../oplog-core`, and Chromium for the build check and the browser tests.
+Requirements: Node.js 22 or later, Chromium for the build check and the browser tests, and the private repository `oplog-core` next to this one:
+
+```sh
+git clone https://github.com/lczerner/oplog-core.git ../oplog-core
+git -C ../oplog-core checkout "$(cat .oplog-core-ref)"   # the commit that this version uses
+npm ci --prefix ../oplog-core
+```
 
 ```sh
 make install      # install the dependencies
-make check        # typecheck, tests (unit, property, simulation), build with the build check
+make check        # oplog-core check, typecheck, tests (unit, property, simulation), build check, SBOM
 make demo         # build the demo and print its URL (synthetic data in memory, nothing is saved)
 npm run test:e2e  # browser tests
-make release      # release package in release/app/
+make release      # release package in release/app/ and SBOMs in release/sbom/
+make sbom         # SBOMs only (runtime + build, CycloneDX, or SPDX with SBOM_FORMAT=spdx)
 make help         # all targets
 ```
 
@@ -87,7 +94,7 @@ The full list is in `docs/security-model.md`.
 | `docs/ui-wireframes.md` | Screens and keyboard. |
 | `docs/decisions/` | Architecture decision records. |
 | `docs/open-questions.md` | Questions and the decisions of the owner. |
-| `AGENTS.md` | Instructions for coding agents and contributors. |
+| `AGENTS.md` | Instructions for coding agents and contributors, including the Git workflow (branches, pull requests, CI, SBOM, Dependabot). |
 
 ## License
 
