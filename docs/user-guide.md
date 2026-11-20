@@ -44,6 +44,8 @@ Když od počítače odcházíte, klikněte vpravo nahoře na **Zamknout**. Pro 
 - **Zkontrolované úkoly** jsou skryté, protože jich stále přibývá. Zobrazíte je přepínačem **Zobrazit zkontrolované** nebo filtrem stavu.
 - **Dolní lišta:** verze aplikace, licence a tato nápověda.
 
+![Hlavní obrazovka: levý panel s pohledy, filtry a tabule se sloupci podle stavu](img/tabule.jpg)
+
 Pohledy v levém panelu:
 
 - **Všechny úkoly**: všechny úkoly týmu.
@@ -51,11 +53,15 @@ Pohledy v levém panelu:
 - **Ke kontrole**: hotové úkoly, které čekají na kontrolu (pro ty, kdo kontrolují úkoly, a pro správce).
 - **Vytvořil(a) jsem**: úkoly, které jste vytvořili.
 
+Velký sloupec tabule ukáže nejdříve 100 úkolů a tabulka 200 řádků. Další úkoly zobrazíte tlačítkem pod seznamem, například **Zobrazit dalších 100**. Počet v záhlaví sloupce platí vždy pro všechny úkoly.
+
 Hledání nerozlišuje velká a malá písmena ani diakritiku: „uctarna“ najde i „Účtárna“. Hledá v názvu, popisu, podúkolech a komentářích. Pro hledání podle štítků a řešitelů použijte filtry.
 
 ## 5. Práce s úkolem
 
 Úkol otevřete kliknutím na kartu nebo řádek tabulky. Panel s úkolem zavřete křížkem, klávesou **Esc** nebo kliknutím mimo panel. Když máte v panelu neuložený text, panel se kliknutím mimo nezavře a aplikace vás upozorní.
+
+![Panel úkolu: stav s tlačítky akcí, termín, popis a podúkoly](img/ukol.jpg)
 
 ### Nový úkol
 
@@ -82,8 +88,9 @@ Do pole **Přidat podúkol** napište text a stiskněte **Enter**. Splněný pod
 ### Přílohy a odkazy
 
 - **+ Přidat soubor** nahraje soubor do sdílené složky. Výchozí maximální velikost přílohy je 25 MB, správce ji může změnit.
-- Z bezpečnostních důvodů aplikace nepřijme soubory HTML, SVG, XML a podobné (mohly by obsahovat skript). Takový soubor zabalte do archivu ZIP.
+- Z bezpečnostních důvodů aplikace nepřijme soubory HTML, SVG, XML a podobné (mohly by obsahovat skript). Takový soubor nepřikládejte. Pokud ho kolegové potřebují, převeďte ho například do PDF.
 - Obrázky (PNG, JPEG, GIF, WebP) mají náhled. Každý soubor stáhnete tlačítkem **Stáhnout**.
+- Když správce soubor trvale odstraní (například dokument přiložený omylem), u přílohy se zobrazí „odstraněno“ a soubor už nejde stáhnout.
 - **+ Přidat odkaz** přidá odkaz na web nebo e-mail.
 
 ### Řešitelé a štítky
@@ -125,6 +132,8 @@ Zvonek v horní liště ukazuje počet nepřečtených upozornění. Upozorněn�
 - vaše změna nebyla použita (viz kapitola 10),
 - hotový úkol čeká na kontrolu (pro ty, kdo kontrolují úkoly, a pro správce).
 
+![Seznam upozornění pod zvonkem](img/upozorneni.jpg)
+
 Kliknutím na upozornění otevřete úkol a upozornění se označí jako přečtené. **Vše přečteno** označí všechna upozornění jako přečtená. Počet nepřečtených vidíte také v názvu karty prohlížeče. Tečka u pohledu v levém panelu znamená, že pohled obsahuje úkol s nepřečteným upozorněním.
 
 Po spuštění aplikace se nahoře ukáže krátký přehled: úkoly po termínu a úkoly ke kontrole.
@@ -137,7 +146,7 @@ Správce může změnu vrátit tlačítkem **Vrátit**.
 
 ## 10. Synchronizace a souběžné změny
 
-- Aplikace zjišťuje nové změny každých několik sekund (interval nastavuje správce). Okamžité načtení: tlačítko **↻** v horní liště.
+- Aplikace zjišťuje nové změny každých několik sekund (interval nastavuje správce). V novějších verzích Edge a Chrome je pozná obvykle hned, jak je OneDrive uloží. Okamžité načtení: tlačítko **↻** v horní liště.
 - Změny kolegů se k vám dostanou, až je OneDrive synchronizuje. Obvykle to trvá sekundy, někdy minuty.
 - Když dva lidé změní stejnou věc současně, platí ta změna, která byla provedena později.
 - Když kolega mezitím změnil stav úkolu, vaše změna stavu se nepoužije. Například jste chtěli úkol odložit, ale kolega ho už označil jako hotový. Aplikace vás upozorní a v historii je změna označená „nepoužito“.

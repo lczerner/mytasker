@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
 // Task views: filters, board and table.
-import { useMemo } from 'preact/hooks';
+import { useMemo, useState } from 'preact/hooks';
 import type { Status } from '../domain/constants';
 import { matches, queryTerms } from '../domain/search';
 import { dueState, type TaskView } from '../domain/view';
 import { href, useApp } from './ctx';
-import { collator, fmtDate, nTasks, statusLabel, t, type Key } from './i18n';
+import { collator, fmtDate, nTasks, statusLabel, t, type Key, nShowMore } from './i18n';
 import { Avatar, DueLabel, StatusBadge, TagChip } from './widgets';
 
 export type ListKind = 'all' | 'mine' | 'review' | 'created';
@@ -53,6 +53,8 @@ export function TaskList({ kind }: { kind: ListKind }) {
   }, [base, q.tags, q.who, q.status, q.q, search, showVerified]);
 
   const sorted = useMemo(() => sortTasks(shown, sort, dir, app.userName, now, settings.dueSoonDays), [shown, sort, dir, now]);
+  // The paging starts again at the first page when the filters, the search or the sort change.
+  const pageKey = [kind, q.tags, q.who, q.status, q.q, q.verified, sort, dir].join('|');
   const active = fTags.length + fWho.length + fStatus.length + (q.q ? 1 : 0);
   const title = t(`nav.${kind}` as Key);
 
@@ -99,9 +101,9 @@ export function TaskList({ kind }: { kind: ListKind }) {
       {sorted.length === 0 ? (
         <p class="empty">{active ? t('view.emptyFiltered') : t('view.empty')}</p>
       ) : mode === 'board' ? (
-        <Board tasks={sorted} columns={showVerified ? BOARD : BOARD.filter((s) => s !== 'verified')} />
+        <Board key={pageKey} tasks={sorted} columns={showVerified ? BOARD : BOARD.filter((s) => s !== 'verified')} />
       ) : (
-        <Table tasks={sorted} sort={sort} dir={dir} />
+        <Table key={pageKey} tasks={sorted} sort={sort} dir={dir} />
       )}
     </section>
   );
@@ -186,23 +188,44 @@ export function sortTasks(list: TaskView[], sort: string, dir: string, name: (id
   return [...list].sort((a, b) => sign * c(a, b) || (a.id < b.id ? -1 : 1));
 }
 
+/** Cards of 1 board column and rows of the table that render at first (docs/performance.md). */
+export const BOARD_PAGE = 100;
+export const TABLE_PAGE = 200;
+
 function Board({ tasks, columns }: { tasks: TaskView[]; columns: Status[] }) {
+  // The number of shown cards for each column. "Zobrazit další" shows the next page.
+  const [shown, setShown] = useState<Partial<Record<Status, number>>>({});
   return (
     <div class="board" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(12rem, 1fr))` }}>
       {columns.map((s) => {
         const col = tasks.filter((v) => v.status === s);
+        const n = shown[s] ?? BOARD_PAGE;
         return (
           <section key={s} class={`col col-${s}`} aria-label={statusLabel(s)}>
             <h2 class="col-head">
               <StatusBadge status={s} /> <span class="count">{col.length}</span>
             </h2>
             <ul class="cards">
-              {col.map((v) => (
+              {col.slice(0, n).map((v) => (
                 <li key={v.id}>
                   <Card v={v} />
                 </li>
               ))}
             </ul>
+            {col.length > n && (
+              <button
+                type="button"
+                class="more"
+                onClick={(e) => {
+                  // The button can disappear (last page): the focus goes to the first new card.
+                  const list = (e.currentTarget as HTMLElement).previousElementSibling;
+                  setShown({ ...shown, [s]: n + BOARD_PAGE });
+                  requestAnimationFrame(() => (list?.querySelectorAll<HTMLElement>('[data-task]')[n] ?? null)?.focus());
+                }}
+              >
+                {nShowMore(Math.min(BOARD_PAGE, col.length - n))}
+              </button>
+            )}
           </section>
         );
       })}
@@ -258,6 +281,7 @@ function Card({ v }: { v: TaskView }) {
 
 function Table({ tasks, sort, dir }: { tasks: TaskView[]; sort: string; dir: string }) {
   const { route, setQuery, userName } = useApp();
+  const [n, setN] = useState(TABLE_PAGE);
   const head = (key: string, label: Key) => {
     const on = sort === key;
     return (
@@ -282,7 +306,7 @@ function Table({ tasks, sort, dir }: { tasks: TaskView[]; sort: string; dir: str
           </tr>
         </thead>
         <tbody>
-          {tasks.map((v) => (
+          {tasks.slice(0, n).map((v) => (
             <tr key={v.id}>
               <td class="title-cell">
                 <a href={href(route.path, { ...route.query, task: v.id })} data-task={v.id}>
@@ -311,6 +335,19 @@ function Table({ tasks, sort, dir }: { tasks: TaskView[]; sort: string; dir: str
           ))}
         </tbody>
       </table>
+      {tasks.length > n && (
+        <button
+          type="button"
+          class="more"
+          onClick={(e) => {
+            const box = (e.currentTarget as HTMLElement).parentElement;
+            setN(n + TABLE_PAGE);
+            requestAnimationFrame(() => (box?.querySelectorAll<HTMLElement>('tbody [data-task]')[n] ?? null)?.focus());
+          }}
+        >
+          {nShowMore(Math.min(TABLE_PAGE, tasks.length - n))}
+        </button>
+      )}
     </div>
   );
 }

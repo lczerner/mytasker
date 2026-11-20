@@ -30,11 +30,11 @@ Status: complete for version 0.1 (Phase 6).
 |---|---|
 | `src/domain/` | The `Domain` for `oplog-core` (`domain.ts`), op catalogue (`catalog.ts`), permission matrix (`permissions.ts`), status state machine (`status.ts`), state helpers, fractional index, text rules, task views, search, notifications. No DOM. |
 | `../oplog-core` | Shared core (separate repository): canonical JSON, crypto, HLC, verify, replay, engine, storage adapters. |
-| `src/app/` | Browser services: session (folder handle, key file, encrypted cache), files and attachments, IndexedDB, demo data. |
+| `src/app/` | Browser services: session (folder handle, key file, encrypted cache), files and attachments, IndexedDB, demo data, performance data (`perfdata.ts`). |
 | `src/ui/` | Preact UI: start screens (`Gate.tsx`), shell (`App.tsx`), task list, task panel, dialogs, admin screens (`admin.tsx`), audit, revert and integrity (`audit.tsx`), notifications (`Notifications.tsx`), built-in guides (`Help.tsx`, parser `docs.ts`), information bar (`Footer.tsx`), safe Markdown (`markdown.ts`), `i18n.ts` (all texts), `styles.css`. |
 | `test/` | `unit` (state machine and `authorize` matrices, domain rules), `property` (convergence), `simulation` (multi-user on disk, attacks), `e2e`, `perf`, `fixtures` (synthetic only). `helpers.ts` makes a synthetic team. |
 | `docs/` | User guide and admin guide (Czech, built into the app), operations, architecture, data model, security model, wireframes, review checklist, ADRs, open questions. |
-| `scripts/` | `check-build.mjs` (build check, also the third-party notices), `release.mjs` (release package), `commit.mjs` (the commit of a build). |
+| `scripts/` | `check-build.mjs` (build check, also the third-party notices), `release.mjs` (release package), `commit.mjs` (the commit of a build), `screenshots.mjs` (guide images). |
 | `release/` | `create-folders.sh` (empty folder skeleton). `release/app/` is generated and git-ignored. |
 | `.claude/agents/mt-reviewer.md` | Claude Code subagent for the expert review (uses `docs/review-checklist.md`). |
 | `Makefile` | Wrapper targets. `make help` lists them. |
@@ -54,7 +54,7 @@ npm run test:e2e       # build + browser tests (CHROMIUM=/path/to/chromium)
 npm run release        # release/app/: index.html, LICENSE, THIRD-PARTY-NOTICES.md, VERSION, SHA256SUMS
 ```
 
-`npm run test:e2e` runs the demo flows, the real flow with OPFS (new installation, enrollment, approval) and the layout test. `make demo` builds and prints the URL of the demo mode (`?demo`, `?demo=petr`, `?demo=large`). `npm run perf` comes in Phase 7. `SIM_SEED` and `SIM_ROUNDS` change the simulation run.
+`npm run test:e2e` runs the demo flows, the real flow with OPFS (new installation, enrollment, approval) and the layout test. `make demo` builds and prints the URL of the demo mode (`?demo`, `?demo=petr`, `?demo=large`). `npm run perf` measures 5 000 tasks with about 100 000 ops (`docs/performance.md`); `dist/index.html?demo=perf` measures the UI. `node scripts/screenshots.mjs` (after a build) makes the guide images `docs/img/*.jpg` from the demo. `SIM_SEED` and `SIM_ROUNDS` change the simulation run.
 
 ## 5a. Checklist: add a new op type or status
 
@@ -73,7 +73,7 @@ npm run release        # release/app/: index.html, LICENSE, THIRD-PARTY-NOTICES.
 1. **Stop and ask** the owner before you change the op format, the permission matrix or the status state machine. Record the question and the answer in `docs/open-questions.md`.
 2. **Temporary files** (probes, screenshots, test folders) go to a temporary directory outside the repository.
 3. **Language.** Docs, comments and commit messages: English in Simplified Technical English style. UI text: Czech, in `src/ui/i18n.ts`. The guides `docs/user-guide.md` and `docs/admin-guide.md`: Czech.
-4. **The guides are part of the app.** The build bundles them, and the app shows them (**Nápověda**, **Příručka správce**). Keep them correct for the current version: use the exact button names from `src/ui/i18n.ts`. Their parser (`src/ui/docs.ts`) supports headings, paragraphs, notes (`> `), flat lists (no nested lists) and links inside the app (`#/help?s=<section>`). Do not use external URLs (the build check refuses them). `test/unit/docs.test.ts` checks these rules and the links.
+4. **The guides are part of the app.** The build bundles them, and the app shows them (**Nápověda**, **Příručka správce**). Keep them correct for the current version: use the exact button names from `src/ui/i18n.ts`. Their parser (`src/ui/docs.ts`) supports headings, paragraphs, notes (`> `), flat lists (no nested lists), images from `docs/img/` (`![text](img/<name>.jpg)`, made by `scripts/screenshots.mjs` from synthetic demo data) and links inside the app (`#/help?s=<section>`). Do not use external URLs (the build check refuses them). `test/unit/docs.test.ts` checks these rules and the links.
 
 ## 7. Git workflow
 

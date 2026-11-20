@@ -14,6 +14,10 @@ import { Dialog } from './widgets';
 
 export type Guide = 'user' | 'admin';
 const SOURCES: Record<Guide, string> = { user: USER_GUIDE, admin: ADMIN_GUIDE };
+/** The images of the guides (docs/img/*.jpg), bundled as data: URLs. */
+const IMAGES: Record<string, string> = Object.fromEntries(
+  Object.entries(import.meta.glob<string>('../../docs/img/*.jpg', { eager: true, query: '?inline', import: 'default' })).map(([p, url]) => [p.split('/').pop()!, url]),
+);
 /** The route of a guide: #/help (user guide) and #/help/admin. */
 const ROUTE: Record<Guide, string[]> = { user: ['help'], admin: ['help', 'admin'] };
 
@@ -84,6 +88,17 @@ function DocView({ guide, onLocal, section }: { guide: Guide; onLocal: (href: st
       }
       case 'p':
         return <p key={i}>{inl(b.c, onLocal)}</p>;
+      case 'img':
+        return IMAGES[b.name] ? (
+          <figure key={i} class="doc-img">
+            <img src={IMAGES[b.name]} alt={b.alt} loading="lazy" />
+            <figcaption>{b.alt}</figcaption>
+          </figure>
+        ) : (
+          <p key={i} class="muted">
+            [{b.alt}]
+          </p>
+        );
       case 'note':
         return (
           <p key={i} class="doc-note">

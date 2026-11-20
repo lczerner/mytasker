@@ -33,6 +33,8 @@ Status: design draft (Phase 2). The labels are the Czech texts of the UI. All na
 - Status columns have an icon and a label. The status is clear without color.
 - Verified tasks are hidden by default (Q-25): the board shows 4 columns, and the filter row has the switch "Zobrazit zkontrolované (N)". With the switch, or with the status filter "Zkontrolováno", the column "Zkontrolováno" and the verified tasks show. The sidebar counts do not count verified tasks.
 - The board has no drag and drop in the first version (Q-15).
+- A board column shows 100 cards, the table 200 rows. The button **Zobrazit další …** under the list (for example "Zobrazit dalších 100") shows the next page, and the focus goes to the first new card or row. A change of the filters, the search or the sort starts again at the first page. The count in the header shows all tasks (`docs/performance.md`).
+- Admins see **Trvale odstranit soubor** at each attachment that is not purged. The dialog needs a reason and shows how many attachments use the same file.
 - An information bar is fixed at the bottom of all screens, also of the start screens: "Úkoly <version> (<commit>) · © 2026 Lukáš Czerner · Licence MIT". The bar has 1 line. Below 520 px it hides the author. "Licence MIT" opens a dialog with the license text from the bundle (no network). The messages show above the bar. The status changes in the task panel. Reason: a drop makes an op with no confirmation, and keyboard use is difficult.
 - The "Správa" section shows only to admins. "Ke kontrole" shows only to verifiers and admins.
 

@@ -157,6 +157,12 @@ const cs = {
   'task.linkUrl': 'Adresa odkazu (začíná http:, https: nebo mailto:)',
   'task.linkTitle': 'Popisek (nepovinný)',
   'task.download': 'Stáhnout',
+  'task.filePurge': 'Trvale odstranit soubor',
+  'task.filePurgeText': 'Soubor „{name}“ se trvale odstraní ze sdílené složky. Je přiložený celkem u {n}. U všech se zobrazí „odstraněno“.',
+  'task.filePurgedUpload': 'Tento soubor správce trvale odstranil. Znovu ho přiložit nejde.',
+  'task.filePurgeWarn': 'Odstranění nejde vrátit. Použijte ho jen pro soubor, který do aplikace nepatří (například citlivý dokument přiložený omylem).',
+  'task.filePurgeReason': 'Důvod',
+  'task.filePurgeDeleteFailed': 'Soubor se nepodařilo smazat ({path}). Ostatní ho přesto neotevřou. Smažte ho ručně.',
   'task.fileRemove': 'Odebrat přílohu',
   'task.linkRemove': 'Odebrat odkaz',
   'task.filePurged': 'odstraněno',
@@ -444,6 +450,9 @@ export const nShownChanges = (n: number, total: number): string => {
 export const nShowMore = (n: number): string => `Zobrazit ${plural.select(n) === 'many' || plural.select(n) === 'other' ? 'dalších' : 'další'} ${n}`;
 /** "a další 1 zápis", "a další 3 zápisy", "a dalších 7 zápisů". */
 export const nMoreWrites = (n: number): string => `a ${plural.select(n) === 'one' || plural.select(n) === 'few' ? 'další' : 'dalších'} ${plu(n, ['zápis', 'zápisy', 'zápisů'])}`;
+
+/** "u 1 přílohy", "u 3 příloh" (genitive after "u"). */
+export const nAttachmentsGen = (n: number): string => plu(n, ['přílohy', 'příloh', 'příloh']);
 
 /** "1 nepřečtené", "2 nepřečtená", "5 nepřečtených". */
 export const nUnread = (n: number): string => plu(n, ['nepřečtené', 'nepřečtená', 'nepřečtených']);

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
 import { MemoryStorage, sha256Hex } from 'oplog-core';
-import { blobPath, loadBlob, sniffImage, storeBlob } from '../../src/app/files';
+import { blobPath, loadBlob, purgeBlobFile, PurgedBlobError, sniffImage, storeBlob } from '../../src/app/files';
 
 const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
 const enc = (s: string) => new TextEncoder().encode(s);
@@ -39,5 +39,27 @@ describe('cache key of an installation', () => {
     expect(a).toMatch(/^[0-9a-f]{16}$/);
     expect(a).not.toBe(b);
     expect(await installIdOf('{"v":1,"roots":[{"keyId":"ka"}]}')).toBe(a);
+  });
+});
+
+describe('purge of a blob file', () => {
+  const bytes = new TextEncoder().encode('citlivý dokument');
+  it('storeBlob refuses the content of a purged file before it writes anything', async () => {
+    const storage = new MemoryStorage();
+    const sha = await storeBlob(storage, bytes);
+    await storage.remove(`data/files/${sha}`);
+    await expect(storeBlob(storage, bytes, (s) => s === sha)).rejects.toBeInstanceOf(PurgedBlobError);
+    expect(await storage.readBytes(`data/files/${sha}`)).toBeNull();
+  });
+  it('purgeBlobFile tells a deleted, a missing and a failed delete apart', async () => {
+    const storage = new MemoryStorage();
+    const sha = await storeBlob(storage, bytes);
+    expect(await purgeBlobFile(storage, sha)).toBe('deleted');
+    expect(await storage.readBytes(`data/files/${sha}`)).toBeNull();
+    expect(await purgeBlobFile(storage, sha)).toBe('missing');
+    // A storage that cannot delete (for example a OneDrive lock): remove() returns false, the file stays.
+    await storeBlob(storage, bytes);
+    const locked = Object.assign(Object.create(storage), { remove: async () => false }) as MemoryStorage;
+    expect(await purgeBlobFile(locked, sha)).toBe('failed');
   });
 });

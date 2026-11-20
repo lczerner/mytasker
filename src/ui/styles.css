@@ -891,6 +891,11 @@ dialog h2 {
   margin: 0 0 0.5rem;
 }
 
+button.more {
+  margin: 0.5rem 0;
+  width: 100%;
+}
+
 /* ---- Audit, history, revert, integrity ---- */
 .toolbar {
   gap: 0.5rem;
@@ -1037,6 +1042,18 @@ button.link.danger-link {
   background: var(--bg);
   padding: 0 0.25rem;
   border-radius: 4px;
+}
+.doc-img {
+  margin: 1rem 0;
+}
+.doc-img img {
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.doc-img figcaption {
+  font-size: 0.85rem;
+  color: var(--muted);
 }
 .doc-note {
   background: var(--warn-bg);

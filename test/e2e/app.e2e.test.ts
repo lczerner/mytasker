@@ -264,6 +264,21 @@ describe('real flow with a folder (OPFS instead of the native dialogs, http://12
     await unlockAlena();
     await page.waitForSelector('.bell[data-ready]');
     expect(await page.locator('.bell-n').count()).toBe(0);
+
+    // FileSystemObserver: an unknown file in the shared folder shows in the integrity view within
+    // seconds. Polling cannot find it so fast (a quick scan does not list new folders; a full scan
+    // runs at every 8th poll, 2 minutes).
+    if (await page.evaluate(() => 'FileSystemObserver' in window)) {
+      expect(await page.locator('nav a[href="#/admin/integrity"] .badge').count()).toBe(0);
+      await page.evaluate(async () => {
+        const root = await (await navigator.storage.getDirectory()).getDirectoryHandle('shared');
+        const dir = await (await (await root.getDirectoryHandle('data')).getDirectoryHandle('ops')).getDirectoryHandle('neznamy', { create: true });
+        const w = await (await dir.getFileHandle('kopie.json', { create: true })).createWritable();
+        await w.write('{}');
+        await w.close();
+      });
+      await page.waitForSelector('nav a[href="#/admin/integrity"] .badge', { timeout: 5000 });
+    } else console.warn('FileSystemObserver is not available in this Chromium: the check is skipped');
     expect(errors).toEqual([]);
     await ctx.close();
   }, 120_000);

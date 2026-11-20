@@ -461,4 +461,63 @@ describe('more flows (demo over file://)', () => {
     expect(errors).toEqual([]);
     await page.close();
   }, 60_000);
+
+  it('large lists: a board column and the table show the first page and "Zobrazit další"', async () => {
+    const { page, errors } = await open('large');
+    // The column with the most tasks: its header count is above the first page (100).
+    const col = page.locator('.col').filter({ has: page.locator('button.more') }).first();
+    await col.waitFor();
+    const total = Number(await col.locator('.col-head .count').textContent());
+    expect(total).toBeGreaterThan(100);
+    expect(await col.locator('[data-task]').count()).toBe(100);
+    await col.locator('button.more').focus();
+    await page.keyboard.press('Enter');
+    // The focus goes to the first new card (card 101).
+    await page.waitForFunction(() => {
+      const el = document.activeElement;
+      const col = el?.closest('.col');
+      return !!col && [...col.querySelectorAll('[data-task]')].indexOf(el as Element) === 100;
+    });
+    await page.waitForFunction((n) => [...document.querySelectorAll('.col')].some((c) => c.querySelectorAll('[data-task]').length === n), Math.min(200, total));
+    await page.evaluate(() => (location.hash = '#/all?view=table&verified=1'));
+    await page.waitForSelector('table.tasks');
+    expect(await page.locator('table.tasks tbody tr').count()).toBe(200);
+    await page.click('.table-box button.more');
+    await page.waitForFunction(() => document.querySelectorAll('table.tasks tbody tr').length > 200);
+    expect(errors).toEqual([]);
+    await page.close();
+  }, 60_000);
+
+  it('an admin purges an attachment file: reason, "odstraněno", an audit entry; no purge for a user', async () => {
+    const upload = async (page: Page) => {
+      await task(page, 'Objednat toner');
+      await page.setInputFiles('.drawer input[type=file]', { name: 'omylem.txt', mimeType: 'text/plain', buffer: Buffer.from('citlivé') });
+      await page.waitForSelector('.drawer .files li:has-text("omylem.txt") button:has-text("Stáhnout")');
+    };
+    const eva = await open('eva');
+    await upload(eva.page);
+    expect(await eva.page.locator('.drawer button:has-text("Trvale odstranit soubor")').count()).toBe(0);
+    await eva.page.close();
+
+    const { page, errors } = await open('alena');
+    await upload(page);
+    await page.click('.drawer .files li:has-text("omylem.txt") button:has-text("Trvale odstranit soubor")');
+    await page.waitForSelector('dialog[open]:has-text("Odstranění nejde vrátit.")');
+    // The reason is required.
+    expect(await page.locator('dialog[open] button.danger').isDisabled()).toBe(true);
+    await page.fill('dialog[open] input[type=text]', 'Přiloženo omylem');
+    await page.click('dialog[open] button.danger');
+    await page.waitForSelector('dialog[open]', { state: 'detached' });
+    await page.waitForSelector('.drawer .files li:has-text("omylem.txt"):has-text("odstraněno")');
+    expect(await page.locator('.drawer .files li:has-text("omylem.txt") button:has-text("Stáhnout")').count()).toBe(0);
+    // The same content cannot come back: the upload is refused before any write.
+    const before = await page.locator('.drawer .files li').count();
+    await page.setInputFiles('.drawer input[type=file]', { name: 'znovu.txt', mimeType: 'text/plain', buffer: Buffer.from('citlivé') });
+    await page.waitForSelector('.toast-error:has-text("Znovu ho přiložit nejde")');
+    expect(await page.locator('.drawer .files li').count()).toBe(before);
+    await page.evaluate(() => (location.hash = '#/admin/audit'));
+    await page.waitForSelector('table.audit tbody tr:first-child:has-text("Trvalé odstranění souboru")');
+    expect(errors).toEqual([]);
+    await page.close();
+  }, 60_000);
 });

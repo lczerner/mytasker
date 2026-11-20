@@ -108,6 +108,24 @@ export function App(props: AppProps) {
     }
   }, [hash]);
 
+  // FileSystemObserver (if the browser has it): a change in the shared folder starts a full scan
+  // after a short pause, so many new files give 1 scan. Polling below stays on as the fallback.
+  useEffect(() => {
+    const FSO = (window as unknown as { FileSystemObserver?: new (cb: () => void) => { observe(h: FileSystemHandle, o: { recursive: boolean }): Promise<void>; disconnect(): void } }).FileSystemObserver;
+    const root = (storage as { root?: FileSystemHandle }).root;
+    if (!FSO || !root || root.kind !== 'directory') return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const obs = new FSO(() => {
+      clearTimeout(timer);
+      timer = setTimeout(() => void refresh('full'), 1500);
+    });
+    obs.observe(root, { recursive: true }).catch(() => undefined);
+    return () => {
+      clearTimeout(timer);
+      obs.disconnect();
+    };
+  }, []);
+
   // Polling (FileSystemObserver is optional; polling is the fallback and stays on).
   useEffect(() => {
     const ms = Math.max(5, model.settings.pollSeconds) * 1000;

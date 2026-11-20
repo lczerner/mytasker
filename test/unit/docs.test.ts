@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
 // The parser of the built-in guides, and the guides themselves (headings, links).
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { parseDoc, slug, tocOf, type DocBlock } from '../../src/ui/docs';
 import type { Inline } from '../../src/ui/markdown';
 
@@ -29,6 +29,12 @@ describe('parseDoc', () => {
     expect(allLinks(b)).toEqual(['#/help?s=x', 'https://example.org/']);
   });
 
+  it('makes an image only from a file name in img/; other image lines are text', () => {
+    const b = parseDoc('![Tabule](img/tabule.jpg)\n\n![x](img/../tajne.jpg)\n\n![x](javascript:alert(1))\n\n![x](https://example.org/a.jpg)');
+    expect(b[0]).toEqual({ k: 'img', alt: 'Tabule', name: 'tabule.jpg' });
+    expect(b.slice(1).every((x) => x.k === 'p')).toBe(true);
+  });
+
   it('keeps raw HTML as text', () => {
     const b = parseDoc('<img src=x onerror=alert(1)>');
     expect(b).toEqual([{ k: 'p', c: [{ k: 'text', v: '<img src=x onerror=alert(1)>' }] }]);
@@ -46,6 +52,9 @@ describe('the guides', () => {
       expect(src).not.toMatch(/https?:\/\/[a-z]/i);
       const blocks = parseDoc(src);
       expect(tocOf(blocks).length).toBeGreaterThan(5);
+      // Each image exists (the build bundles docs/img/*.jpg).
+      for (const x of blocks) if (x.k === 'img') expect(existsSync(`docs/img/${x.name}`), x.name).toBe(true);
+      expect(blocks.some((x) => x.k === 'img')).toBe(true);
       for (const href of allLinks(blocks)) {
         const [path, q = ''] = href.slice(2).split('?');
         const g = path === route.user ? 'user' : path === route.admin ? 'admin' : null;

@@ -102,7 +102,15 @@ Role changes apply by order, not by cutoff (`docs/data-model.md` §6.2). An admi
 
 A non-root admin must not do this: the admin who is not trusted can then revoke the key of that admin with an old time, and the replay reports an integrity issue.
 
-## 5. Repair of the op files
+## 5. Attachment purge
+
+An admin purges an attachment file in the task panel (**Trvale odstranit soubor**, a reason is required). The app writes a `PurgeBlob` op, then deletes `data/files/<sha256>`. All attachments with this hash show "odstraněno". The purge cannot be undone, and a later `AddAttachment` with the same hash is superseded (`docs/data-model.md` §11).
+
+- If the delete fails (for example a OneDrive lock), the app shows a message with the path. Other clients do not open a purged file. Delete the file by hand: the button is gone after the purge.
+- The app refuses a new upload of the same content. A computer that did not yet see the `PurgeBlob` op can still write the file again. If the file comes back, delete it by hand.
+- OneDrive keeps the deleted file in its recycle bin and version history for some time. For a sensitive file, delete it there too.
+
+## 6. Repair of the op files
 
 The rule: never change or delete an op file. A repair restores the original file.
 
@@ -111,12 +119,15 @@ The rule: never change or delete an op file. A repair restores the original file
 - **`unknown-file`:** usually a OneDrive conflict copy (the computer name is in the file name). The app ignores it. Check the content, then delete the file.
 - **A file of another author under the next number of a user** (ADR 0014): the chain skips such a file. No repair is necessary. Delete the file.
 
-## 6. Backup and restore
+## 7. Backup and restore
 
 - OneDrive keeps a version history and a recycle bin. That covers most accidents.
 - Copy the full shared folder to a different safe location 1 time each month. The ops are immutable, so an incremental copy is sufficient.
 - To restore a full folder: copy the backup into an empty shared folder. Each client then reads the ops from the start. Ops that the users wrote after the backup are lost, except the ops that are still on their computers in the encrypted cache. The cache does not write ops back to the folder.
 
-## 7. Performance
+## 8. Performance
 
-Phase 7 measures the performance with large data sets. Until then: make a checkpoint (**Správa → Kontrolní body**) when the number of op files outside checkpoints is more than about 2 000.
+`docs/performance.md` has the measurements with 5 000 tasks and about 100 000 ops, and the method (`npm run perf`, and `index.html?demo=perf` in the browser). Short form:
+
+- The first start on a new computer reads and checks all ops. This takes about 10 seconds at 100 000 ops on a fast computer, and more on Windows with OneDrive. Later starts use the encrypted cache.
+- Make a checkpoint (**Správa → Kontrolní body**) when more than about 2 000 op files are outside checkpoints. A checkpoint replaces many small file reads with 1 file. It does not save the signature checks: the app checks each op in a checkpoint again.

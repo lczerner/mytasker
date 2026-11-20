@@ -51,9 +51,20 @@ export async function openTextFile(accept: Record<string, string[]> = { 'applica
 
 export const blobPath = (sha256: string) => `data/files/${sha256}`;
 
-/** Writes the blob if it does not exist yet (deduplication by content). Returns its SHA-256. */
-export async function storeBlob(storage: Storage, bytes: Uint8Array): Promise<string> {
+/** An admin purged this content (PurgeBlob): it must not come back into the shared folder. */
+export class PurgedBlobError extends Error {
+  constructor(readonly sha256: string) {
+    super('purged');
+  }
+}
+
+/**
+ * Writes the blob if it does not exist yet (deduplication by content). Returns its SHA-256.
+ * `isPurged` refuses the content of a purged file BEFORE the write (data-model §11).
+ */
+export async function storeBlob(storage: Storage, bytes: Uint8Array, isPurged: (sha256: string) => boolean = () => false): Promise<string> {
   const sha = await sha256Hex(bytes);
+  if (isPurged(sha)) throw new PurgedBlobError(sha);
   if ((await storage.readBytes(blobPath(sha))) !== null) return sha;
   try {
     await storage.writeNewBytes(blobPath(sha), bytes);
@@ -61,6 +72,15 @@ export async function storeBlob(storage: Storage, bytes: Uint8Array): Promise<st
     if (!(e instanceof FileExistsError)) throw e; // written by another client at the same time: the same content
   }
   return sha;
+}
+
+/**
+ * Deletes the file of a purged blob. `Storage.remove` returns false (it does not throw) for a
+ * missing file and for a failed delete, so a false result is checked with a read.
+ */
+export async function purgeBlobFile(storage: Storage, sha256: string): Promise<'deleted' | 'missing' | 'failed'> {
+  if (await storage.remove(blobPath(sha256))) return 'deleted';
+  return (await storage.readBytes(blobPath(sha256))) === null ? 'missing' : 'failed';
 }
 
 export type BlobResult = { ok: true; bytes: Uint8Array } | { ok: false; reason: 'missing' | 'bad' };

@@ -10,6 +10,8 @@ export type DocBlock =
   | { k: 'h'; level: 1 | 2 | 3; id: string; c: Inline[]; text: string }
   | { k: 'p'; c: Inline[] }
   | { k: 'note'; c: Inline[] }
+  /** An image of the guide: only a file name in docs/img/ (the build bundles these files). */
+  | { k: 'img'; name: string; alt: string }
   | { k: 'ul'; items: Inline[][] }
   | { k: 'ol'; start: number; items: Inline[][] };
 
@@ -53,6 +55,9 @@ function localLinks(nodes: Inline[]): Inline[] {
 
 const inline = (s: string) => localLinks(parseInline(s));
 
+/** An image line: ![alt](img/<name>.jpg). Other image lines are text. */
+const IMG_RE = /^!\[([^\]\n]{1,200})\]\(img\/([a-z0-9-]{1,40}\.jpg)\)$/;
+
 export function parseDoc(src: string): DocBlock[] {
   const blocks: DocBlock[] = [];
   const seen = new Map<string, number>();
@@ -71,7 +76,9 @@ export function parseDoc(src: string): DocBlock[] {
       lines.shift();
       if (!lines.length) continue;
     }
-    if (lines.every((l) => /^>\s?/.test(l))) blocks.push({ k: 'note', c: inline(lines.map((l) => l.replace(/^>\s?/, '')).join('\n')) });
+    const img = lines.length === 1 ? IMG_RE.exec(lines[0]) : null;
+    if (img) blocks.push({ k: 'img', alt: img[1], name: img[2] });
+    else if (lines.every((l) => /^>\s?/.test(l))) blocks.push({ k: 'note', c: inline(lines.map((l) => l.replace(/^>\s?/, '')).join('\n')) });
     else if (lines.every((l) => /^\s*[-*]\s+/.test(l))) blocks.push({ k: 'ul', items: lines.map((l) => inline(l.replace(/^\s*[-*]\s+/, ''))) });
     else if (lines.every((l) => /^\s*\d{1,3}[.)]\s+/.test(l))) blocks.push({ k: 'ol', start: Number(/\d+/.exec(lines[0])![0]), items: lines.map((l) => inline(l.replace(/^\s*\d{1,3}[.)]\s+/, ''))) });
     else blocks.push({ k: 'p', c: inline(lines.join('\n')) });

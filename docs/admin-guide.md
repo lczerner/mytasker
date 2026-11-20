@@ -51,6 +51,8 @@ Schválení se k uživateli dostane synchronizací OneDrive. Jeho aplikace se pa
 
 ## 4. Uživatelé, role a klíče
 
+![Správa uživatelů: role, kontrola úkolů, klíče a tlačítka](img/uzivatele.jpg)
+
 Obrazovka **Správa → Uživatelé** ukazuje všechny uživatele, jejich role, právo kontrolovat úkoly, klíče a stav.
 
 - **Nastavit jako správce** a **Odebrat práva správce**: správce může vše, co popisuje tato příručka.
@@ -96,6 +98,16 @@ Odebrání práv správce platí podle pořadí změn. Správce, kterému nedův
 
 **Správa → Štítky**: **Přejmenovat**, **Sloučit do…** (úkoly dostanou cílový štítek) a **Smazat** (štítek zmizí ze všech úkolů).
 
+### Trvalé odstranění souboru
+
+Když někdo omylem přiloží soubor, který do aplikace nepatří (například citlivý dokument), odeberte ho trvale:
+
+1. Otevřete úkol a u přílohy klikněte na **Trvale odstranit soubor**.
+2. Dialog ukáže, u kolika příloh je stejný soubor. Zmizí u všech.
+3. Zadejte důvod a potvrďte. Aplikace soubor smaže ze složky `data/files`.
+
+Odstranění nejde vrátit. Přílohy se pak zobrazí jako „odstraněno“. Pokud se soubor smazat nepodaří, aplikace to oznámí a ukáže jeho cestu. Ostatní ho přesto neotevřou: smažte ho ručně. Pokud někdo stejný soubor později přiloží znovu, aplikace to odmítne. Soubor může ještě nějakou dobu zůstat v koši a v historii verzí OneDrive: pokud je citlivý, odstraňte ho i tam.
+
 ### Koš a zkontrolované úkoly
 
 - **Správa → Koš** ukazuje smazané úkoly. **Obnovit z koše** vrátí úkol do stavu před smazáním.
@@ -104,6 +116,8 @@ Odebrání práv správce platí podle pořadí změn. Správce, kterému nedův
 ## 6. Audit a vrácení změn
 
 **Správa → Audit** ukazuje všechny změny, nejnovější nahoře. Filtrujte podle textu, autora, druhu změny, stavu, data nebo úkolu (odkaz **jen tento úkol**). Kliknutím na změnu zobrazíte podrobnosti: co se změnilo, původní a novou hodnotu, klíč autora a ověření podpisu.
+
+![Audit s otevřeným detailem změny](img/audit.jpg)
 
 Stav změny:
 
@@ -129,7 +143,7 @@ Nový počítač při prvním spuštění načítá všechny soubory změn. Po d
 1. Otevřete **Správa → Kontrolní body**. Uvidíte počet souborů změn a kolik jich ještě není v kontrolním bodu.
 2. Klikněte na **Vytvořit kontrolní bod** pro **Úkoly**, případně i pro **Uživatelé a nastavení**.
 
-Kontrolní bod nic nemaže a ničemu neškodí. Doporučení: vytvořte ho, když je mimo kontrolní body přes 2 000 souborů.
+Kontrolní bod nic nemaže a ničemu neškodí. Doporučení: vytvořte ho, když je mimo kontrolní body přes 2 000 souborů. Na Windows s OneDrive je čtení tisíců malých souborů pomalé, takže kontrolní bod tam pomáhá nejvíc. Po prvním spuštění si každý počítač pamatuje načtené změny (zašifrovaně), a další spuštění jsou rychlá.
 
 ## 8. Integrita
 

@@ -3,7 +3,7 @@
 // Task detail panel (drawer). Each change is 1 op at once.
 import { uuidv7, type AuditEntry, type Entity } from 'oplog-core';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { downloadBytes, imageUrl, loadBlob, storeBlob } from '../app/files';
+import { downloadBytes, imageUrl, loadBlob, purgeBlobFile, PurgedBlobError, storeBlob } from '../app/files';
 import { LIMITS, type Status } from '../domain/constants';
 import { comparePos, keyBetween, planMove } from '../domain/fractional';
 import { TRANSITIONS, STATUS_OPS, type StatusOp } from '../domain/status';
@@ -12,9 +12,9 @@ import type { TaskView } from '../domain/view';
 import { ChangeDetail, changeLabel, entityLabel, fieldText, RevertDialog, tasksOf, valueText, visibleWrites } from './audit';
 import { focusTask, href, useApp } from './ctx';
 import { DoneDialog, DeleteDialog, ResumeDialog, ReturnDialog } from './dialogs';
-import { collator, fmtDateTime, nMoreWrites, fmtRelative, isoToInputs, opLabel, pragueToIso, t, type Key } from './i18n';
+import { collator, fmtDateTime, nAttachmentsGen, nMoreWrites, fmtRelative, isoToInputs, opLabel, pragueToIso, t, type Key } from './i18n';
 import { Markdown } from './Markdown';
-import { Avatar, DueLabel, Picker, StatusBadge, TagChip, useBusy } from './widgets';
+import { Avatar, Dialog, DueLabel, Picker, StatusBadge, TagChip, useBusy } from './widgets';
 
 export function TaskPanel({ id }: { id: string }) {
   const app = useApp();
@@ -330,10 +330,12 @@ function Files({ v, ro }: { v: TaskView; ro: boolean }) {
     if (isBlockedFileName(f.name)) return app.toast(t('task.fileBlocked'), 'error');
     if (f.size > app.settings.maxAttachmentMB * 1024 * 1024) return app.toast(t('task.fileTooBig', { mb: app.settings.maxAttachmentMB }), 'error');
     try {
-      const sha256 = await storeBlob(app.storage, new Uint8Array(await f.arrayBuffer()));
+      const purged = (sha: string) => app.engine.state.scopes.data?.blob?.[sha]?.purged === true;
+      const sha256 = await storeBlob(app.storage, new Uint8Array(await f.arrayBuffer()), purged);
       await app.act('AddAttachment', { id: uuidv7(), taskId: v.id, sha256, name: f.name.slice(0, LIMITS.fileName), mime: (f.type || 'application/octet-stream').slice(0, LIMITS.mime), size: f.size });
     } catch (e) {
-      app.toast(t('msg.writeFailed', { reason: (e as Error).message }), 'error');
+      if (e instanceof PurgedBlobError) app.toast(t('task.filePurgedUpload'), 'error');
+      else app.toast(t('msg.writeFailed', { reason: (e as Error).message }), 'error');
     }
   };
   return (
@@ -411,6 +413,7 @@ function Attachment({ a, ro }: { a: Entity; ro: boolean }) {
   const purged = app.engine.state.scopes.data?.blob?.[String(a.sha256)]?.purged === true;
   const [thumb, setThumb] = useState<string | null>(null);
   const [problem, setProblem] = useState<'missing' | 'bad' | null>(null);
+  const [purging, setPurging] = useState(false);
   const name = String(a.name);
   const txt = downloadName(name) !== name.replace(/[. ]+$/, '') && extensionOf(name) !== null;
   useEffect(() => {
@@ -451,7 +454,67 @@ function Attachment({ a, ro }: { a: Entity; ro: boolean }) {
           🗑
         </button>
       )}
+      {app.isAdmin && !purged && (
+        <button type="button" class="link small danger-link" onClick={() => setPurging(true)}>
+          {t('task.filePurge')}
+        </button>
+      )}
+      {purging && <PurgeDialog sha256={String(a.sha256)} name={name} onClose={() => setPurging(false)} />}
     </li>
+  );
+}
+
+/**
+ * Purge of an attachment file (admins, data-model §11): a PurgeBlob op, then the file in
+ * data/files/ is deleted. All attachments with the same content show "odstraněno". Permanent.
+ */
+function PurgeDialog({ sha256, name, onClose }: { sha256: string; name: string; onClose: () => void }) {
+  const app = useApp();
+  const [reason, setReason] = useState('');
+  const [busy, setBusy, isBusy] = useBusy();
+  const uses = Object.values(app.engine.state.scopes.data?.attachment ?? {}).filter((x) => x.sha256 === sha256 && x.status === 'active').length;
+  const purge = async () => {
+    if (isBusy() || !reason.trim()) return;
+    setBusy(true);
+    if ((await app.act('PurgeBlob', { sha256, reason: reason.trim() })) !== 'rejected') {
+      // The op is the decision. The delete of the file can fail (for example a OneDrive lock):
+      // then other clients still do not open the file, and the admin deletes it by hand (the
+      // button is gone after the purge). "missing": the file is not on this computer (not synced).
+      let r: Awaited<ReturnType<typeof purgeBlobFile>> = 'failed';
+      try {
+        r = await purgeBlobFile(app.storage, sha256);
+      } catch {
+        /* r stays 'failed' */
+      }
+      if (r === 'failed') app.toast(t('task.filePurgeDeleteFailed', { path: `data/files/${sha256}` }), 'error');
+      onClose();
+    } else setBusy(false);
+  };
+  return (
+    <Dialog title={t('task.filePurge')} onClose={onClose}>
+      <p>{t('task.filePurgeText', { name, n: nAttachmentsGen(uses) })}</p>
+      <p class="warn">{t('task.filePurgeWarn')}</p>
+      <form
+        class="stack"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void purge();
+        }}
+      >
+        <label>
+          {t('task.filePurgeReason')} *
+          <input type="text" required autoFocus maxLength={LIMITS.reason} value={reason} onInput={(e) => setReason((e.target as HTMLInputElement).value)} />
+        </label>
+        <div class="row end">
+          <button type="button" onClick={onClose}>
+            {t('dlg.cancel')}
+          </button>
+          <button type="submit" class="danger" disabled={busy || !reason.trim()}>
+            {t('task.filePurge')}
+          </button>
+        </div>
+      </form>
+    </Dialog>
   );
 }
 

@@ -111,5 +111,6 @@ export const useApp = () => useContext(Ctx);
 
 /** After the panel closes, the focus goes back to the card or row of the task. */
 export function focusTask(id: string): void {
-  requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-task="${CSS.escape(id)}"]`)?.focus());
+  // A task that is not on the shown page (or not in the view): the main content gets the focus.
+  requestAnimationFrame(() => (document.querySelector<HTMLElement>(`[data-task="${CSS.escape(id)}"]`) ?? document.getElementById('main'))?.focus());
 }
