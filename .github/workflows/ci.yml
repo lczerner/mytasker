@@ -1,0 +1,135 @@
+# SPDX-License-Identifier: MIT
+# Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
+# CI for pull requests and for master: typecheck, tests (unit, property, simulation), SBOM with
+# its checks, build check and browser tests. All test data is synthetic.
+#
+# mytasker uses the private repository lczerner/oplog-core as "file:../oplog-core". The CI checks
+# out the commit of .oplog-core-ref next to mytasker, with a read-only deploy key:
+#   secret OPLOG_CORE_DEPLOY_KEY (Actions secret, and also a Dependabot secret, because the runs
+#   of Dependabot pull requests can read only Dependabot secrets). See AGENTS.md §7.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: mytasker
+
+jobs:
+  test:
+    name: Typecheck, tests and SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: mytasker
+          persist-credentials: false
+      - name: Pinned oplog-core commit and deploy key
+        id: oplog
+        env:
+          KEY: ${{ secrets.OPLOG_CORE_DEPLOY_KEY }}
+        shell: bash
+        run: |
+          ref=$(tr -d '[:space:]' < .oplog-core-ref)
+          [[ $ref =~ ^[0-9a-f]{40}$ ]] || { echo "::error::.oplog-core-ref must contain a full 40-character commit SHA (make oplog-core-ref)"; exit 1; }
+          [ -n "$KEY" ] || { echo "::error::The secret OPLOG_CORE_DEPLOY_KEY is missing. It must be an Actions secret, and a Dependabot secret for Dependabot PRs. Fork PRs get no secrets. See AGENTS.md §7.1."; exit 1; }
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lczerner/oplog-core
+          ref: ${{ steps.oplog.outputs.ref }}
+          path: oplog-core
+          ssh-key: ${{ secrets.OPLOG_CORE_DEPLOY_KEY }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: mytasker/.nvmrc
+          cache: npm
+          cache-dependency-path: |
+            mytasker/package-lock.json
+            oplog-core/package-lock.json
+      - name: Install (mytasker and oplog-core)
+        run: |
+          npm ci
+          npm ci --prefix ../oplog-core
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit, property and simulation tests
+        run: npm test
+      - name: SBOM (runtime + build) and its checks (runtime packages, third-party notices)
+        run: node scripts/sbom.mjs cyclonedx
+      - name: Audit runtime dependencies (the code inside app/index.html)
+        run: npm audit --omit=dev --audit-level=low
+      - name: Upload SBOM
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sbom-${{ github.sha }}
+          path: mytasker/release/sbom/
+          if-no-files-found: error
+          retention-days: 30
+
+  build:
+    name: Build check and browser tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      # Google Chrome is preinstalled on the GitHub-hosted Ubuntu runners.
+      CHROMIUM: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: mytasker
+          persist-credentials: false
+      - name: Pinned oplog-core commit and deploy key
+        id: oplog
+        env:
+          KEY: ${{ secrets.OPLOG_CORE_DEPLOY_KEY }}
+        shell: bash
+        run: |
+          ref=$(tr -d '[:space:]' < .oplog-core-ref)
+          [[ $ref =~ ^[0-9a-f]{40}$ ]] || { echo "::error::.oplog-core-ref must contain a full 40-character commit SHA (make oplog-core-ref)"; exit 1; }
+          [ -n "$KEY" ] || { echo "::error::The secret OPLOG_CORE_DEPLOY_KEY is missing. It must be an Actions secret, and a Dependabot secret for Dependabot PRs. Fork PRs get no secrets. See AGENTS.md §7.1."; exit 1; }
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: lczerner/oplog-core
+          ref: ${{ steps.oplog.outputs.ref }}
+          path: oplog-core
+          ssh-key: ${{ secrets.OPLOG_CORE_DEPLOY_KEY }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: mytasker/.nvmrc
+          cache: npm
+          cache-dependency-path: |
+            mytasker/package-lock.json
+            oplog-core/package-lock.json
+      - name: Install (mytasker and oplog-core)
+        run: |
+          npm ci
+          npm ci --prefix ../oplog-core
+      - name: Browser version
+        run: '"$CHROMIUM" --version'
+      - name: Build and build check (1 file, no URLs, CSP, notices, loads over file://)
+        run: npm run build
+      - name: Browser tests (demo flows, real flow on OPFS, layout)
+        run: npx vitest run -c vitest.e2e.config.ts
+      - name: Upload the app
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: app-${{ github.sha }}
+          path: mytasker/dist/index.html
+          if-no-files-found: error
+          retention-days: 14

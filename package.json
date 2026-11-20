@@ -12,7 +12,8 @@
     "simulate": "vitest run test/simulation",
     "test:e2e": "vite build && vitest run -c vitest.e2e.config.ts",
     "perf": "PERF=1 vitest run test/perf",
-    "release": "node scripts/release.mjs"
+    "release": "node scripts/release.mjs",
+    "sbom": "node scripts/sbom.mjs"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.10.6",

@@ -20,3 +20,5 @@
 - The tests of the generic code move to `oplog-core`. `mytasker` tests its domain and the integration.
 - A git dependency needs a remote. No remote exists yet (Q-16). Until the owner creates one, `mytasker` uses a `file:../oplog-core` dependency on this computer.
 - Until `system-vzdelavani` migrates, 2 copies of the core exist. A security fix must go into both.
+
+Update 2026-11-20 (Q-27): `oplog-core` is now the private repository `lczerner/oplog-core`. mytasker pins its commit in `.oplog-core-ref` (AGENTS.md §7.1).

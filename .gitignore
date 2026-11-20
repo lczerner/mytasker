@@ -21,6 +21,7 @@ node_modules/
 dist/
 coverage/
 release/app/
+release/sbom/
 test-results/
 playwright-report/
 .vite/
