@@ -21,7 +21,7 @@ make demo             # build, then print the URL of the demo mode
 
 1. Make sure that the CI of `master` is green, and that the local `master` is clean and up to date (`git switch master && git pull --ff-only`). Then run `make check` and `npm run test:e2e`.
 2. If the release has changes for the users, increase `version` in `package.json` first, in a pull request (AGENTS.md §7).
-3. Run `make release`. The result is in `release/app/`:
+3. Run `make release`. It stops if the code of `../oplog-core` is not clean or not at the pinned commit (`.oplog-core-ref`). The result is in `release/app/`:
    - `index.html`: the app, with all code, styles and guides inside.
    - `LICENSE` and `THIRD-PARTY-NOTICES.md`.
    - `VERSION`: the version and the commit, for example `0.1.0 (a44e002)`.

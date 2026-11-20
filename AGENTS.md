@@ -102,7 +102,7 @@ Remote: `github.com/lczerner/mytasker`. The default branch `master` is protected
 mytasker uses the private repository `lczerner/oplog-core` as `file:../oplog-core`. `.oplog-core-ref` pins the commit that the CI checks out.
 
 1. A change in oplog-core is a separate pull request in oplog-core, with its own rules (its `AGENTS.md`).
-2. After the oplog-core commit: `make oplog-core-ref` in mytasker, and commit `.oplog-core-ref` on the mytasker branch. `make check` fails if the code of `../oplog-core` differs from the pinned commit.
+2. After the oplog-core commit: `make oplog-core-ref` in mytasker, and commit `.oplog-core-ref` on the mytasker branch. `make check` and `make release` fail if the code of `../oplog-core` differs from the pinned commit.
 3. The CI can check out only a pushed commit. Push the oplog-core branch (on the owner's command) before the mytasker pull request. The owner merges the oplog-core pull request first.
 4. After that merge, pin the commit on oplog-core `master`: `git -C ../oplog-core switch master && git -C ../oplog-core pull --ff-only`, then `make oplog-core-ref`, and commit `.oplog-core-ref` on the mytasker branch before the owner merges it. Reason: a squash merge or a rebase merge makes a new commit, and the commit of the branch is then not on `master`.
 5. The CI uses a read-only deploy key of oplog-core ("mytasker CI (read-only)"): the secret `OPLOG_CORE_DEPLOY_KEY`, as an Actions secret and as a Dependabot secret of mytasker. The CI stops with a clear message if the secret is missing (for example in a pull request from a fork).

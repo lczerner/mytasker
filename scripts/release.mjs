@@ -9,6 +9,8 @@ import { execSync } from 'node:child_process';
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { gitCommit } from './commit.mjs';
 
+// The release and its SBOM must use exactly the pinned oplog-core code (.oplog-core-ref).
+execSync('node scripts/oplog-core-ref.mjs check', { stdio: 'inherit' });
 execSync('npm run build', { stdio: 'inherit' });
 // The SBOMs of this release (release/sbom/), with their checks (runtime packages and notices).
 execSync('node scripts/sbom.mjs cyclonedx', { stdio: 'inherit' });
