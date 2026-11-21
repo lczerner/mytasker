@@ -4,7 +4,7 @@ Status: complete for version 0.1. §7 (Git workflow) applies since the GitHub re
 
 ## 1. Purpose
 
-"Úkoly" (repository `mytasker`) is a task manager for a small team. The app is 1 HTML file in a shared OneDrive folder. It runs in Edge or Chrome over `file://`. The data is a log of signed, immutable JSON op files. See `docs/architecture.md` and `docs/data-model.md`.
+Tasks ("Úkoly" in the Czech UI, repository `mytasker`) is a task manager for a small team. The app is 1 HTML file in a shared OneDrive folder. It runs in Edge or Chrome over `file://`. The data is a log of signed, immutable JSON op files. See `docs/architecture.md` and `docs/data-model.md`.
 
 ## 2. Constraints (non-negotiable)
 

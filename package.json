@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Serverless task management for a small team (Úkoly) on a shared OneDrive folder",
+  "description": "Serverless task management for a small team (Tasks) on a shared OneDrive folder",
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/check-build.mjs",

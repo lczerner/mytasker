@@ -4,7 +4,7 @@ Status: design (Phase 2). A `Q-` number refers to an answered question in `docs/
 
 ## 1. Summary
 
-"Úkoly" (repository `mytasker`) is a task manager for a small team. It has no server.
+Tasks ("Úkoly" in the Czech UI, repository `mytasker`) is a task manager for a small team. It has no server.
 
 - The app is 1 HTML file in a shared OneDrive folder. Each user opens it from the local copy of the folder over `file://` in Edge or Chrome.
 - The app reads and writes the local copy with the File System Access API. OneDrive syncs the folder between the computers.
