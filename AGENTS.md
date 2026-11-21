@@ -105,7 +105,7 @@ mytasker uses the repository `lczerner/oplog-core` as `file:../oplog-core`. `.op
 2. After the oplog-core commit: `make oplog-core-ref` in mytasker, and commit `.oplog-core-ref` on the mytasker branch. `make check` and `make release` fail if the code of `../oplog-core` differs from the pinned commit.
 3. The CI can check out only a pushed commit. Push the oplog-core branch (on the owner's command) before the mytasker pull request. The owner merges the oplog-core pull request first.
 4. After that merge, pin the commit on oplog-core `master`: `git -C ../oplog-core switch master && git -C ../oplog-core pull --ff-only`, then `make oplog-core-ref`, and commit `.oplog-core-ref` on the mytasker branch before the owner merges it. Reason: a squash merge or a rebase merge makes a new commit, and the commit of the branch is then not on `master`.
-5. The CI uses a read-only deploy key of oplog-core ("mytasker CI (read-only)"): the secret `OPLOG_CORE_DEPLOY_KEY`, as an Actions secret and as a Dependabot secret of mytasker. The CI stops with a clear message if the secret is missing (for example in a pull request from a fork).
+5. `lczerner/oplog-core` is a public repository. The CI checks it out at the pinned commit with no key and no secret. Thus the CI also runs for pull requests from forks and for Dependabot pull requests.
 
 ### 7.2 CI, SBOM and Dependabot
 
