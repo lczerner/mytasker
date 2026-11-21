@@ -27,7 +27,7 @@ make demo             # build, then print the URL of the demo mode
    - `VERSION`: the version and the commit, for example `0.1.0 (a44e002)`.
    - `SHA256SUMS`: the SHA-256 of the files above.
    - `release/sbom/runtime.cdx.json` and `release/sbom/build.cdx.json`: the SBOMs of this release (`make sbom`, AGENTS.md §7.2). Give them to the admins with the package if they ask for them.
-4. If `VERSION` shows `-dirty`, the build used uncommitted files. Do not distribute such a package.
+4. If `VERSION` shows `-dirty`, the build used uncommitted changes: a changed tracked file, or an untracked file in a path that the build reads (`src/`, `docs/img/`, `public/`, `index.html` and the config files at the root). Other untracked files do not count. Do not distribute such a package.
 5. Give the content of `release/app/` to the admins. The admin guide, chapter 9, describes the update.
 
 `app/index.html` in the shared folder is the supply-chain point of the system (`docs/security-model.md`). Copy the release only from a trusted computer, and compare `SHA256SUMS` before the copy.
