@@ -6,6 +6,8 @@ Tasks is a task manager for a small team. It has no server. The app is 1 HTML fi
 - No network access at runtime. The content security policy blocks it, and the build check verifies it.
 - The UI is in Czech. The Czech UI uses the name "Úkoly" for the app. The app contains a user guide (**Nápověda**) and an admin guide (**Příručka správce**).
 
+![The board and an open task in the demo mode (synthetic data)](docs/readme/app.jpg)
+
 ## Constraints
 
 - No server, no sync service, no push or email, no Microsoft Graph. The only shared infrastructure is a OneDrive folder that each computer syncs.
