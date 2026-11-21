@@ -22,3 +22,5 @@ An earlier app of the owner has the same architecture: signed op files on OneDri
 - Until the earlier app migrates, 2 copies of the core exist. A security fix must go into both.
 
 Update 2026-11-20 (Q-27): `oplog-core` is now the repository `lczerner/oplog-core`. mytasker pins its commit in `.oplog-core-ref` (AGENTS.md §7.1).
+
+Update 2026-11-21 (Q-28): `lczerner/oplog-core` is a public repository. The CI checks out the pinned commit with no key.

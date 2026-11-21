@@ -3,10 +3,10 @@
 # CI for pull requests and for master: typecheck, tests (unit, property, simulation), SBOM with
 # its checks, build check and browser tests. All test data is synthetic.
 #
-# mytasker uses the repository lczerner/oplog-core as "file:../oplog-core". The CI checks
-# out the commit of .oplog-core-ref next to mytasker, with a read-only deploy key:
-#   secret OPLOG_CORE_DEPLOY_KEY (Actions secret, and also a Dependabot secret, because the runs
-#   of Dependabot pull requests can read only Dependabot secrets). See AGENTS.md §7.
+# mytasker uses the public repository lczerner/oplog-core as "file:../oplog-core". The CI checks
+# out the commit of .oplog-core-ref next to mytasker. The checkout needs no key and no secret,
+# so the CI also works for pull requests from forks and for Dependabot pull requests.
+# See AGENTS.md §7.
 name: CI
 
 on:
@@ -36,22 +36,18 @@ jobs:
         with:
           path: mytasker
           persist-credentials: false
-      - name: Pinned oplog-core commit and deploy key
+      - name: Pinned oplog-core commit
         id: oplog
-        env:
-          KEY: ${{ secrets.OPLOG_CORE_DEPLOY_KEY }}
         shell: bash
         run: |
           ref=$(tr -d '[:space:]' < .oplog-core-ref)
           [[ $ref =~ ^[0-9a-f]{40}$ ]] || { echo "::error::.oplog-core-ref must contain a full 40-character commit SHA (make oplog-core-ref)"; exit 1; }
-          [ -n "$KEY" ] || { echo "::error::The secret OPLOG_CORE_DEPLOY_KEY is missing. It must be an Actions secret, and a Dependabot secret for Dependabot PRs. Fork PRs get no secrets. See AGENTS.md §7.1."; exit 1; }
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: lczerner/oplog-core
           ref: ${{ steps.oplog.outputs.ref }}
           path: oplog-core
-          ssh-key: ${{ secrets.OPLOG_CORE_DEPLOY_KEY }}
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -92,22 +88,18 @@ jobs:
         with:
           path: mytasker
           persist-credentials: false
-      - name: Pinned oplog-core commit and deploy key
+      - name: Pinned oplog-core commit
         id: oplog
-        env:
-          KEY: ${{ secrets.OPLOG_CORE_DEPLOY_KEY }}
         shell: bash
         run: |
           ref=$(tr -d '[:space:]' < .oplog-core-ref)
           [[ $ref =~ ^[0-9a-f]{40}$ ]] || { echo "::error::.oplog-core-ref must contain a full 40-character commit SHA (make oplog-core-ref)"; exit 1; }
-          [ -n "$KEY" ] || { echo "::error::The secret OPLOG_CORE_DEPLOY_KEY is missing. It must be an Actions secret, and a Dependabot secret for Dependabot PRs. Fork PRs get no secrets. See AGENTS.md §7.1."; exit 1; }
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: lczerner/oplog-core
           ref: ${{ steps.oplog.outputs.ref }}
           path: oplog-core
-          ssh-key: ${{ secrets.OPLOG_CORE_DEPLOY_KEY }}
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
