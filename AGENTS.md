@@ -4,7 +4,7 @@ Status: complete for version 0.1. §7 (Git workflow) applies since the GitHub re
 
 ## 1. Purpose
 
-"Úkoly" (repository `mytasker`) is a task manager for a small team. The app is 1 HTML file in a shared OneDrive folder. It runs in Edge or Chrome over `file://`. The data is a log of signed, immutable JSON op files. See `docs/architecture.md` and `docs/data-model.md`.
+Tasks ("Úkoly" in the Czech UI, repository `mytasker`) is a task manager for a small team. The app is 1 HTML file in a shared OneDrive folder. It runs in Edge or Chrome over `file://`. The data is a log of signed, immutable JSON op files. See `docs/architecture.md` and `docs/data-model.md`.
 
 ## 2. Constraints (non-negotiable)
 
@@ -34,7 +34,7 @@ Status: complete for version 0.1. §7 (Git workflow) applies since the GitHub re
 | `src/ui/` | Preact UI: start screens (`Gate.tsx`), shell (`App.tsx`), task list, task panel, dialogs, admin screens (`admin.tsx`), audit, revert and integrity (`audit.tsx`), notifications (`Notifications.tsx`), built-in guides (`Help.tsx`, parser `docs.ts`), information bar (`Footer.tsx`), safe Markdown (`markdown.ts`), `i18n.ts` (all texts), `styles.css`. |
 | `test/` | `unit` (state machine and `authorize` matrices, domain rules), `property` (convergence), `simulation` (multi-user on disk, attacks), `e2e`, `perf`, `fixtures` (synthetic only). `helpers.ts` makes a synthetic team. |
 | `docs/` | User guide and admin guide (Czech, built into the app), operations, architecture, data model, security model, wireframes, review checklist, ADRs, open questions. |
-| `scripts/` | `check-build.mjs` (build check, also the third-party notices), `release.mjs` (release package), `sbom.mjs` (SBOM and its checks), `oplog-core-ref.mjs` (the pinned oplog-core commit), `commit.mjs` (the commit of a build), `screenshots.mjs` (guide images). |
+| `scripts/` | `check-build.mjs` (build check, also the third-party notices), `release.mjs` (release package), `sbom.mjs` (SBOM and its checks), `oplog-core-ref.mjs` (the pinned oplog-core commit), `commit.mjs` (the commit of a build), `screenshots.mjs` (guide images and the README image). |
 | `release/` | `create-folders.sh` (empty folder skeleton). `release/app/` and `release/sbom/` are generated and git-ignored. |
 | `.claude/agents/mt-reviewer.md` | Claude Code subagent for the expert review (uses `docs/review-checklist.md`). |
 | `Makefile` | Wrapper targets. `make help` lists them. |
@@ -56,7 +56,7 @@ npm run test:e2e       # build + browser tests (CHROMIUM=/path/to/chromium)
 npm run release        # release/app/: index.html, LICENSE, THIRD-PARTY-NOTICES.md, VERSION, SHA256SUMS
 ```
 
-`npm run test:e2e` runs the demo flows, the real flow with OPFS (new installation, enrollment, approval) and the layout test. `make demo` builds and prints the URL of the demo mode (`?demo`, `?demo=petr`, `?demo=large`). `npm run perf` measures 5 000 tasks with about 100 000 ops (`docs/performance.md`); `dist/index.html?demo=perf` measures the UI. `node scripts/screenshots.mjs` (after a build) makes the guide images `docs/img/*.jpg` from the demo. `SIM_SEED` and `SIM_ROUNDS` change the simulation run.
+`npm run test:e2e` runs the demo flows, the real flow with OPFS (new installation, enrollment, approval) and the layout test. `make demo` builds and prints the URL of the demo mode (`?demo`, `?demo=petr`, `?demo=large`). `npm run perf` measures 5 000 tasks with about 100 000 ops (`docs/performance.md`); `dist/index.html?demo=perf` measures the UI. `node scripts/screenshots.mjs` (after a build) makes the guide images `docs/img/*.jpg` and the README image `docs/readme/app.jpg` from the demo. Build from a clean commit first, or the footer in the images shows "-dirty". The build bundles `docs/img/` but not `docs/readme/`. `SIM_SEED` and `SIM_ROUNDS` change the simulation run.
 
 ## 5a. Checklist: add a new op type or status
 
@@ -99,7 +99,7 @@ Remote: `github.com/lczerner/mytasker`. The default branch `master` is protected
 
 ### 7.1 oplog-core
 
-mytasker uses the private repository `lczerner/oplog-core` as `file:../oplog-core`. `.oplog-core-ref` pins the commit that the CI checks out.
+mytasker uses the repository `lczerner/oplog-core` as `file:../oplog-core`. `.oplog-core-ref` pins the commit that the CI checks out.
 
 1. A change in oplog-core is a separate pull request in oplog-core, with its own rules (its `AGENTS.md`).
 2. After the oplog-core commit: `make oplog-core-ref` in mytasker, and commit `.oplog-core-ref` on the mytasker branch. `make check` and `make release` fail if the code of `../oplog-core` differs from the pinned commit.

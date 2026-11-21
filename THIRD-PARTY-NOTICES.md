@@ -1,6 +1,6 @@
 # Third-party notices
 
-The app "Úkoly" (`index.html`) contains the code of these packages. The build check (`scripts/check-build.mjs`) makes sure that this file has a section for each runtime dependency in `package.json`, with the installed version.
+The app Tasks ("Úkoly" in the Czech UI, `index.html`) contains the code of these packages. The build check (`scripts/check-build.mjs`) makes sure that this file has a section for each runtime dependency in `package.json`, with the installed version.
 
 ## preact 11.2.0
 

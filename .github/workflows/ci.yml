@@ -3,7 +3,7 @@
 # CI for pull requests and for master: typecheck, tests (unit, property, simulation), SBOM with
 # its checks, build check and browser tests. All test data is synthetic.
 #
-# mytasker uses the private repository lczerner/oplog-core as "file:../oplog-core". The CI checks
+# mytasker uses the repository lczerner/oplog-core as "file:../oplog-core". The CI checks
 # out the commit of .oplog-core-ref next to mytasker, with a read-only deploy key:
 #   secret OPLOG_CORE_DEPLOY_KEY (Actions secret, and also a Dependabot secret, because the runs
 #   of Dependabot pull requests can read only Dependabot secrets). See AGENTS.md §7.

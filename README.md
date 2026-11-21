@@ -1,10 +1,12 @@
-# Úkoly (mytasker)
+# Tasks (mytasker)
 
-Úkoly is a task manager for a small team. It has no server. The app is 1 HTML file in a shared OneDrive folder. Each user opens it from the local copy of the folder in Edge or Chrome over `file://`. OneDrive syncs the changes between the computers.
+Tasks is a task manager for a small team. It has no server. The app is 1 HTML file in a shared OneDrive folder. Each user opens it from the local copy of the folder in Edge or Chrome over `file://`. OneDrive syncs the changes between the computers.
 
 - Each change is a signed, immutable JSON file (an op). Each computer checks all ops and computes the same state.
 - No network access at runtime. The content security policy blocks it, and the build check verifies it.
-- The UI is in Czech. The app contains a user guide (**Nápověda**) and an admin guide (**Příručka správce**).
+- The UI is in Czech. The Czech UI uses the name "Úkoly" for the app. The app contains a user guide (**Nápověda**) and an admin guide (**Příručka správce**).
+
+![The board and an open task in the demo mode (synthetic data)](docs/readme/app.jpg)
 
 ## Constraints
 
@@ -14,7 +16,7 @@
 
 ## Quick start (development)
 
-Requirements: Node.js 22 or later, Chromium for the build check and the browser tests, and the private repository `oplog-core` next to this one:
+Requirements: Node.js 22 or later, Chromium for the build check and the browser tests, and the repository `oplog-core` next to this one:
 
 ```sh
 git clone https://github.com/lczerner/oplog-core.git ../oplog-core
