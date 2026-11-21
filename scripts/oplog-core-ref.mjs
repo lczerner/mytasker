@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
 // The commit of oplog-core that this version of mytasker uses: .oplog-core-ref.
-// The CI checks out exactly this commit of the private repository lczerner/oplog-core.
+// The CI checks out exactly this commit of the repository lczerner/oplog-core.
 //
 //   node scripts/oplog-core-ref.mjs check    compare with ../oplog-core (HEAD, clean tree)
 //   node scripts/oplog-core-ref.mjs update   write the HEAD of ../oplog-core to .oplog-core-ref

@@ -1,6 +1,6 @@
 # 0006. Passphrase-wrapped key file and encrypted local cache
 
-- Status: accepted (same as `system-vzdelavani` ADR 0007)
+- Status: accepted (same as in the earlier app of the owner)
 - Date: 2026-11-19
 
 ## Context

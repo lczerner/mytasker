@@ -6,7 +6,7 @@ The admins use the Czech admin guide for the daily work. It is part of the app (
 
 ## 1. Build and test
 
-Requirements: Node.js 22 or later, Chromium for the build check and the e2e tests, and the private repository `oplog-core` in `../oplog-core` at the commit of `.oplog-core-ref` (README, "Quick start").
+Requirements: Node.js 22 or later, Chromium for the build check and the e2e tests, and the repository `oplog-core` in `../oplog-core` at the commit of `.oplog-core-ref` (README, "Quick start").
 
 ```sh
 make install          # npm ci

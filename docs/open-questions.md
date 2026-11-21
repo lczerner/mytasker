@@ -10,12 +10,12 @@ No open questions.
 
 | ID | Question | Answer | Date |
 |---|---|---|---|
-| A-1 | Reuse the core of `system-vzdelavani`? | Yes. New shared repository `~/Projects/oplog-core`, git dependency pinned to a commit. `system-vzdelavani` migrates later. | 2026-11-19 |
+| A-1 | Reuse the core of an earlier app of the owner? | Yes. New shared repository `lczerner/oplog-core`, git dependency pinned to a commit. The earlier app migrates later. | 2026-11-19 |
 | A-2 | Signature algorithm? | Ed25519. | 2026-11-19 |
 | A-3 | The file `functions` with the first requirements? | Move to `docs/requirements-original.md`. | 2026-11-19 |
 | A-4 | Name of the default git branch? | `master`. | 2026-11-19 |
 | Q-2 | Can every user assign and unassign any user on any task? | Yes. | 2026-11-19 |
-| Q-3 | Edge version in the organisation? | Edge 137 or later is acceptable. | 2026-11-19 |
+| Q-3 | Edge version in the team? | Edge 137 or later is acceptable. | 2026-11-19 |
 | Q-6 | Can users edit a `verified` task? | No. Only comments. An admin reopens the task to change it. A `done` task is editable. | 2026-11-19 |
 | Q-7 | Is the due date required? | No. The due date is optional and can be empty. | 2026-11-19 |
 | Q-16 | Remotes of `oplog-core` and `mytasker`? | None yet. The owner creates them later. Until then, commit on `master` and use `file:../oplog-core`. | 2026-11-19 |
@@ -28,7 +28,7 @@ No open questions.
 | Q-11 | Does separation of duties apply (the user who marked a task done cannot verify it)? | No. Verifiers and admins can always verify, also their own work. There is no setting for this rule. | 2026-11-19 |
 | Q-12 | Who can change `completedAt` after "Hotovo"? | Proposal accepted: The user who marked it done, and admins. Only while the status is `done`. | 2026-11-19 |
 | Q-13 | After `RestoreTask`, which status does the task get? | Proposal accepted: The status before the deletion. The due date stays. | 2026-11-19 |
-| Q-14 | Browser notifications on `file://`: can you test them in Edge on a work computer? Group policy can block them. | Proposal accepted: Keep them optional and off by default. I add a test button in the settings. | 2026-11-19 |
+| Q-14 | Browser notifications on `file://`: can you test them in Edge on a managed computer? Group policy can block them. | Proposal accepted: Keep them optional and off by default. I add a test button in the settings. | 2026-11-19 |
 | Q-15 | Drag and drop on the board? | Proposal accepted: Not in the first version. Status changes with buttons in the task panel. | 2026-11-19 |
 | Q-17 | `enroll/`: OneDrive can usually not give "write but not read" to a folder. Is it acceptable that all users can read enrollment requests? | Proposal accepted: Yes. A request contains only a public key and a display name. No secret. | 2026-11-19 |
 | Q-7a | If a due date has no time, when is the task due? | Proposal accepted: At 23:59 Europe/Prague on that day. The time is optional. | 2026-11-19 |
@@ -38,7 +38,7 @@ No open questions.
 | Q-21 | Can the creator delete a `verified` task? | No. Only an admin can delete a `verified` task. | 2026-11-19 |
 | Q-22 | Must the app store the folder handle? How to treat attachments that a browser runs as pages? | Store the handle. The owner accepts the risk (`docs/security-model.md` §4). Block attachments of HTML, SVG and similar types in the UI and in the replay. Download names of other types get `.txt` if the extension is not on the safe list. | 2026-11-19 |
 | Q-23 | 3 new op-format rules from the security review of `oplog-core`: HLC limits (`hlc.t` ≤ the year 9999, `hlc.c` ≤ 2 147 483 647), only the canonical base64url text of `sig`, at most 32 levels of nesting. Also: no field `overwritten` in a `Revert` payload. | Approved. | 2026-11-19 |
-| Q-24 | Any user can save a file under the next op number of another user and block all writes of that user forever. How to fix it? | Option A: change the chain rule in `oplog-core`. The chain follows the `prevHash` links, the numbers must increase but can have gaps, and files that are not validly signed ops of the author are skipped (integrity issue). The writer takes the smallest free number above its last valid op. `system-vzdelavani` gets it with its migration to `oplog-core`. | 2026-11-19 |
+| Q-24 | Any user can save a file under the next op number of another user and block all writes of that user forever. How to fix it? | Option A: change the chain rule in `oplog-core`. The chain follows the `prevHash` links, the numbers must increase but can have gaps, and files that are not validly signed ops of the author are skipped (integrity issue). The writer takes the smallest free number above its last valid op. | 2026-11-19 |
 | Q-25 | Verified tasks stay forever, so the lists only grow. Must they show by default? | No. "Všechny úkoly" and "Vytvořené mnou" hide verified tasks and the board column "Zkontrolováno". The switch "Zobrazit zkontrolované (N)" or the status filter "Zkontrolováno" shows them. The sidebar counts do not count them. | 2026-11-19 |
 | Q-26 | Czech proof-reading proposed new names for product terms. Which apply? | Status `new` stays "Nový". The buttons of status actions keep their text ("Hotovo", "Zkontrolováno"). The verifier role uses "kontrola": "Kontroluje úkoly", "Povolit kontrolu úkolů", "Zrušit kontrolu úkolů", "Změna práva kontroly". The view "Vytvořené mnou" is now "Vytvořil(a) jsem". | 2026-11-19 |
 | Q-27 | The GitHub remotes exist (2026-11-20). What is the process now? | `master` is protected. All work on a branch, never on `master`. Push and pull requests only on the owner's command. A CI tests each pull request and `master`. `make sbom` writes the SBOM, and the SBOM is part of `make check`, the release and the CI. Dependabot checks the dependencies (version and security updates). `oplog-core` is a private repository: the CI checks out the commit of `.oplog-core-ref` with a read-only deploy key (`AGENTS.md` §7). Q-16 is replaced. | 2026-11-20 |

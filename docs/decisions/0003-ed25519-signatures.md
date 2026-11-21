@@ -7,7 +7,7 @@
 
 The task says: use ECDSA P-256, unless Ed25519 is verified in current Edge and Chrome.
 
-On 2026-11-19 I tested Chromium 155 on this computer over `file://` with Playwright. `crypto.subtle.generateKey({ name: "Ed25519" })` and `sign` operate. The signature has 64 bytes. Chrome supports Ed25519 in WebCrypto since version 137. Edge uses the same Chromium code. Node 22 also supports Ed25519, so the tests use the same code. `system-vzdelavani` uses Ed25519 too (its ADR 0002).
+On 2026-11-19 I tested Chromium 155 on the development computer over `file://` with Playwright. `crypto.subtle.generateKey({ name: "Ed25519" })` and `sign` operate. The signature has 64 bytes. Chrome supports Ed25519 in WebCrypto since version 137. Edge uses the same Chromium code. Node 22 also supports Ed25519, so the tests use the same code. The earlier app of the owner uses Ed25519 too.
 
 ## Decision
 

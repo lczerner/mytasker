@@ -88,7 +88,7 @@ The same rule applies in `roles`: a `GrantUser` with a `userId` or a `keyId` tha
   1. Deterministic: the `hlc.t` of the op is more than 1 hour after its own `wallTime`, **and** greater than the `hlc.t` of each op that sorts before it. Honest clients copy the HLC of the future op, so their ops are never greater than it, and they do not get the flag. This check also finds an op with a false HLC and an honest `wallTime`. The flag stays after the real time passes the false time.
   2. Local: the `wallTime` of the op is more than 1 hour after the local time of the reader. This flag goes away when the real time reaches the false time.
 
-The shared library `oplog-core` defines the envelope (ADR 0001). The envelope is the same as in `system-vzdelavani`.
+The shared library `oplog-core` defines the envelope (ADR 0001).
 
 ## 5. Op catalogue
 
@@ -231,12 +231,12 @@ The UI calls the same guards to show or hide controls.
 
 `authorize` does **not** check the status of the user for the rights of a normal user. Admin and verifier rights apply only to an `active` user. (An honest client never writes ops for a removed user, so this difference shows only with ops of a revoked key.) A removed user's ops at or below the cutoff stay valid, also if they sort after `RemoveUser`. Reason: an offline user can sync old ops after the removal.
 
-**Revocation is by `seq` cutoff, not by order.** `RevokeKey` and `RemoveUser` set a cutoff `{ roles, data }` for a key. The cutoff applies to **all** ops of the key, also to ops that sort before the `RevokeKey` op. Otherwise an attacker with a stolen key can write ops with an old HLC. The replay does this with a fixpoint (same as `system-vzdelavani`):
+**Revocation is by `seq` cutoff, not by order.** `RevokeKey` and `RemoveUser` set a cutoff `{ roles, data }` for a key. The cutoff applies to **all** ops of the key, also to ops that sort before the `RevokeKey` op. Otherwise an attacker with a stolen key can write ops with an old HLC. The replay does this with a fixpoint:
 
 1. Replay all ops with the cutoffs of the trust root.
 2. Collect the cutoffs of all applied `RevokeKey` and `RemoveUser` ops.
 3. If the cutoffs changed, replay all ops again with the new cutoffs. A revocation can make another revocation invalid, so repeat until the cutoffs do not change. After 6 rounds without a stable result, the replay reports an integrity issue.
-4. If 1 key has more than 1 cutoff (for example from `RevokeKey` and from `RemoveUser`), the lowest `seq` in each scope applies. (`system-vzdelavani` uses the first cutoff that it finds. `oplog-core` uses the minimum.)
+4. If 1 key has more than 1 cutoff (for example from `RevokeKey` and from `RemoveUser`), the lowest `seq` in each scope applies.
 
 **Role changes are by order, not by cutoff** (known limit). `SetRole` and `SetVerifier` apply from their point in the order. A demoted admin can still write an op with an HLC between the own last op and the `SetRole` op, and `authorize` then sees the role `admin`. The same applies to a verifier after `SetVerifier false`. Procedure for a user who is not trusted: a **root admin** writes `SetRole` or `SetVerifier`, and also `RevokeKey` with a cutoff at the last trusted `seq`, then `AddKey` with a new key (`docs/operations.md` §4.3). A root admin must do it, because a root key cannot be revoked by an op. If a non-root admin does it, the demoted admin can write a backdated `RevokeKey` against that admin. Then the 2 revocations make each other invalid, the fixpoint does not become stable, and the replay reports an integrity issue.
 

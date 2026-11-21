@@ -99,7 +99,7 @@ Remote: `github.com/lczerner/mytasker`. The default branch `master` is protected
 
 ### 7.1 oplog-core
 
-mytasker uses the private repository `lczerner/oplog-core` as `file:../oplog-core`. `.oplog-core-ref` pins the commit that the CI checks out.
+mytasker uses the repository `lczerner/oplog-core` as `file:../oplog-core`. `.oplog-core-ref` pins the commit that the CI checks out.
 
 1. A change in oplog-core is a separate pull request in oplog-core, with its own rules (its `AGENTS.md`).
 2. After the oplog-core commit: `make oplog-core-ref` in mytasker, and commit `.oplog-core-ref` on the mytasker branch. `make check` and `make release` fail if the code of `../oplog-core` differs from the pinned commit.

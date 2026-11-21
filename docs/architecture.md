@@ -25,7 +25,7 @@ flowchart LR
 
 ## 2. Code structure
 
-The generic part of the code is in a separate repository, `oplog-core` (ADR 0001). The sibling project `system-vzdelavani` has the same architecture. It will use `oplog-core` later.
+The generic part of the code is in a separate repository, `oplog-core` (ADR 0001). Other apps with the same architecture can use `oplog-core` too.
 
 ```mermaid
 flowchart TB
@@ -61,7 +61,7 @@ The `Domain` interface of `oplog-core` (`oplog-core/src/domain.ts`). mytasker im
 | `removeWrites` | The writes for a `Revert` of a create op (`docs/data-model.md` §8) |
 | `isDerived` | `task.assigneeCount`: a `Revert` does not write it, `normalize` computes it again |
 
-`effects()` can return `{ superseded: reason }`. The replay records it in the audit log with the status `superseded`. `system-vzdelavani` has only `no-effect`. `superseded` is a new audit status in `oplog-core`. An error in domain code rejects only that op (issue kind `domain`).
+`effects()` can return `{ superseded: reason }`. The replay records it in the audit log with the status `superseded`. `superseded` is an audit status in `oplog-core`. An error in domain code rejects only that op (issue kind `domain`).
 
 ## 3. Folder layout and OneDrive permissions
 
@@ -168,7 +168,7 @@ sequenceDiagram
   N->>N: the app shows the user as active
 ```
 
-The fingerprint is the 20 characters of the key ID after the `k`, in uppercase, in 5 groups (100 bits, the same as in `system-vzdelavani`). Example: the key ID `k7qd2mxapf4nwz3bh5rk6tyae` has the fingerprint `7QD2-MXAP-F4NW-Z3BH-5RK6`.
+The fingerprint is the 20 characters of the key ID after the `k`, in uppercase, in 5 groups (100 bits). Example: the key ID `k7qd2mxapf4nwz3bh5rk6tyae` has the fingerprint `7QD2-MXAP-F4NW-Z3BH-5RK6`.
 
 Bootstrap of the first admin:
 

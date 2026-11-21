@@ -1,6 +1,6 @@
 # 0005. RFC 8785 (JCS) canonical JSON
 
-- Status: accepted (same as `system-vzdelavani` ADR 0003)
+- Status: accepted (same as in the earlier app of the owner)
 - Date: 2026-11-19
 
 ## Decision

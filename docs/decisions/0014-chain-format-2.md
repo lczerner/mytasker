@@ -25,4 +25,3 @@ The code is in `oplog-core` (`verify.ts` `checkChains`, `engine.ts` `write`).
 - A quick scan lists the folders of the known authors, so a gap in the numbers does not stop it. Cutoffs (`RemoveUser`) and checkpoint frontiers use the head of the valid chain (`Engine.validHeads`), not a file with a higher number and a bad signature.
 - Deletion, change and forks are detected as before.
 - Chain format 1 data stays valid in format 2 (no gaps is a special case).
-- `system-vzdelavani` still uses format 1. It gets format 2 with its migration to `oplog-core`.

@@ -1,6 +1,6 @@
 # 0007. Checkpoints are signed packs of the original ops
 
-- Status: accepted (same as `system-vzdelavani` ADR 0008)
+- Status: accepted (same as in the earlier app of the owner)
 - Date: 2026-11-19
 
 ## Context

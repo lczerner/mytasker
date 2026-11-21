@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
 // Audit, revert and integrity: the admin pages, and the Czech description of a change
-// (also for the history of a task). The structure follows the audit of system-vzdelavani.
+// (also for the history of a task).
 import { canonicalize, planRevert, type AppliedWrite, type AuditEntry, type Issue, type OpMeta, type RevertPlan, type State, type Write } from 'oplog-core';
 import { Fragment } from 'preact';
 import { useMemo, useRef, useState } from 'preact/hooks';

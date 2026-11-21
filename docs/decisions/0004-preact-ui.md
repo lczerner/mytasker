@@ -15,5 +15,5 @@ Use Preact with hooks and hand-written CSS with design tokens (CSS custom proper
 
 - Preact is about 4 kB (gzip). It has no compiler step except JSX in Vite.
 - JSX escapes all text. This is the main protection against XSS (`docs/security-model.md`). The code never uses `dangerouslySetInnerHTML`. The Markdown renderer makes Preact nodes, not an HTML string.
-- `system-vzdelavani` uses Preact. The 2 projects can share patterns and test helpers.
+- The earlier app of the owner uses Preact. The projects can share patterns and test helpers.
 - Svelte compiles to small code too, but it is a second toolchain for the same owner.

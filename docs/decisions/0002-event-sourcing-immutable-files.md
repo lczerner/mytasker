@@ -1,6 +1,6 @@
 # 0002. Event sourcing over immutable, per-author op files
 
-- Status: accepted (from the task, same as `system-vzdelavani` ADR 0001)
+- Status: accepted (from the task, same as in the earlier app of the owner)
 - Date: 2026-11-19
 
 ## Decision

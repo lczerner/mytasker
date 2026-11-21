@@ -14,7 +14,7 @@
 
 ## Quick start (development)
 
-Requirements: Node.js 22 or later, Chromium for the build check and the browser tests, and the private repository `oplog-core` next to this one:
+Requirements: Node.js 22 or later, Chromium for the build check and the browser tests, and the repository `oplog-core` next to this one:
 
 ```sh
 git clone https://github.com/lczerner/oplog-core.git ../oplog-core
