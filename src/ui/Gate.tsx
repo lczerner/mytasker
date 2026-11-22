@@ -4,6 +4,7 @@
 import { createEnrollment, enrollmentPath, Engine, FileExistsError, fingerprint, FsaStorage, TRUST_ROOT_PATH, uuidv7, WrongPassphraseError, type KeyFile, type TrustRoot } from 'oplog-core';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { openTextFile, saveTextFile } from '../app/files';
+import { deleteDb } from '../app/idb';
 import {
   checkSupport,
   createKey,
@@ -33,9 +34,15 @@ import { t, type Key } from './i18n';
 
 type Root = FileSystemDirectoryHandle;
 
+/** The first checks (before any user action) normally take less than 1 s. */
+const START_TIMEOUT_MS = 15_000;
+/** Set by the reset button: the next page load deletes the database before any other IndexedDB access. */
+const RESET_FLAG = 'mytasker-reset';
+const RESET_STEP = 'reset of the browser data (IndexedDB)';
+
 type Step =
   | { s: 'loading' }
-  | { s: 'error'; reason: string; retry: () => void }
+  | { s: 'error'; reason: string; retry: () => void; resetFailed?: boolean }
   | { s: 'unsupported'; problems: string[] }
   | { s: 'pick'; error?: string }
   | { s: 'permission'; root: Root }
@@ -59,22 +66,45 @@ export function Gate() {
   };
 
   useEffect(() => {
-    void guard(async () => {
-      const sup = await checkSupport();
-      if (!sup.ok) return setStep({ s: 'unsupported', problems: sup.problems });
-      const root = await savedRoot();
-      if (!root) return setStep({ s: 'pick' });
-      if ((await rootPermission(root, false)) === 'granted') return afterRoot(root);
-      setStep({ s: 'permission', root });
+    // A browser call that never ends (seen with IndexedDB data in Edge) must not give an endless
+    // "loading": after the timeout, show the error screen with the step. If the step ends later,
+    // its result replaces only that error screen, not a step that the user reached since then.
+    let at = 'browser check';
+    let timedOut: Step | null = null;
+    const timer = setTimeout(() => {
+      timedOut = { s: 'error', reason: `The start did not end in ${START_TIMEOUT_MS / 1000} s. Step: ${at}.`, retry: () => location.reload(), resetFailed: at === RESET_STEP };
+      setStep(timedOut);
+    }, START_TIMEOUT_MS);
+    const set = (next: Step) => setStep((cur) => (timedOut === null || cur === timedOut ? next : cur));
+    const mark = (s: string) => (at = s);
+    void (async () => {
+      try {
+        if (sessionStorage.getItem(RESET_FLAG)) {
+          sessionStorage.removeItem(RESET_FLAG); // 1 try only: no reload loop
+          mark(RESET_STEP);
+          try {
+            await deleteDb();
+          } catch (e) {
+            return set({ s: 'error', reason: (e as Error).message, retry: () => location.reload(), resetFailed: true });
+          }
+        }
+        mark('browser check');
+        const sup = await checkSupport();
+        if (!sup.ok) return set({ s: 'unsupported', problems: sup.problems });
+        mark('saved folder (IndexedDB)');
+        const root = await savedRoot();
+        if (!root) return set({ s: 'pick' });
+        mark('folder permission');
+        set((await rootPermission(root, false)) === 'granted' ? await rootStep(root, mark) : { s: 'permission', root });
+      } catch (e) {
+        set({ s: 'error', reason: (e as Error).message, retry: () => location.reload() });
+      } finally {
+        clearTimeout(timer);
+      }
     })();
   }, []);
 
-  async function afterRoot(root: Root) {
-    const storage = new FsaStorage(root);
-    if ((await storage.list('app')) === null) return setStep({ s: 'pick', error: t('gate.wrongFolder') });
-    if ((await storage.read(TRUST_ROOT_PATH)) === null) return setStep({ s: 'install', root });
-    setStep({ s: 'key', root, stored: await storedKeyFile() });
-  }
+  const afterRoot = async (root: Root) => setStep(await rootStep(root));
 
   const start = (root: Root, u: Unlocked) =>
     guard(async () => {
@@ -115,6 +145,8 @@ export function Gate() {
               {t('top.changeFolder')}
             </button>
           </div>
+          {step.resetFailed && <p class="note">{t('gate.reset.failed')}</p>}
+          <ResetBrowserData />
         </Screen>
       );
     case 'unsupported':
@@ -235,6 +267,43 @@ function Screen({ title, children }: { title: string; children: preact.Component
       </main>
       <Footer />
     </>
+  );
+}
+
+/** The step after the folder is known (no state change: the caller sets the step). */
+async function rootStep(root: Root, mark: (step: string) => void = () => undefined): Promise<Step> {
+  const storage = new FsaStorage(root);
+  mark('shared folder read');
+  if ((await storage.list('app')) === null) return { s: 'pick', error: t('gate.wrongFolder') };
+  if ((await storage.read(TRUST_ROOT_PATH)) === null) return { s: 'install', root };
+  mark('saved key (IndexedDB)');
+  return { s: 'key', root, stored: await storedKeyFile() };
+}
+
+/**
+ * Deletes the data of the app in this browser (after a confirmation). The delete runs after a
+ * reload, before any IndexedDB access: in this page, a request that never ended can block it.
+ */
+function ResetBrowserData() {
+  const [ask, setAsk] = useState(false);
+  if (!ask)
+    return (
+      <button type="button" class="link" onClick={() => setAsk(true)}>
+        {t('gate.reset.button')}
+      </button>
+    );
+  return (
+    <div class="stack">
+      <p class="note">{t('gate.reset.confirm')}</p>
+      <div class="row wrap">
+        <button type="button" class="danger" onClick={() => (sessionStorage.setItem(RESET_FLAG, '1'), location.reload())}>
+          {t('gate.reset.do')}
+        </button>
+        <button type="button" onClick={() => setAsk(false)}>
+          {t('dlg.cancel')}
+        </button>
+      </div>
+    </div>
   );
 }
 

@@ -282,4 +282,59 @@ describe('real flow with a folder (OPFS instead of the native dialogs, http://12
     expect(errors).toEqual([]);
     await ctx.close();
   }, 120_000);
+
+  it('a start that hangs in IndexedDB shows the error screen after 15 s; the reset deletes the saved data', async () => {
+    const ctx = await browser.newContext();
+    // While "e2e-hang" is set, indexedDB.open never ends (as seen in Edge). While "e2e-hang-delete"
+    // is set, indexedDB.deleteDatabase never ends.
+    await ctx.addInitScript(() => {
+      const open = IDBFactory.prototype.open;
+      IDBFactory.prototype.open = function (this: IDBFactory, ...a: Parameters<IDBFactory['open']>) {
+        return localStorage.getItem('e2e-hang') ? ({} as IDBOpenDBRequest) : open.apply(this, a);
+      };
+      const del = IDBFactory.prototype.deleteDatabase;
+      IDBFactory.prototype.deleteDatabase = function (this: IDBFactory, ...a: Parameters<IDBFactory['deleteDatabase']>) {
+        return localStorage.getItem('e2e-hang-delete') ? ({} as IDBOpenDBRequest) : del.apply(this, a);
+      };
+    });
+    const page = await ctx.newPage();
+    const errors = watch(page);
+    await page.goto(url);
+    await page.waitForSelector('button:has-text("Vybrat složku")');
+    // A saved "folder" that is not a folder handle: without the reset, the start shows an error.
+    await page.evaluate(
+      () =>
+        new Promise<void>((res, rej) => {
+          const r = indexedDB.open('mytasker', 1);
+          r.onsuccess = () => {
+            const tx = r.result.transaction('kv', 'readwrite');
+            tx.objectStore('kv').put('not a handle', 'rootHandle');
+            tx.oncomplete = () => (r.result.close(), res());
+            tx.onerror = () => rej(tx.error);
+          };
+          r.onerror = () => rej(r.error);
+        }),
+    );
+    await page.evaluate(() => localStorage.setItem('e2e-hang', '1'));
+    await page.reload();
+    await page.waitForSelector('.gate p:has-text("Načítám data")');
+    await page.waitForSelector('.gate .error', { timeout: 25_000 });
+    expect(await page.textContent('.gate details code')).toContain('saved folder (IndexedDB)');
+    expect(await page.locator('.gate .note:has-text("Delete database")').count()).toBe(0);
+    const reset = async () => {
+      await page.click('button:has-text("Vymazat data aplikace v tomto prohlížeči")');
+      await page.click('button:has-text("Vymazat a načíst znovu")');
+    };
+    // The delete hangs too: after the timeout, the error screen names the reset and shows the manual steps.
+    await page.evaluate(() => (localStorage.removeItem('e2e-hang'), localStorage.setItem('e2e-hang-delete', '1')));
+    await reset();
+    await page.waitForSelector('.gate .note:has-text("Delete database")', { timeout: 25_000 });
+    expect(await page.textContent('.gate details code')).toContain('reset of the browser data');
+    // The delete works: the start continues without the saved folder.
+    await page.evaluate(() => localStorage.removeItem('e2e-hang-delete'));
+    await reset();
+    await page.waitForSelector('button:has-text("Vybrat složku")');
+    expect(errors).toEqual([]);
+    await ctx.close();
+  }, 90_000);
 });
