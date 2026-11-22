@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
-// Audit, revert and integrity: the admin pages, and the Czech description of a change
+// Audit, revert and integrity: the admin pages, and the description of a change
 // (also for the history of a task).
 import { canonicalize, planRevert, type AppliedWrite, type AuditEntry, type Issue, type OpMeta, type RevertPlan, type State, type Write } from 'oplog-core';
 import { Fragment } from 'preact';
 import { useMemo, useRef, useState } from 'preact/hooks';
 import { DATA, ROLES, type Status } from '../domain/constants';
 import { href, useApp, type AppCtx } from './ctx';
-import { AUDIT_TEXT, FIELD_TEXT, fmtDateTime, nMoreWrites, nShowMore, nShownChanges, opLabel, pragueToIso, STATUS_OTHER, statusLabel, t, type Key } from './i18n';
+import { auditText, fieldName, fmtDateTime, nMoreWrites, nShowMore, nShownChanges, opLabel, otherStatus, pragueToIso, quote, statusLabel, t, type Key } from './i18n';
 import { Dialog, useBusy } from './widgets';
 
 // ---- Description of a change ----------------------------------------------------------------------
@@ -16,37 +16,37 @@ type Ent = Record<string, unknown> | undefined;
 const entOf = (st: State, scope: string, e: string, id: string): Ent => (st.scopes[scope] as Record<string, Record<string, Ent>> | undefined)?.[e]?.[id];
 const short = (s: string, n = 60) => (s.length > n ? `${s.slice(0, n)}…` : s);
 
-/** The Czech name of an entity: "Úkol „Objednat toner“", "Podúkol „…“", "Uživatel Eva Nová". */
+/** The name of an entity: "Úkol „Objednat toner“", "Podúkol „…“", "Uživatel Eva Nová" (English: 'Task "…"'). */
 /** `withTask` false leaves out the task of a child (the task history shows only 1 task). */
 export function entityLabel(st: State, scope: string, e: string, id: string, userName: (id: string) => string, withTask = true): string {
   const x = entOf(st, scope, e, id);
   const task = (tid: unknown) => {
     if (!withTask) return '';
     const tk = entOf(st, DATA, 'task', String(tid));
-    return tk ? t('ent.ofTask', { title: `„${short(String(tk.title ?? ''), 40)}“` }) : '';
+    return tk ? t('ent.ofTask', { title: quote(short(String(tk.title ?? ''), 40)) }) : '';
   };
   const tagName = (tid: unknown) => String(entOf(st, DATA, 'tag', String(tid))?.name ?? tid);
   switch (e) {
     case 'task':
-      return `${t('ent.task')} ${x ? `„${short(String(x.title ?? ''))}“` : id}`;
+      return `${t('ent.task')} ${x ? quote(short(String(x.title ?? ''))) : id}`;
     case 'subtask':
-      return `${t('ent.subtask')} „${short(String(x?.text ?? id), 40)}“ ${x ? task(x.taskId) : ''}`.trim();
+      return `${t('ent.subtask')} ${quote(short(String(x?.text ?? id), 40))} ${x ? task(x.taskId) : ''}`.trim();
     case 'comment':
       return `${t('ent.comment')} ${x ? task(x.taskId) : id}`.trim();
     case 'attachment':
-      return `${t('ent.attachment')} „${short(String(x?.name ?? id), 40)}“ ${x ? task(x.taskId) : ''}`.trim();
+      return `${t('ent.attachment')} ${quote(short(String(x?.name ?? id), 40))} ${x ? task(x.taskId) : ''}`.trim();
     case 'link':
-      return `${t('ent.link')} „${short(String(x?.title || x?.url || id), 40)}“ ${x ? task(x.taskId) : ''}`.trim();
+      return `${t('ent.link')} ${quote(short(String(x?.title || x?.url || id), 40))} ${x ? task(x.taskId) : ''}`.trim();
     case 'assignee': {
       const [tid, uid] = id.split('/');
       return `${t('ent.assignee')} ${userName(uid)} ${task(tid)}`.trim();
     }
     case 'taskTag': {
       const [tid, gid] = id.split('/');
-      return `${t('ent.taskTag')} „${tagName(gid)}“ ${task(tid)}`.trim();
+      return `${t('ent.taskTag')} ${quote(tagName(gid))} ${task(tid)}`.trim();
     }
     case 'tag':
-      return `${t('ent.tag')} „${String(x?.name ?? id)}“`;
+      return `${t('ent.tag')} ${quote(String(x?.name ?? id))}`;
     case 'blob':
       return `${t('ent.blob')} ${id.slice(0, 12)}…`;
     case 'user':
@@ -54,18 +54,18 @@ export function entityLabel(st: State, scope: string, e: string, id: string, use
     case 'key':
       return `${t('ent.key')} ${id.slice(0, 12)}… ${x?.userId ? `(${userName(String(x.userId))})` : ''}`.trim();
     case 'setting':
-      return `${t('ent.setting')} „${SETTING_KEYS.includes(id) ? t(`admin.set.${id}` as Key) : id}“`;
+      return `${t('ent.setting')} ${quote(SETTING_KEYS.includes(id) ? t(`admin.set.${id}` as Key) : id)}`;
     default:
       return `${e} ${id}`;
   }
 }
 
-/** True if the field has an entry in the Czech table (tests). */
-export const knownField = (f: string): boolean => f in FIELD_TEXT;
-export const fieldText = (f: string, e?: string): string => ((e === 'assignee' || e === 'taskTag') && f === 'on' ? AUDIT_TEXT.onField : f in FIELD_TEXT ? FIELD_TEXT[f] : f);
+/** True if the field has an entry in the table of field names (tests). */
+export const knownField = (f: string): boolean => fieldName(f) !== undefined;
+export const fieldText = (f: string, e?: string): string => ((e === 'assignee' || e === 'taskTag') && f === 'on' ? auditText('onField') : (fieldName(f) ?? f));
 const SETTING_KEYS = ['dueSoonDays', 'pollSeconds', 'maxAttachmentMB', 'defaultTags'];
 
-/** The Czech label of an op: for a Batch, its items ("Vytvoření úkolu, 3× Přidání řešitele"). */
+/** The label of an op: for a Batch, its items ("Vytvoření úkolu, 3× Přidání řešitele"). */
 export function changeLabel(a: AuditEntry): string {
   if (a.type !== 'Batch' || !a.itemTypes?.length) return opLabel(a.type);
   const n = new Map<string, number>();
@@ -73,14 +73,14 @@ export function changeLabel(a: AuditEntry): string {
   return [...n].map(([x, k]) => (k > 1 ? `${k}× ${opLabel(x)}` : opLabel(x))).join(', ');
 }
 
-/** A value in Czech: status labels, user names, dates, tag names, yes/no. */
+/** A value as text: status labels, user names, dates, tag names, yes/no. */
 export function valueText(st: State, f: string, v: unknown, userName: (id: string) => string, e?: string): string {
   if (v === null || v === undefined || v === '') return '—';
-  if (f === 'on' && e === 'assignee') return v ? AUDIT_TEXT.assigneeOn : AUDIT_TEXT.assigneeOff;
-  if (f === 'on' && e === 'taskTag') return v ? AUDIT_TEXT.tagOn : AUDIT_TEXT.tagOff;
+  if (f === 'on' && e === 'assignee') return auditText(v ? 'assigneeOn' : 'assigneeOff');
+  if (f === 'on' && e === 'taskTag') return auditText(v ? 'tagOn' : 'tagOff');
   if (f === 'status' || f === 'statusBeforeDelete') {
     const s = String(v);
-    return ['new', 'assigned', 'postponed', 'done', 'verified', 'deleted'].includes(s) ? statusLabel(s as Status) : (STATUS_OTHER[s] ?? s);
+    return ['new', 'assigned', 'postponed', 'done', 'verified', 'deleted'].includes(s) ? statusLabel(s as Status) : otherStatus(s);
   }
   if (typeof v === 'boolean') return v ? t('common.yes') : t('common.no');
   if (f === 'role') return v === 'admin' ? t('admin.roleAdmin') : t('admin.roleUser');
@@ -88,8 +88,8 @@ export function valueText(st: State, f: string, v: unknown, userName: (id: strin
   if (f === 'due' && typeof v === 'object') return fmtDateTime(String((v as { at: string }).at), Boolean((v as { allDay: boolean }).allDay));
   if ((f.endsWith('At') || f === 'at') && typeof v === 'string') return fmtDateTime(v);
   if (f === 'mentions' && Array.isArray(v)) return v.map((x) => userName(String(x))).join(', ') || '—';
-  if (f === 'mergedInto') return `„${String(entOf(st, DATA, 'tag', String(v))?.name ?? v)}“`;
-  if (f === 'size' && typeof v === 'number') return `${Math.max(1, Math.round(v / 1024))} ${AUDIT_TEXT.kB}`;
+  if (f === 'mergedInto') return quote(String(entOf(st, DATA, 'tag', String(v))?.name ?? v));
+  if (f === 'size' && typeof v === 'number') return `${Math.max(1, Math.round(v / 1024))} ${auditText('kB')}`;
   if (typeof v === 'object') return short(canonicalize(v), 120);
   return short(String(v), 120);
 }
@@ -157,7 +157,7 @@ export function RevertDialog({ entry, onClose }: { entry: AuditEntry; onClose: (
   const app = useApp();
   const [busy, setBusy, isBusy] = useBusy();
   // Planned again after each change of the data, so the warning is never out of date.
-  const plan = useMemo(() => revertPlan(app, entry), [app.version]);
+  const plan = useMemo(() => revertPlan(app, entry), [app.version, app.lang]);
   const openVersion = useRef(app.version);
   const st = app.engine.state;
   const name = app.userName;
@@ -334,10 +334,10 @@ export function AuditPage() {
   const [revert, setRevert] = useState<AuditEntry | null>(null);
   const all = useMemo(() => [...app.engine.audit].reverse(), [app.version]);
   const users = useMemo(() => [...new Set(all.map((a) => a.userId).filter((x): x is string => !!x))].sort((a, b) => app.userName(a).localeCompare(app.userName(b), 'cs')), [all]);
-  const types = useMemo(() => [...new Set(all.flatMap((a) => [a.type, ...(a.itemTypes && a.type === 'Batch' ? a.itemTypes : [])]))].sort((a, b) => opLabel(a).localeCompare(opLabel(b), 'cs')), [all]);
+  const types = useMemo(() => [...new Set(all.flatMap((a) => [a.type, ...(a.itemTypes && a.type === 'Batch' ? a.itemTypes : [])]))].sort((a, b) => opLabel(a).localeCompare(opLabel(b), 'cs')), [all, app.lang]);
   const text = (q.q ?? '').trim().toLocaleLowerCase('cs');
   // The search text of each change, computed 1 time for each version of the audit (not on each key press).
-  const hay = useMemo(() => new Map<string, string>(), [all]);
+  const hay = useMemo(() => new Map<string, string>(), [all, app.lang]);
   const hayOf = (a: AuditEntry) => {
     let h = hay.get(a.opId);
     if (h === undefined) {
@@ -362,7 +362,7 @@ export function AuditPage() {
         if (text && !hayOf(a).includes(text)) return false;
         return true;
       }),
-    [all, q.user, q.type, q.status, fromMs, toMs, q.task, text],
+    [all, hay, q.user, q.type, q.status, fromMs, toMs, q.task, text],
   );
   const set = (k: string) => (e: Event) => {
     setLimit(PAGE);

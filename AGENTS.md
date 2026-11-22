@@ -14,7 +14,7 @@ Tasks ("Úkoly" in the Czech UI, repository `mytasker`) is a task manager for a 
 4. **Desktop Edge or Chrome 137 or later.** File System Access API, WebCrypto Ed25519.
 5. **No real user data in git.** Tests, docs, fixtures and screenshots use synthetic data only.
 6. Runtime dependencies: Preact and `oplog-core` only. A new runtime dependency needs the owner's approval.
-7. The UI is in Czech. All strings are in `src/ui/i18n.ts`.
+7. The UI is in Czech (the default) and English (`docs/architecture.md` §8). All strings are in `src/ui/i18n.ts`, with a text in both languages.
 
 ## 3. Invariants
 
@@ -31,7 +31,7 @@ Tasks ("Úkoly" in the Czech UI, repository `mytasker`) is a task manager for a 
 | `src/domain/` | The `Domain` for `oplog-core` (`domain.ts`), op catalogue (`catalog.ts`), permission matrix (`permissions.ts`), status state machine (`status.ts`), state helpers, fractional index, text rules, task views, search, notifications. No DOM. |
 | `../oplog-core` | Shared core (separate repository): canonical JSON, crypto, HLC, verify, replay, engine, storage adapters. |
 | `src/app/` | Browser services: session (folder handle, key file, encrypted cache), files and attachments, IndexedDB, demo data, performance data (`perfdata.ts`). |
-| `src/ui/` | Preact UI: start screens (`Gate.tsx`), shell (`App.tsx`), task list, task panel, dialogs, admin screens (`admin.tsx`), audit, revert and integrity (`audit.tsx`), notifications (`Notifications.tsx`), built-in guides (`Help.tsx`, parser `docs.ts`), information bar (`Footer.tsx`), safe Markdown (`markdown.ts`), `i18n.ts` (all texts), `styles.css`. |
+| `src/ui/` | Preact UI: start screens (`Gate.tsx`), shell (`App.tsx`), task list, task panel, dialogs, admin screens (`admin.tsx`), audit, revert and integrity (`audit.tsx`), notifications (`Notifications.tsx`), built-in guides (`Help.tsx`, parser `docs.ts`), information bar (`Footer.tsx`), safe Markdown (`markdown.ts`), `i18n.ts` (all texts, Czech and English), `lang.tsx` (the language switch), `styles.css`. |
 | `test/` | `unit` (state machine and `authorize` matrices, domain rules), `property` (convergence), `simulation` (multi-user on disk, attacks), `e2e`, `perf`, `fixtures` (synthetic only). `helpers.ts` makes a synthetic team. |
 | `docs/` | User guide and admin guide (Czech, built into the app), operations, architecture, data model, security model, wireframes, review checklist, ADRs, open questions. |
 | `scripts/` | `check-build.mjs` (build check, also the third-party notices), `release.mjs` (release package and archive), `zip.mjs` (ZIP writer of the archive), `sbom.mjs` (SBOM and its checks), `oplog-core-ref.mjs` (the pinned oplog-core commit), `commit.mjs` (the commit of a build), `screenshots.mjs` (guide images and the README image). |
@@ -66,7 +66,7 @@ npm run release        # release/app/: index.html, LICENSE, THIRD-PARTY-NOTICES.
 4. `test/unit/authorize.test.ts`: the expected rights in the independent lists.
 5. A new status or transition: `src/domain/status.ts` and the matrix `EXPECTED` in `test/unit/status.test.ts`.
 6. Revert: a create op needs a case in `removeWrites` (`src/domain/domain.ts`). A derived field needs `isDerived`.
-7. Notifications (`src/domain/notifications.ts`), the UI labels (`src/ui/i18n.ts`) and the Czech audit texts (`FIELD_TEXT` in `src/ui/i18n.ts`).
+7. Notifications (`src/domain/notifications.ts`), the UI labels and the audit texts (`OP_LABEL`, `FIELD_TEXT`) in `src/ui/i18n.ts`, in Czech and English.
 8. `docs/data-model.md`: the catalogue row (payload, who, effects, inverse). The guides (`docs/user-guide.md`, `docs/admin-guide.md`) if users or admins see the change.
 9. Run the definition of done.
 
@@ -74,7 +74,7 @@ npm run release        # release/app/: index.html, LICENSE, THIRD-PARTY-NOTICES.
 
 1. **Stop and ask** the owner before you change the op format, the permission matrix or the status state machine. Record the question and the answer in `docs/open-questions.md`.
 2. **Temporary files** (probes, screenshots, test folders) go to a temporary directory outside the repository.
-3. **Language.** Docs, comments and commit messages: English in Simplified Technical English style. UI text: Czech, in `src/ui/i18n.ts`. The guides `docs/user-guide.md` and `docs/admin-guide.md`: Czech.
+3. **Language.** Docs, comments and commit messages: English in Simplified Technical English style. UI text: Czech and English, in `src/ui/i18n.ts`. The guides `docs/user-guide.md` and `docs/admin-guide.md`: Czech.
 4. **The guides are part of the app.** The build bundles them, and the app shows them (**Nápověda**, **Příručka správce**). Keep them correct for the current version: use the exact button names from `src/ui/i18n.ts`. Their parser (`src/ui/docs.ts`) supports headings, paragraphs, notes (`> `), flat lists (no nested lists), images from `docs/img/` (`![text](img/<name>.jpg)`, made by `scripts/screenshots.mjs` from synthetic demo data) and links inside the app (`#/help?s=<section>`). Do not use external URLs (the build check refuses them). `test/unit/docs.test.ts` checks these rules and the links.
 
 ## 7. Git workflow

@@ -1,6 +1,6 @@
 # UI wireframes
 
-Status: design draft (Phase 2). The labels are the Czech texts of the UI. All names are synthetic.
+Status: design draft (Phase 2). The labels are the Czech texts of the UI. All names are synthetic. The button **English** (**Česky** back) is on each start screen next to the app name and in the top bar next to the user name (`docs/architecture.md` §8).
 
 ## 1. Main window, board view
 

@@ -887,8 +887,15 @@ dialog h2 {
   padding: 1.5rem 2rem;
   width: min(32rem, 100%);
 }
-.gate-box .brand {
-  margin: 0 0 0.5rem;
+.gate-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+.gate-top .brand {
+  margin: 0;
 }
 
 button.more {

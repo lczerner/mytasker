@@ -6,6 +6,7 @@ import { useContext } from 'preact/hooks';
 import type { AuditStatus, Engine, Signer, Storage } from 'oplog-core';
 import type { Settings, Status } from '../domain/constants';
 import type { TaskView } from '../domain/view';
+import type { Lang } from './i18n';
 
 export interface Me {
   userId: string;
@@ -43,6 +44,8 @@ export interface AppCtx extends Model {
   me: Me;
   /** Changes after each replay, to render again. */
   version: number;
+  /** The language of the UI. A memo that holds text depends on it. */
+  lang: Lang;
   now: number;
   isAdmin: boolean;
   isVerifier: boolean;

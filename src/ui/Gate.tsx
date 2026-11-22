@@ -32,6 +32,7 @@ import { settingsOf, userIsActive } from '../domain/state';
 import { App } from './App';
 import { Footer } from './Footer';
 import { t, type Key } from './i18n';
+import { LangButton, useLang } from './lang';
 
 type Root = FileSystemDirectoryHandle;
 
@@ -46,16 +47,17 @@ type Step =
   | { s: 'error'; reason: string; retry: () => void; resetFailed?: boolean }
   | { s: 'unsupported'; problems: string[] }
   | { s: 'embedded' }
-  | { s: 'pick'; error?: string }
+  | { s: 'pick'; error?: string; errorKey?: Key }
   | { s: 'permission'; root: Root }
   | { s: 'install'; root: Root }
-  | { s: 'key'; root: Root; stored?: KeyFile; error?: string }
+  | { s: 'key'; root: Root; stored?: KeyFile }
   | { s: 'create'; root: Root; bootstrap: boolean }
   | { s: 'waiting'; root: Root; u: Unlocked; engine: Engine; sent: boolean }
   | { s: 'removed'; root: Root }
   | { s: 'app'; root: Root; u: Unlocked; engine: Engine; installId: string };
 
 export function Gate() {
+  useLang(); // a change of the language renders the start screens and the app again
   const [step, setStep] = useState<Step>({ s: 'loading' });
 
   /** Runs a step function. An error shows a message with "try again" (never an endless "loading"). */
@@ -179,6 +181,7 @@ export function Gate() {
       return (
         <Screen title={t('gate.pick.title')}>
           <p>{t('gate.pick.text')}</p>
+          {step.errorKey && <p class="error">{t(step.errorKey)}</p>}
           {step.error && <p class="error">{step.error}</p>}
           <button
             type="button"
@@ -276,9 +279,12 @@ function Screen({ title, children }: { title: string; children: preact.Component
     <>
       <main class="gate">
         <div class="gate-box">
-          <p class="brand">
-            <span aria-hidden="true">✓</span> {t('appName')}
-          </p>
+          <div class="gate-top">
+            <p class="brand">
+              <span aria-hidden="true">✓</span> {t('appName')}
+            </p>
+            <LangButton />
+          </div>
           <h1>{title}</h1>
           {children}
         </div>
@@ -292,7 +298,7 @@ function Screen({ title, children }: { title: string; children: preact.Component
 async function rootStep(root: Root, mark: (step: string) => void = () => undefined): Promise<Step> {
   const storage = new FsaStorage(root);
   mark('shared folder read');
-  if ((await storage.list('app')) === null) return { s: 'pick', error: t('gate.wrongFolder') };
+  if ((await storage.list('app')) === null) return { s: 'pick', errorKey: 'gate.wrongFolder' };
   if ((await storage.read(TRUST_ROOT_PATH)) === null) return { s: 'install', root };
   mark('saved key (IndexedDB)');
   return { s: 'key', root, stored: await storedKeyFile() };
@@ -351,23 +357,23 @@ function TrustRootInfo({ root }: { root: Root }) {
 function KeyStep({ step, onUnlocked, onCreate, setStep }: { step: Extract<Step, { s: 'key' }>; onUnlocked: (u: Unlocked) => void; onCreate: () => void; setStep: (s: Step) => void }) {
   const [pass, setPass] = useState('');
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState(step.error ?? '');
+  const [err, setErr] = useState<Key | null>(null);
   const open = async () => {
     try {
       const f = await openTextFile();
       if (!f) return;
-      if (await isInside(step.root, f.handle)) return setErr(t('gate.key.inside'));
+      if (await isInside(step.root, f.handle)) return setErr('gate.key.inside');
       const k = parseKeyFile(f.text);
       await storeKeyFile(k);
-      setStep({ ...step, stored: k, error: undefined });
+      setStep({ ...step, stored: k });
     } catch {
-      setErr(t('gate.key.notKey'));
+      setErr('gate.key.notKey');
     }
   };
   if (!step.stored)
     return (
       <Screen title={t('gate.key.title')}>
-        {err && <p class="error">{err}</p>}
+        {err && <p class="error">{t(err)}</p>}
         <div class="stack">
           <button type="button" class="primary" onClick={open}>
             {t('gate.key.open')}
@@ -393,7 +399,7 @@ function KeyStep({ step, onUnlocked, onCreate, setStep }: { step: Extract<Step, 
             onUnlocked(await unlock(step.stored!, pass));
           } catch (x) {
             console.warn(x);
-            setErr(x instanceof WrongPassphraseError ? t('gate.unlock.wrong') : t('gate.errorGeneric'));
+            setErr(x instanceof WrongPassphraseError ? 'gate.unlock.wrong' : 'gate.errorGeneric');
             setBusy(false);
           }
         }}
@@ -402,7 +408,7 @@ function KeyStep({ step, onUnlocked, onCreate, setStep }: { step: Extract<Step, 
           {t('gate.unlock.pass')}
           <input type="password" autoFocus required autoComplete="current-password" value={pass} onInput={(e) => setPass((e.target as HTMLInputElement).value)} />
         </label>
-        {err && <p class="error">{err}</p>}
+        {err && <p class="error">{t(err)}</p>}
         <button type="submit" class="primary" disabled={busy}>
           {t('gate.unlock.button')}
         </button>
@@ -411,7 +417,7 @@ function KeyStep({ step, onUnlocked, onCreate, setStep }: { step: Extract<Step, 
           class="link"
           onClick={async () => {
             await forgetKeyFile();
-            setStep({ ...step, stored: undefined, error: undefined });
+            setStep({ ...step, stored: undefined });
           }}
         >
           {t('gate.unlock.other')}
@@ -430,7 +436,7 @@ function CreateStep({ root, bootstrap, onDone }: { root: Root; bootstrap: boolea
   const [name, setName] = useState('');
   const [p1, setP1] = useState('');
   const [p2, setP2] = useState('');
-  const [err, setErr] = useState('');
+  const [err, setErr] = useState<Key | null>(null);
   const [busy, setBusy] = useState(false);
   // The key is created 1 time. If the save of the key file is cancelled, the user saves again with the SAME key.
   const [made, setMade] = useState<{ u: Unlocked; publicKey: string } | null>(null);
@@ -438,7 +444,7 @@ function CreateStep({ root, bootstrap, onDone }: { root: Root; bootstrap: boolea
   const finish = async (m: { u: Unlocked; publicKey: string }) => {
     const r = await saveTextFile(keyFileName(m.u.keyFile.displayName), JSON.stringify(m.u.keyFile, null, 2), 'application/json', t('file.keyDescription'), (h) => isInside(root, h));
     if (!r.saved) {
-      setErr(r.reason === 'forbidden' ? t('gate.key.inside') : t('gate.key.saveCancelled'));
+      setErr(r.reason === 'forbidden' ? 'gate.key.inside' : 'gate.key.saveCancelled');
       return;
     }
     // Only after the key file is saved: keep the wrapped copy and write the trust root or the access request.
@@ -455,10 +461,10 @@ function CreateStep({ root, bootstrap, onDone }: { root: Root; bootstrap: boolea
   };
 
   const submit = async () => {
-    setErr('');
+    setErr(null);
     if (!made) {
-      if (p1.length < 12) return setErr(t('gate.create.passShort'));
-      if (p1 !== p2) return setErr(t('gate.create.passDiff'));
+      if (p1.length < 12) return setErr('gate.create.passShort');
+      if (p1 !== p2) return setErr('gate.create.passDiff');
     }
     setBusy(true);
     try {
@@ -471,7 +477,7 @@ function CreateStep({ root, bootstrap, onDone }: { root: Root; bootstrap: boolea
       await finish(m);
     } catch (e) {
       console.warn(e);
-      setErr(t('gate.errorGeneric'));
+      setErr('gate.errorGeneric');
     } finally {
       setBusy(false);
     }
@@ -502,7 +508,7 @@ function CreateStep({ root, bootstrap, onDone }: { root: Root; bootstrap: boolea
           </>
         )}
         <p class="note">{t('gate.create.saveHint')}</p>
-        {err && <p class="error">{err}</p>}
+        {err && <p class="error">{t(err)}</p>}
         <button type="submit" class="primary" disabled={busy}>
           {bootstrap ? t('gate.newInstall.button') : t('gate.create.save')}
         </button>
@@ -516,7 +522,7 @@ function Waiting({ step, onApproved }: { step: Extract<Step, { s: 'waiting' }>; 
   const secs = settingsOf(step.engine.state).pollSeconds;
   const timer = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const [sent, setSent] = useState(step.sent);
-  const [err, setErr] = useState('');
+  const [err, setErr] = useState<Key | null>(null);
   useEffect(() => {
     timer.current = setInterval(async () => {
       try {
@@ -527,7 +533,7 @@ function Waiting({ step, onApproved }: { step: Extract<Step, { s: 'waiting' }>; 
         }
       } catch (e) {
         console.warn(e);
-        setErr(t('gate.errorGeneric'));
+        setErr('gate.errorGeneric');
       }
     }, secs * 1000);
     return () => clearInterval(timer.current);
@@ -544,7 +550,7 @@ function Waiting({ step, onApproved }: { step: Extract<Step, { s: 'waiting' }>; 
       setSent(true);
     } catch (e) {
       console.warn(e);
-      setErr(t('gate.errorGeneric'));
+      setErr('gate.errorGeneric');
     }
   };
   return (
@@ -560,7 +566,7 @@ function Waiting({ step, onApproved }: { step: Extract<Step, { s: 'waiting' }>; 
           {t('gate.enroll.send')}
         </button>
       )}
-      {err && <p class="error">{err}</p>}
+      {err && <p class="error">{t(err)}</p>}
       <TrustRootInfo root={step.root} />
     </Screen>
   );

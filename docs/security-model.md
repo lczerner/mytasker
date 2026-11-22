@@ -46,7 +46,7 @@ On 2026-11-19 I tested Chromium 155: all local HTML files share 1 storage origin
 1. The key file and the cache are encrypted with keys from the passphrase (ADR 0006).
 2. The signing key is a non-extractable `CryptoKey` in the memory of the app page only.
 3. **The app stores the folder handle** in IndexedDB, so the user does not select the folder at each start. **Accepted risk** (owner, 2026-11-19, Q-22): any local HTML file can read the handle and ask for write permission to the shared folder. The dialog then shows the name of our folder. If the user grants it, that page can change or delete files in the shared folder, and on an admin computer it can replace `app/index.html`. Item 5 of §3 decreases the risk: the app does not let users attach or download files that run as pages. A residual path stays: an HTML file inside a ZIP attachment, or an HTML file from another source, such as email or the web.
-4. `localStorage` contains only view settings (filters, board or table).
+4. `localStorage` contains only view settings (filters, board or table, the language of the UI).
 
 ## 5. Known limitations
 
