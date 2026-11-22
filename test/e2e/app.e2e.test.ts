@@ -117,7 +117,10 @@ describe('real flow with a folder (OPFS instead of the native dialogs, http://12
   let url = '';
   beforeAll(async () => {
     const html = readFileSync(DIST, 'utf8');
-    server = createServer((_, res) => res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(html));
+    // "?sandbox": the page is sandboxed, as in the file preview of SharePoint on the web.
+    server = createServer((req, res) =>
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', ...(req.url?.includes('sandbox') ? { 'content-security-policy': 'sandbox allow-scripts' } : {}) }).end(html),
+    );
     await new Promise<void>((r) => server.listen(0, '127.0.0.1', () => r()));
     url = `http://127.0.0.1:${(server.address() as { port: number }).port}/`;
   });
@@ -337,4 +340,32 @@ describe('real flow with a folder (OPFS instead of the native dialogs, http://12
     expect(errors).toEqual([]);
     await ctx.close();
   }, 90_000);
+
+  it('a sandboxed web page (SharePoint preview) or a blocked folder picker shows how to open the app from the synced folder', async () => {
+    const TITLE = '.gate h1:has-text("Otevřete aplikaci ze složky v počítači")';
+    let ctx = await browser.newContext();
+    let page = await ctx.newPage();
+    let errors = watch(page);
+    await page.goto(`${url}?sandbox`);
+    expect(await page.evaluate(() => window.origin)).toBe('null');
+    await page.waitForSelector(TITLE);
+    expect(await page.locator('.gate ol li').count()).toBe(4);
+    expect(await page.locator('button:has-text("Vybrat složku")').count()).toBe(0);
+    expect(errors).toEqual([]);
+    await ctx.close();
+    // The picker throws SecurityError in a way that the start check does not detect.
+    ctx = await browser.newContext();
+    await ctx.addInitScript(() => {
+      (window as any).showDirectoryPicker = async () => {
+        throw new DOMException("Sandboxed documents aren't allowed to show a file picker.", 'SecurityError');
+      };
+    });
+    page = await ctx.newPage();
+    errors = watch(page);
+    await page.goto(url);
+    await page.click('button:has-text("Vybrat složku")');
+    await page.waitForSelector(TITLE);
+    expect(errors).toEqual([]);
+    await ctx.close();
+  }, 60_000);
 });

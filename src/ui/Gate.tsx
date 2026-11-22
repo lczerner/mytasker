@@ -11,6 +11,7 @@ import {
   forgetKeyFile,
   forgetRoot,
   installIdOf,
+  isEmbedded,
   isInside,
   loadCache,
   loadUserData,
@@ -44,6 +45,7 @@ type Step =
   | { s: 'loading' }
   | { s: 'error'; reason: string; retry: () => void; resetFailed?: boolean }
   | { s: 'unsupported'; problems: string[] }
+  | { s: 'embedded' }
   | { s: 'pick'; error?: string }
   | { s: 'permission'; root: Root }
   | { s: 'install'; root: Root }
@@ -79,6 +81,7 @@ export function Gate() {
     const mark = (s: string) => (at = s);
     void (async () => {
       try {
+        if (isEmbedded()) return set({ s: 'embedded' }); // before any storage access: it can throw there
         if (sessionStorage.getItem(RESET_FLAG)) {
           sessionStorage.removeItem(RESET_FLAG); // 1 try only: no reload loop
           mark(RESET_STEP);
@@ -149,6 +152,18 @@ export function Gate() {
           <ResetBrowserData />
         </Screen>
       );
+    case 'embedded':
+      return (
+        <Screen title={t('gate.embedded.title')}>
+          <p>{t('gate.embedded.text')}</p>
+          <ol>
+            <li>{t('gate.embedded.sync')}</li>
+            <li>{t('gate.embedded.keep')}</li>
+            <li>{t('gate.embedded.open')}</li>
+            <li>{t('gate.embedded.pick')}</li>
+          </ol>
+        </Screen>
+      );
     case 'unsupported':
       return (
         <Screen title={t('gate.unsupported.title')}>
@@ -173,7 +188,10 @@ export function Gate() {
               try {
                 root = await pickRoot();
               } catch (e) {
-                if ((e as Error).name !== 'AbortError') setStep({ s: 'pick', error: (e as Error).message });
+                const name = (e as Error).name;
+                // SecurityError: the page is embedded in a way that isEmbedded() does not detect.
+                if (name === 'SecurityError') setStep({ s: 'embedded' });
+                else if (name !== 'AbortError') setStep({ s: 'pick', error: (e as Error).message });
                 return;
               }
               await guard(() => afterRoot(root))();

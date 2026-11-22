@@ -126,6 +126,18 @@ Unsupported browser (no File System Access API or no Ed25519):
 Tento prohlížeč aplikaci Úkoly nepodporuje. Otevřete soubor v aktuálním Microsoft Edge nebo Google Chrome (verze 137 nebo novější).
 ```
 
+Opened in the web preview of SharePoint (a frame or a sandboxed page, or the folder picker throws SecurityError): no folder button, only the steps.
+
+```text
+┌ Otevřete aplikaci ze složky v počítači ────────────────────────┐
+│ Aplikace Úkoly nefunguje v náhledu na webu SharePoint …        │
+│ 1. Na webu SharePoint … klikněte na „Synchronizovat“.          │
+│ 2. … zvolte „Vždy ponechat na tomto zařízení“.                 │
+│ 3. Ve složce Úkoly otevřete soubor app/index.html …            │
+│ 4. Klikněte na „Vybrat složku“ …                               │
+└────────────────────────────────────────────────────────────────┘
+```
+
 ## 6. Notification centre
 
 ```text
