@@ -4,7 +4,7 @@ Tasks is a task manager for a small team. It has no server. The app is 1 HTML fi
 
 - Each change is a signed, immutable JSON file (an op). Each computer checks all ops and computes the same state.
 - No network access at runtime. The content security policy blocks it, and the build check verifies it.
-- The UI is in Czech (the start screens also in English). The Czech UI uses the name "Úkoly" for the app. The app contains a user guide (**Nápověda**) and an admin guide (**Příručka správce**).
+- The UI is in Czech (the default) and English. Both languages use the name "Úkoly" for the app. The app contains a user guide (**Nápověda**) and an admin guide (**Příručka správce**).
 
 ![The board and an open task in the demo mode (synthetic data)](docs/readme/app.jpg)
 

@@ -290,6 +290,30 @@ describe('more flows (demo over file://)', () => {
     await page.close();
   }, 60_000);
 
+  it('the app changes to English and back, and shows the guides with a Czech-only note', async () => {
+    const { page, errors } = await open('alena');
+    await page.click('header.top button:has-text("English")');
+    await page.waitForSelector('nav.side a:has-text("All tasks")');
+    expect(await page.getAttribute('html', 'lang')).toBe('en');
+    await page.waitForSelector('.start-banner:has-text("2 tasks wait for verification")');
+    await task(page, 'Objednat toner');
+    await page.waitForSelector('.drawer textarea[placeholder^="Write a comment"]');
+    await page.click('#tab-h');
+    await page.waitForFunction(() => document.querySelector('.history')?.textContent?.includes('Task created'));
+    expect(await page.textContent('footer.footer')).toContain('MIT License');
+    await page.evaluate(() => (location.hash = '#/help'));
+    await page.waitForSelector('main p.muted:has-text("The guides are available in Czech only.")');
+    expect(await page.getAttribute('.doc-body', 'lang')).toBe('cs');
+    // The choice stays after a reload; "Česky" changes back.
+    await page.reload();
+    await page.waitForSelector('nav.side a:has-text("All tasks")');
+    await page.click('header.top button:has-text("Česky")');
+    await page.waitForSelector('nav.side a:has-text("Všechny úkoly")');
+    expect(await page.getAttribute('html', 'lang')).toBe('cs');
+    expect(errors).toEqual([]);
+    await page.close();
+  }, 60_000);
+
   it('notifications: the bell count, the page title, the start banner, mark as read, open a task', async () => {
     const { page, errors } = await open('vera');
     await page.waitForSelector('.bell-n');

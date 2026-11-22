@@ -8,7 +8,7 @@ import ADMIN_GUIDE from '../../docs/admin-guide.md?raw';
 import USER_GUIDE from '../../docs/user-guide.md?raw';
 import { href, useApp } from './ctx';
 import { parseDoc, tocOf, type DocBlock } from './docs';
-import { t } from './i18n';
+import { getLang, t } from './i18n';
 import type { Inline } from './markdown';
 import { Dialog } from './widgets';
 
@@ -123,30 +123,36 @@ function DocView({ guide, onLocal, section }: { guide: Guide; onLocal: (href: st
         );
     }
   };
+  // The guides are in Czech only (lang="cs" for screen readers in the English UI).
   return (
-    <div class="doc" ref={box}>
-      {toc.length > 2 && (
-        <nav class="doc-toc" aria-label={t('help.toc')}>
-          <h2>{t('help.toc')}</h2>
-          <ul>
-            {toc.map((x) => (
-              <li key={x.id}>
-                <a
-                  href={href(ROUTE[guide], { s: x.id })}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onLocal(href(ROUTE[guide], { s: x.id }));
-                  }}
-                >
-                  {x.text}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )}
-      <article class="doc-body">{blocks.map(block)}</article>
-    </div>
+    <>
+      {getLang() !== 'cs' && <p class="muted">{t('help.czechOnly')}</p>}
+      <div class="doc" ref={box}>
+        {toc.length > 2 && (
+          <nav class="doc-toc" aria-label={t('help.toc')}>
+            <h2>{t('help.toc')}</h2>
+            <ul lang="cs">
+              {toc.map((x) => (
+                <li key={x.id}>
+                  <a
+                    href={href(ROUTE[guide], { s: x.id })}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onLocal(href(ROUTE[guide], { s: x.id }));
+                    }}
+                  >
+                    {x.text}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
+        <article class="doc-body" lang="cs">
+          {blocks.map(block)}
+        </article>
+      </div>
+    </>
   );
 }
 
@@ -191,7 +197,7 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
   };
   return (
     <Dialog title={t('help.user')} onClose={onClose} wide>
-      <div class="help-dialog" lang="cs" ref={box}>
+      <div class="help-dialog" ref={box}>
         <DocView guide="user" onLocal={onLocal} />
       </div>
       <div class="row end">

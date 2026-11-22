@@ -5,18 +5,14 @@ import { useState } from 'preact/hooks';
 import LICENSE from '../../LICENSE?raw';
 import NOTICES from '../../THIRD-PARTY-NOTICES.md?raw';
 import { HelpDialog } from './Help';
-import { t as translate, type Lang, type StartKey } from './i18n';
+import { t } from './i18n';
 import { Dialog } from './widgets';
 
 const VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : 'dev';
 const COMMIT = typeof __APP_COMMIT__ === 'string' ? __APP_COMMIT__ : 'dev';
 
-/**
- * `helpHref`: in the app, the help is a page. Without it (start screens), the help opens in a dialog.
- * `lang`: the language of the start screens (the app is in Czech only).
- */
-export function Footer({ helpHref, lang = 'cs' }: { helpHref?: string; lang?: Lang }) {
-  const t = (k: StartKey) => translate(k, {}, lang);
+/** `helpHref`: in the app, the help is a page. Without it (start screens), the help opens in a dialog. */
+export function Footer({ helpHref }: { helpHref?: string }) {
   const [open, setOpen] = useState(false);
   const [help, setHelp] = useState(false);
   // The dialogs are outside the footer: inside, they would inherit the small font of the bar.

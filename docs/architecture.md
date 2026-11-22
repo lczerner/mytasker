@@ -42,7 +42,7 @@ flowchart TB
   subgraph app[mytasker]
     domain[src/domain: catalogue, authorize, status machine, search, notifications] --> replay
     appsvc[src/app: session, key file, encrypted cache, files] --> engine
-    ui[src/ui: Preact, i18n cs] --> appsvc
+    ui[src/ui: Preact, i18n cs and en] --> appsvc
     ui --> domain
   end
 ```
@@ -203,7 +203,7 @@ See `docs/data-model.md` §9 for the diagram and the transition table.
 
 The UI is Preact (ADR 0004) with hand-written CSS. All strings are in `src/ui/i18n.ts`. See `docs/ui-wireframes.md`.
 
-The UI is in Czech. The start screens (`src/ui/Gate.tsx`) and their information bar also have English: the button **English** (**Česky** back) changes the language, and `localStorage` keeps the choice. The English table in `i18n.ts` must have a text for each start-screen key (a compile error otherwise). After the unlock, the app is in Czech only.
+The UI is in Czech (the default) and English. The button **English** (**Česky** back) on the start screens and in the top bar changes the language (`src/ui/lang.tsx`), and `localStorage` keeps the choice. The English table in `i18n.ts` has the type of the Czech table, so a missing text is a compile error; a unit test checks that the placeholders agree. A change of the language renders the UI again and keeps its state; a memo that holds text depends on `lang` of the app context. Dates stay in Europe/Prague, and sorting stays Czech, in both languages. The guides (`docs/user-guide.md`, `docs/admin-guide.md`) are in Czech only: in English, the help shows a note.
 
 ## 9. Test strategy
 

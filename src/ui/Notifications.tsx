@@ -208,7 +208,8 @@ export function StartBanner() {
   const app = useApp();
   const [closed, setClosed] = useState(false);
   // Computed 1 time, when the app starts: a later change does not show the banner again.
-  const [parts] = useState(() => {
+  // The counts only: the text is made at each render, in the current language.
+  const [counts] = useState(() => {
     const me = app.me.userId;
     let overdue = 0;
     let verify = 0;
@@ -218,11 +219,11 @@ export function StartBanner() {
       if (mine && dueState(v, app.now, app.settings.dueSoonDays) === 'overdue') overdue++;
       if (app.isVerifier && v.status === 'done') verify++;
     }
-    const out: { text: string; link: string }[] = [];
-    if (overdue) out.push({ text: t('banner.overdue', { n: nTasks(overdue) }), link: href(['mine']) });
-    if (verify) out.push({ text: nVerifyWaiting(verify), link: href(['review']) });
-    return out;
+    return { overdue, verify };
   });
+  const parts: { text: string; link: string }[] = [];
+  if (counts.overdue) parts.push({ text: t('banner.overdue', { n: nTasks(counts.overdue) }), link: href(['mine']) });
+  if (counts.verify) parts.push({ text: nVerifyWaiting(counts.verify), link: href(['review']) });
   if (closed || !parts.length) return null;
   return (
     <div class="start-banner" role="status">

@@ -11,6 +11,7 @@ import { App } from './App';
 import type { UserData } from './Notifications';
 import { Gate } from './Gate';
 import { t } from './i18n';
+import { initLang, LangProvider } from './lang';
 import './styles.css';
 
 function DemoRoot({ size, first }: { size: 'small' | 'large'; first: string }) {
@@ -71,17 +72,18 @@ function PerfRoot({ tasks, per }: { tasks: number; per: number }) {
 
 const params = new URLSearchParams(location.search);
 const root = document.getElementById('app')!;
+initLang();
 if (params.has('demo')) {
   const v = params.get('demo') ?? '';
   if (v === 'perf') {
     // Limits: a mistake in the URL must not freeze the tab for minutes.
     const num = (k: string, d: number, min: number, max: number) => Math.min(max, Math.max(min, Math.floor(Number(params.get(k) ?? d)) || d));
-    render(<PerfRoot tasks={num('tasks', 5000, 1, 20_000)} per={num('per', 20, 9, 60)} />, root);
+    render(<LangProvider><PerfRoot tasks={num('tasks', 5000, 1, 20_000)} per={num('per', 20, 9, 60)} /></LangProvider>, root);
   } else {
     const first = DEMO_USERS.find((u) => u.id === `u-${v}`)?.id ?? DEMO_USERS[0].id;
-    render(<DemoRoot size={v === 'large' ? 'large' : 'small'} first={first} />, root);
+    render(<LangProvider><DemoRoot size={v === 'large' ? 'large' : 'small'} first={first} /></LangProvider>, root);
   }
-} else render(<Gate />, root);
+} else render(<LangProvider><Gate /></LangProvider>, root);
 
 /** Demo: the per-user data stays in memory (nothing is saved). */
 const demoData = new Map<string, unknown>();

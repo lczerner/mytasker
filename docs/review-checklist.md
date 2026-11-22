@@ -48,7 +48,7 @@ Wrong logic, unhandled `null` or `undefined`, off-by-one errors, wrong date arit
 ### 4. UI quality
 
 - Simple, clean and readable. The design follows `docs/ui-wireframes.md`.
-- Every visible string is in `src/ui/i18n.ts`. The Czech text is correct and natural: correct plurals (`Intl.PluralRules`), dates as `19. 11. 2026 14:30`.
+- Every visible string is in `src/ui/i18n.ts`. The Czech text is correct and natural: correct plurals (`Intl.PluralRules`), dates as `19. 11. 2026 14:30`. The English text has the same meaning, correct plurals, dates as `19 Nov 2026 14:30`.
 - Status is clear without color (icon and label). WCAG AA contrast. Full keyboard use with a visible focus.
 - Layout: no content leaks out of its card, table or panel at 1000, 1400 and 1920 px width, also with long titles and many tags.
 - Controls that the user cannot use are hidden or disabled.

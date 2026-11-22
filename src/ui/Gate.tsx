@@ -2,8 +2,7 @@
 // Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
 // Start screens for a real shared folder: browser check, folder, trust root, key, enrollment.
 import { createEnrollment, enrollmentPath, Engine, FileExistsError, fingerprint, FsaStorage, TRUST_ROOT_PATH, uuidv7, WrongPassphraseError, type KeyFile, type TrustRoot } from 'oplog-core';
-import { createContext } from 'preact';
-import { useContext, useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { openTextFile, saveTextFile } from '../app/files';
 import { deleteDb } from '../app/idb';
 import {
@@ -32,7 +31,8 @@ import { domain } from '../domain/domain';
 import { settingsOf, userIsActive } from '../domain/state';
 import { App } from './App';
 import { Footer } from './Footer';
-import { t as translate, type Lang, type StartKey } from './i18n';
+import { t, type Key } from './i18n';
+import { LangButton, useLang } from './lang';
 
 type Root = FileSystemDirectoryHandle;
 
@@ -41,30 +41,13 @@ const START_TIMEOUT_MS = 15_000;
 /** Set by the reset button: the next page load deletes the database before any other IndexedDB access. */
 const RESET_FLAG = 'mytasker-reset';
 const RESET_STEP = 'reset of the browser data (IndexedDB)';
-/** The language of the start screens in `localStorage` (a view setting, not secret). */
-const LANG_KEY = 'mytasker.lang';
-
-type T = (key: StartKey, params?: Record<string, string | number>) => string;
-const LangCtx = createContext<{ lang: Lang; setLang: (l: Lang) => void }>({ lang: 'cs', setLang: () => undefined });
-const useT = (): T => {
-  const { lang } = useContext(LangCtx);
-  return (key, params) => translate(key, params, lang);
-};
-
-function savedLang(): Lang {
-  try {
-    return localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'cs';
-  } catch {
-    return 'cs'; // storage can be blocked (for example in an embedded page)
-  }
-}
 
 type Step =
   | { s: 'loading' }
   | { s: 'error'; reason: string; retry: () => void; resetFailed?: boolean }
   | { s: 'unsupported'; problems: string[] }
   | { s: 'embedded' }
-  | { s: 'pick'; error?: string; errorKey?: StartKey }
+  | { s: 'pick'; error?: string; errorKey?: Key }
   | { s: 'permission'; root: Root }
   | { s: 'install'; root: Root }
   | { s: 'key'; root: Root; stored?: KeyFile }
@@ -74,29 +57,8 @@ type Step =
   | { s: 'app'; root: Root; u: Unlocked; engine: Engine; installId: string };
 
 export function Gate() {
-  const [lang, setLangState] = useState<Lang>(savedLang);
-  const setLang = (l: Lang) => {
-    setLangState(l);
-    try {
-      localStorage.setItem(LANG_KEY, l);
-    } catch {
-      /* the choice stays for this page only */
-    }
-  };
-  return (
-    <LangCtx.Provider value={{ lang, setLang }}>
-      <Steps />
-    </LangCtx.Provider>
-  );
-}
-
-function Steps() {
-  const { lang } = useContext(LangCtx);
-  const t = useT();
+  useLang(); // a change of the language renders the start screens and the app again
   const [step, setStep] = useState<Step>({ s: 'loading' });
-  useEffect(() => {
-    document.documentElement.lang = step.s === 'app' ? 'cs' : lang;
-  }, [lang, step.s]);
 
   /** Runs a step function. An error shows a message with "try again" (never an endless "loading"). */
   const guard = (f: () => Promise<void>) => async () => {
@@ -210,7 +172,7 @@ function Steps() {
           <p>{t('gate.unsupported.text')}</p>
           <ul>
             {step.problems.map((p) => (
-              <li key={p}>{t(`gate.unsupported.${p}` as StartKey)}</li>
+              <li key={p}>{t(`gate.unsupported.${p}` as Key)}</li>
             ))}
           </ul>
         </Screen>
@@ -313,9 +275,6 @@ function debounce(f: () => void, ms: number): () => void {
 }
 
 function Screen({ title, children }: { title: string; children: preact.ComponentChildren }) {
-  const { lang, setLang } = useContext(LangCtx);
-  const t = useT();
-  const other: Lang = lang === 'cs' ? 'en' : 'cs';
   return (
     <>
       <main class="gate">
@@ -324,15 +283,13 @@ function Screen({ title, children }: { title: string; children: preact.Component
             <p class="brand">
               <span aria-hidden="true">✓</span> {t('appName')}
             </p>
-            <button type="button" class="link" lang={other} onClick={() => setLang(other)}>
-              {t('gate.language')}
-            </button>
+            <LangButton />
           </div>
           <h1>{title}</h1>
           {children}
         </div>
       </main>
-      <Footer lang={lang} />
+      <Footer />
     </>
   );
 }
@@ -352,7 +309,6 @@ async function rootStep(root: Root, mark: (step: string) => void = () => undefin
  * reload, before any IndexedDB access: in this page, a request that never ended can block it.
  */
 function ResetBrowserData() {
-  const t = useT();
   const [ask, setAsk] = useState(false);
   if (!ask)
     return (
@@ -377,7 +333,6 @@ function ResetBrowserData() {
 
 /** The fingerprints of the root admins (security-model §2.5): users compare them with the admin. */
 function TrustRootInfo({ root }: { root: Root }) {
-  const t = useT();
   const [fps, setFps] = useState<string[]>([]);
   useEffect(() => {
     void new FsaStorage(root)
@@ -400,10 +355,9 @@ function TrustRootInfo({ root }: { root: Root }) {
 }
 
 function KeyStep({ step, onUnlocked, onCreate, setStep }: { step: Extract<Step, { s: 'key' }>; onUnlocked: (u: Unlocked) => void; onCreate: () => void; setStep: (s: Step) => void }) {
-  const t = useT();
   const [pass, setPass] = useState('');
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<StartKey | null>(null);
+  const [err, setErr] = useState<Key | null>(null);
   const open = async () => {
     try {
       const f = await openTextFile();
@@ -481,9 +435,8 @@ function keyFileName(name: string): string {
 function CreateStep({ root, bootstrap, onDone }: { root: Root; bootstrap: boolean; onDone: (u: Unlocked) => void }) {
   const [name, setName] = useState('');
   const [p1, setP1] = useState('');
-  const t = useT();
   const [p2, setP2] = useState('');
-  const [err, setErr] = useState<StartKey | null>(null);
+  const [err, setErr] = useState<Key | null>(null);
   const [busy, setBusy] = useState(false);
   // The key is created 1 time. If the save of the key file is cancelled, the user saves again with the SAME key.
   const [made, setMade] = useState<{ u: Unlocked; publicKey: string } | null>(null);
@@ -568,9 +521,8 @@ function CreateStep({ root, bootstrap, onDone }: { root: Root; bootstrap: boolea
 function Waiting({ step, onApproved }: { step: Extract<Step, { s: 'waiting' }>; onApproved: () => void }) {
   const secs = settingsOf(step.engine.state).pollSeconds;
   const timer = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
-  const t = useT();
   const [sent, setSent] = useState(step.sent);
-  const [err, setErr] = useState<StartKey | null>(null);
+  const [err, setErr] = useState<Key | null>(null);
   useEffect(() => {
     timer.current = setInterval(async () => {
       try {

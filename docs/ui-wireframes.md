@@ -1,6 +1,6 @@
 # UI wireframes
 
-Status: design draft (Phase 2). The labels are the Czech texts of the UI. All names are synthetic.
+Status: design draft (Phase 2). The labels are the Czech texts of the UI. All names are synthetic. The button **English** (**Česky** back) is on each start screen next to the app name and in the top bar next to the user name (`docs/architecture.md` §8).
 
 ## 1. Main window, board view
 
@@ -104,8 +104,6 @@ Click a column header to sort. Click again to reverse. The sort uses Czech colla
 ```
 
 ## 5. Start screens
-
-Each start screen has the button **English** (**Česky** back) next to the app name (`docs/architecture.md` §8).
 
 ```text
 ┌ Úkoly ─────────────────────────────────────────┐   ┌ Odemknout ───────────────────────────┐

@@ -582,7 +582,7 @@ function Tags({ v, ro }: { v: TaskView; ro: boolean }) {
 function Tabs({ v }: { v: TaskView }) {
   const [tab, setTab] = useState<'c' | 'h'>('c');
   const app = useApp();
-  const history = useMemo(() => taskHistory(app, v.id), [app.version, v.id]);
+  const history = useMemo(() => taskHistory(app, v.id), [app.version, v.id, app.lang]);
   return (
     <section class="sec">
       <div

@@ -16,7 +16,7 @@ Potřebujete:
 
 ## 2. První spuštění: žádost o přístup
 
-1. Ve sdílené složce na tomto počítači otevřete soubor `app/index.html` v Edge nebo Chrome. Neotevírejte ho na webu SharePoint: tam aplikace nefunguje. Texty úvodních obrazovek můžete tlačítkem **English** přepnout do angličtiny. Aplikace po odemknutí je jen v češtině.
+1. Ve sdílené složce na tomto počítači otevřete soubor `app/index.html` v Edge nebo Chrome. Neotevírejte ho na webu SharePoint: tam aplikace nefunguje. Tlačítkem **English** vpravo nahoře přepnete aplikaci do angličtiny (nápověda zůstane česky).
 2. Klikněte na **Vybrat složku** a vyberte hlavní složku Úkoly (tu, která obsahuje podsložky `app`, `roles` a `data`). Prohlížeč se zeptá na povolení přístupu. Povolte ho.
 3. Klikněte na **Jsem nový uživatel / mám nový počítač**.
 4. Zadejte své jméno a heslo ke klíči (alespoň 12 znaků). Heslo zadejte dvakrát.
@@ -37,7 +37,7 @@ Když od počítače odcházíte, klikněte vpravo nahoře na **Zamknout**. Pro 
 
 ## 4. Co v aplikaci najdete
 
-- **Horní lišta:** hledání (klávesa **/**), tlačítko **+ Nový úkol** (klávesa **N**), načtení změn, zvonek s upozorněními a vaše jméno.
+- **Horní lišta:** hledání (klávesa **/**), tlačítko **+ Nový úkol** (klávesa **N**), načtení změn, zvonek s upozorněními, vaše jméno a tlačítko **English**.
 - **Levý panel:** pohledy na úkoly (seznam níže) a nápověda.
 - **Tabule a Tabulka:** přepínač vpravo nahoře. Tabule má sloupce podle stavu. Tabulku můžete řadit kliknutím na záhlaví sloupce.
 - **Filtry:** štítky, řešitelé a stav. Aktivní filtr zrušíte křížkem nebo tlačítkem **Zrušit filtry**.

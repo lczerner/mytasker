@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
-import { fmtDate, fmtDateTime, fmtRelative, isoToInputs, nMoreWrites, nShowMore, nShownChanges, nTasks, nUnread, nVerifyWaiting, plu, pragueToIso, t } from '../../src/ui/i18n';
+import { fmtDate, fmtDateTime, fmtRelative, isoToInputs, nAttachmentsGen, nFiles, nMoreWrites, nOpenTasksLoc, nShowMore, nShownChanges, nTasks, nUnread, nVerifyWaiting, opLabel, plu, pragueToIso, quote, setLang, t, TABLES } from '../../src/ui/i18n';
 
 describe('Czech formats', () => {
   it('formats dates as 19. 11. 2026 14:30 in Europe/Prague', () => {
@@ -33,11 +33,6 @@ describe('Czech formats', () => {
     expect(t('task.fileTooBig', { mb: 25 })).toBe('Soubor je větší než povolený limit 25 MB.');
   });
 
-  it('has English for the start screens only', () => {
-    expect(t('gate.enroll.waiting', { s: 30 }, 'en')).toBe('Waiting for approval. The app checks this automatically (every 30 s).');
-    expect(t('gate.language', {}, 'en')).toBe('Česky');
-    expect(t('nav.all', {}, 'en')).toBe('Všechny úkoly'); // no English text: Czech
-  });
 });
 
 describe('nVerifyWaiting', () => {
@@ -70,5 +65,61 @@ describe('audit plurals', () => {
     expect(nMoreWrites(1)).toBe('a další 1 zápis');
     expect(nMoreWrites(2)).toBe('a další 2 zápisy');
     expect(nMoreWrites(7)).toBe('a dalších 7 zápisů');
+  });
+});
+
+describe('English', () => {
+  afterEach(() => setLang('cs'));
+
+  it('has the same keys and placeholders as Czech in each table, and no empty text', () => {
+    const marks = (x: string) => [...x.matchAll(/\{\w+\}/g)].map((m) => m[0]).sort();
+    for (const [name, table] of Object.entries(TABLES)) {
+      const cs = table.cs as Record<string, string>;
+      const en = table.en as Record<string, string>;
+      expect(Object.keys(en).sort(), name).toEqual(Object.keys(cs).sort());
+      for (const k of Object.keys(cs)) {
+        expect(marks(en[k]), `${name}.${k}`).toEqual(marks(cs[k]));
+        // Empty in both or in none (an empty field name = a technical field that the UI does not show).
+        expect(en[k] === '', `${name}.${k}`).toBe(cs[k] === '');
+      }
+    }
+  });
+
+  it('uses the current language, and the parameter of t() before it', () => {
+    expect(t('nav.all')).toBe('Všechny úkoly');
+    setLang('en');
+    expect(t('nav.all')).toBe('All tasks');
+    expect(t('nav.all', {}, 'cs')).toBe('Všechny úkoly');
+    expect(t('gate.enroll.waiting', { s: 30 })).toBe('Waiting for approval. The app checks this automatically (every 30 s).');
+    expect(opLabel('CreateTask')).toBe('Task created');
+    expect(quote('Toner')).toBe('"Toner"');
+    setLang('cs');
+    expect(quote('Toner')).toBe('„Toner“');
+  });
+
+  it('uses English plurals', () => {
+    setLang('en');
+    expect([1, 2, 0].map(nTasks)).toEqual(['1 task', '2 tasks', '0 tasks']);
+    expect(nShownChanges(1, 5)).toBe('Showing 1 change of 5');
+    expect(nShownChanges(3, 40)).toBe('Showing 3 changes of 40');
+    expect(nShowMore(3)).toBe('Show 3 more');
+    expect(nMoreWrites(1)).toBe('and 1 more write');
+    expect(nMoreWrites(7)).toBe('and 7 more writes');
+    expect(nVerifyWaiting(1)).toBe('1 task waits for verification');
+    expect(nVerifyWaiting(2)).toBe('2 tasks wait for verification');
+    expect(nUnread(2)).toBe('2 unread');
+    expect(nAttachmentsGen(3)).toBe('3 attachments');
+    expect(nOpenTasksLoc(1)).toBe('1 open task');
+    expect(nFiles(12)).toBe('12 change files');
+  });
+
+  it('formats dates in Europe/Prague', () => {
+    setLang('en');
+    expect(fmtDateTime('2026-11-19T13:30:00.000Z')).toBe('19 Nov 2026 14:30');
+    expect(fmtDate('2026-11-19T23:30:00.000Z')).toBe('20 Nov 2026');
+    const now = Date.parse('2026-11-19T12:00:00Z');
+    expect(fmtRelative('2026-11-24T12:00:00Z', now)).toBe('in 5 days');
+    expect(fmtRelative('2026-11-19T09:00:00Z', now)).toBe('3 hours ago');
+    expect(fmtRelative('2026-11-19T11:59:30Z', now)).toBe('just now');
   });
 });

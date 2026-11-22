@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
-// All visible texts of the UI (Czech). The start screens and their information bar also have English (`en`).
-// Dates: Europe/Prague, cs-CZ. Plurals: Intl.PluralRules('cs'). Sorting: Intl.Collator('cs').
+// All visible texts of the UI: Czech (`cs`, the default) and English (`en`). The guides are in Czech only.
+// Dates: always Europe/Prague. Sorting: Intl.Collator('cs') (the data is Czech) in both languages.
 
 import type { Status } from '../domain/constants';
 
 export const TZ = 'Europe/Prague';
-export const LOCALE = 'cs-CZ';
 
 const cs = {
   appName: 'Úkoly',
@@ -56,7 +55,7 @@ const cs = {
   'gate.removed': 'Váš přístup byl ukončen. Obraťte se na správce.',
   'gate.fingerprint': 'Otisk kořene důvěry',
   'gate.loading': 'Načítám data…',
-  'gate.language': 'English',
+  'lang.switch': 'English',
   // ---- Shell ----
   'nav.all': 'Všechny úkoly',
   'nav.mine': 'Moje úkoly',
@@ -388,6 +387,7 @@ const cs = {
   'help.user': 'Nápověda',
   'help.admin': 'Příručka správce',
   'help.toc': 'Obsah',
+  'help.czechOnly': 'Nápověda je jen v češtině.',
   // ---- Misc ----
   'common.yes': 'ano',
   'common.no': 'ne',
@@ -399,12 +399,10 @@ const cs = {
 export type Key = keyof typeof cs;
 export type Lang = 'cs' | 'en';
 
-/** The keys of the start screens (`Gate.tsx`) and of the information bar (`Footer.tsx`). They have English texts. */
-export type StartKey = Extract<Key, `gate.${string}` | `footer.${string}`> | 'appName' | 'admin.techDetail' | 'top.changeFolder' | 'dlg.cancel' | 'file.keyDescription' | 'help.user' | 'task.close';
-
-/** English texts of the start screens. The app after the start is in Czech only. */
-const en: Record<StartKey, string> = {
+/** English texts. The type is the key set of `cs`: a missing text is a compile error. */
+const en: Record<Key, string> = {
   appName: 'Úkoly',
+  // ---- Start screens ----
   'gate.unsupported.title': 'This browser does not support the Úkoly app',
   'gate.unsupported.text': 'Open the file in a current Microsoft Edge or Google Chrome (version 137 or later).',
   'gate.unsupported.fsa': 'Access to folders (File System Access API) is missing.',
@@ -450,94 +448,458 @@ const en: Record<StartKey, string> = {
   'gate.removed': 'Your access has ended. Contact the administrator.',
   'gate.fingerprint': 'Fingerprint of the trust root',
   'gate.loading': 'Loading data…',
-  'gate.language': 'Česky',
+  'lang.switch': 'Česky',
+  // ---- Shell ----
+  'nav.all': 'All tasks',
+  'nav.mine': 'My tasks',
+  'nav.review': 'To verify',
+  'nav.created': 'Created by me',
+  'nav.skip': 'Skip to content',
+  'nav.admin': 'Administration',
+  'nav.trash': 'Trash',
+  'nav.users': 'Users',
+  'nav.enroll': 'Requests',
+  'nav.tags': 'Tags',
+  'nav.settings': 'Settings',
+  'nav.checkpoints': 'Checkpoints',
+  'nav.audit': 'Audit',
+  'nav.integrity': 'Integrity',
+  'top.search': 'Search…',
+  'top.searchLabel': 'Search tasks',
+  'top.new': 'New task',
+  'top.refresh': 'Load changes',
+  'top.notifications': 'Notifications',
+  'notif.allRead': 'Mark all as read',
+  'notif.empty': 'No notifications.',
+  'notif.new': 'New:',
+  'notif.dot': 'Unread notifications',
+  'notif.unknownTask': 'unknown task',
+  'notif.due': 'Due date is near',
+  'notif.overdue': 'Overdue',
+  'notif.assigned': 'Assigned to you',
+  'notif.comment': 'New comment',
+  'notif.mention': 'Mentioned in a comment',
+  'notif.returned': 'Returned for rework',
+  'notif.superseded': 'Your change was not applied (the task changed in the meantime)',
+  'notif.verify': 'Waiting for verification',
+  'banner.overdue': '{n} overdue',
+  'banner.close': 'Close the summary',
+  'top.lock': 'Lock',
+  'top.changeFolder': 'Change folder',
+  'top.updated': 'updated {when}',
+  'demo.banner': 'DEMO MODE – fictitious data, nothing is saved',
+  'demo.as': 'Signed in as',
+  // ---- Views ----
+  'view.board': 'Board',
+  'view.table': 'Table',
+  'view.empty': 'No tasks.',
+  'view.emptyFiltered': 'No tasks match the filters.',
+  'filter.tags': 'Tags',
+  'filter.assignees': 'Assignees',
+  'filter.status': 'Status',
+  'filter.unassigned': 'unassigned',
+  'filter.clear': 'Clear filters',
+  'filter.showVerified': 'Show verified ({n})',
+  'filter.remove': 'Remove the filter {name}',
+  'col.title': 'Title',
+  'col.status': 'Status',
+  'col.assignees': 'Assignees',
+  'col.tags': 'Tags',
+  'col.due': 'Due',
+  'col.created': 'Created',
+  'col.sortBy': 'Sort by: {name}',
+  'due.overdue': 'overdue',
+  'due.soon': 'soon',
+  'card.subtasks': 'Subtasks {done} of {total}',
+  'card.comments': 'Comments: {n}',
+  'card.attachments': 'Attachments: {n}',
+  // ---- Status ----
+  'status.new': 'New',
+  'status.assigned': 'Assigned',
+  'status.postponed': 'Postponed',
+  'status.done': 'Done',
+  'status.verified': 'Verified',
+  'status.deleted': 'Deleted',
+  // ---- Actions ----
+  'act.PostponeTask': 'Postpone',
+  'act.ResumeTask': 'Resume',
+  'act.CompleteTask': 'Done',
+  'act.VerifyTask': 'Verified',
+  'act.ReturnTask': 'Return for rework',
+  'act.ReopenTask': 'Reopen',
+  'act.DeleteTask': 'Delete',
+  'act.RestoreTask': 'Restore from trash',
+  // ---- Task panel ----
+  'task.close': 'Close',
+  'task.createdBy': 'Created by {name} {when}',
+  'task.title': 'Title',
+  'task.description': 'Description',
+  'task.descriptionEmpty': 'No description.',
+  'task.edit': 'Edit',
+  'task.save': 'Save',
+  'task.cancel': 'Cancel',
+  'task.saved': 'Saved',
+  'task.unsaved': 'The panel has an unsaved change. Save it, or close the panel with the cross.',
+  'task.due': 'Due date',
+  'task.dueNone': 'no due date',
+  'task.dueTime': 'Time (optional)',
+  'task.dueClear': 'Remove the due date',
+  'task.subtasks': 'Subtasks',
+  'task.subtaskAdd': 'Add a subtask',
+  'task.subtaskUp': 'Move up',
+  'task.subtaskDown': 'Move down',
+  'task.subtaskRemove': 'Remove the subtask',
+  'task.subtaskEdit': 'Edit the subtask',
+  'task.files': 'Attachments and links',
+  'task.fileAdd': 'Add a file',
+  'task.linkAdd': 'Add a link',
+  'task.linkUrl': 'Link address (starts with http:, https: or mailto:)',
+  'task.linkTitle': 'Label (optional)',
+  'task.download': 'Download',
+  'task.filePurge': 'Permanently remove the file',
+  'task.filePurgeText': 'The file "{name}" will be permanently removed from the shared folder. It is used in {n} in total. All of them will show "removed".',
+  'task.filePurgedUpload': 'An administrator permanently removed this file. You cannot attach it again.',
+  'task.filePurgeWarn': 'You cannot undo the removal. Use it only for a file that does not belong in the app (for example a sensitive document attached by mistake).',
+  'task.filePurgeReason': 'Reason',
+  'task.filePurgeDeleteFailed': 'The file could not be deleted ({path}). Other users still cannot open it. Delete it manually.',
+  'task.fileRemove': 'Remove the attachment',
+  'task.linkRemove': 'Remove the link',
+  'task.filePurged': 'removed',
+  'task.fileMissing': 'the file is not synced yet',
+  'task.fileBad': 'the file is damaged (the checksum does not match)',
+  'task.fileBlocked': 'You cannot attach files of this type (HTML, SVG, XML…).',
+  'task.fileTooBig': 'The file is larger than the limit of {mb} MB.',
+  'task.fileWarnTxt': 'It downloads as text (.txt), so that it does not open in the browser.',
+  'task.assignees': 'Assignees',
+  'task.assigneeAdd': 'Add an assignee',
+  'task.assigneeRemove': 'Remove the assignee {name}',
+  'task.tags': 'Tags',
+  'task.tagAdd': 'Add a tag',
+  'task.tagNew': 'New tag "{name}"',
+  'task.tagRemove': 'Remove the tag {name}',
+  'task.conversation': 'Conversation',
+  'task.history': 'History',
+  'task.historyIntro': "All changes of the task, newest first. Click a change to see the details. The time is from the author's computer.",
+  'task.historyAudit': 'Show in the audit',
+  'task.commentPlaceholder': 'Write a comment… (@name to mention someone)',
+  'task.commentSend': 'Send',
+  'task.commentEdit': 'Edit',
+  'task.commentDelete': 'Delete',
+  'task.commentDeleted': 'The comment was deleted.',
+  'task.commentEdited': 'edited',
+  'task.returnReason': 'Reason for the return',
+  'task.readonly': 'The task is verified. Changes are possible only after an administrator reopens it.',
+  'task.notFound': 'Task not found.',
+  // ---- Dialogs ----
+  'dlg.new.title': 'New task',
+  'dlg.new.create': 'Create',
+  'dlg.done.title': 'Mark as done',
+  'dlg.done.open': 'Open subtasks: {n} of {total}.',
+  'dlg.done.date': 'Completion date',
+  'dlg.return.title': 'Return for rework',
+  'dlg.delete.title': 'Delete the task',
+  'dlg.delete.text': 'The task "{title}" moves to the trash. Only an administrator can restore it.',
+  'dlg.resume.title': 'Resume the task',
+  'dlg.resume.due': 'New due date (optional)',
+  'dlg.cancel': 'Cancel',
+  // ---- Messages ----
+  'msg.saved': 'Saved.',
+  'msg.superseded': 'The change was not applied, because the task changed in the meantime (for example its status). The details are in the history of the task.',
+  'msg.rejected': 'You cannot make this change, or it is not valid.',
+  'msg.error': 'Error: {reason}',
+  'msg.writeFailed': 'The file could not be written to the shared folder: {reason}',
+  // ---- Admin ----
+  'admin.users': 'Users',
+  'admin.user': 'User',
+  'admin.role': 'Role',
+  'admin.roleAdmin': 'administrator',
+  'admin.roleUser': 'user',
+  'admin.verifier': 'Verifies tasks',
+  'admin.keys': 'Keys',
+  'admin.status': 'Status',
+  'admin.active': 'active',
+  'admin.removed': 'removed',
+  'admin.root': 'main administrator',
+  'admin.makeAdmin': 'Make administrator',
+  'admin.makeUser': 'Remove the administrator rights',
+  'admin.verifierOn': 'Give the verification right',
+  'admin.verifierOff': 'Remove the verification right',
+  'admin.remove': 'Remove the user',
+  'admin.removeConfirm': 'The user {name} loses access. The earlier changes of this user stay valid.',
+  'admin.removeTasks': 'The user is an assignee in {tasks}. Also remove the user from the assignees?',
+  'admin.removeAlsoTasks': 'Yes, also remove from the tasks',
+  'admin.removeOnly': 'Only remove the access',
+  'admin.enroll': 'Access requests',
+  'admin.enrollNone': 'No pending requests.',
+  'admin.enrollInvalid': 'invalid request',
+  'admin.enrollDone': 'already approved',
+  'admin.enrollApprove': 'Approve',
+  'admin.enrollCompare': 'Before you approve, compare the fingerprint with the user (by phone or in person).',
+  'admin.tags': 'Tags',
+  'admin.tagCount': 'Number of tasks',
+  'admin.tagRename': 'Rename',
+  'admin.tagMerge': 'Merge into…',
+  'admin.tagDelete': 'Delete',
+  'admin.settings': 'Settings',
+  'admin.set.dueSoonDays': 'Warn about a near due date (days before)',
+  'admin.set.pollSeconds': 'Interval of the check for new changes (s)',
+  'admin.set.maxAttachmentMB': 'Maximum attachment size (MB)',
+  'admin.set.defaultTags': 'Default tags of a new task',
+  'admin.checkpoints': 'Checkpoints',
+  'admin.cpText': 'A checkpoint makes the first load on a new computer faster. The change files stay.',
+  'admin.cpCreate': 'Create a checkpoint ({scope})',
+  'admin.cpStats': '{files}, {outside} of them outside checkpoints',
+  'admin.trash': 'Trash',
+  'admin.trashEmpty': 'The trash is empty.',
+  'admin.deletedBy': 'Deleted by {name} {when}',
+  'admin.audit': 'Audit',
+  'admin.integrity': 'Integrity',
+  'admin.integrityOk': 'No problems.',
+  'admin.notAllowed': 'Only an administrator can open this page.',
+  // ---- Labels added in the review of Phase 4 ----
+  'nav.main': 'Main menu',
+  'filter.active': 'Active filters',
+  'common.actions': 'Actions',
+  'admin.keyRevoked': 'revoked',
+  'admin.keyRevoke': 'Revoke the key',
+  'admin.keyRevokeText': 'Revoke the key {key} of the user {name}? Do this when a key is lost or stolen. The changes that the key wrote until now and that this computer sees stay valid. Each further change with this key will be rejected.',
+  'admin.keyRevokeWarn': 'You cannot undo a revocation. A user without another key loses access: the user asks for a new key, and you approve the request as "New key for the user".',
+  'admin.fingerprint': 'Fingerprint',
+  'admin.enrollAs': 'Approve as',
+  'admin.enrollNewUser': 'New user',
+  'admin.enrollNewKey': 'New key for the user {name}',
+  'admin.colTime': 'Time',
+  'admin.colChange': 'Change',
+  'admin.scope.roles': 'Users and settings',
+  'admin.scope.data': 'Tasks',
+  'file.keyDescription': 'Úkoly app key',
   'gate.key.saveCancelled': 'The key file was not saved. Without it, you cannot get into the app if the browser data is lost. Please save it.',
   'gate.retry': 'Try again',
   'gate.reset.button': 'Delete the app data in this browser',
   'gate.reset.confirm': 'The browser forgets the selected folder, the saved copy of the key and the read notifications. The shared folder and the tasks stay unchanged. Then you select the folder again and open your key file. Without the key file, you need a new key and an approval by the administrator.',
   'gate.reset.do': 'Delete and reload',
   'gate.reset.failed': 'The data could not be deleted. Close the other tabs with the Úkoly app. In this tab, press F12, open Application → IndexedDB → mytasker and click Delete database. Then reload the page.',
+  'audit.applied': 'applied',
+  'audit.no-effect': 'no change',
+  'audit.superseded': 'not applied (the task changed in the meantime)',
+  'audit.rejected': 'rejected',
   'gate.errorGeneric': 'The operation failed. Please try again.',
+  'admin.tagDeleteConfirm': 'The tag "{name}" disappears from all tasks. Continue?',
+  'admin.techDetail': 'Technical details',
+  'issue.unknown-file': 'Unknown file in the shared folder (for example a copy from a OneDrive conflict)',
+  'issue.parse-error': 'Damaged or invalid file',
+  'issue.misplaced': 'The file is in the wrong place',
+  'issue.bad-signature': 'Invalid signature (the file was changed, or someone else wrote it)',
+  'issue.unknown-key': 'Unknown key (waiting for the sync or for the approval)',
+  'issue.chain-gap': 'A previous change is missing (waiting for the sync, or the file was deleted or changed)',
+  'issue.chain-broken': 'Broken chain of changes',
+  'issue.fork': 'Fork: the author has 2 different changes with the same sequence number',
+  'issue.revoked': 'Change after the key was revoked',
+  'issue.unauthorized': 'Change without permission',
+  'issue.invalid-payload': 'Invalid change',
+  'issue.future-clock': 'The time of the change is in the future (wrong computer clock)',
+  'issue.bad-checkpoint': 'Invalid checkpoint',
+  'issue.domain': 'Internal app error for 1 change',
+  'advice.unknown-file': 'The shared folder contains a file that the app does not know. Often it is a copy that OneDrive made in a conflict. The app does not use the file. Check it, then remove it from the folder.',
+  'advice.parse-error': 'The app cannot read the change file. Maybe it is not fully synced yet. Wait for the sync. If the problem stays, restore the file from the OneDrive version history.',
+  'advice.misplaced': 'The content of the file does not match its location. Someone moved or renamed the file. The app does not use it. Move the file back to its original location, or restore it from the OneDrive version history.',
+  'advice.bad-signature': 'The signature does not match: the file changed after it was written. The app does not use the change. Restore the original version of the file from the OneDrive version history, and find out who edited the file.',
+  'advice.unknown-key': 'The key of the author is not known yet. Usually the approval of the user is not synced yet. Wait for the sync. If the problem stays, check the access requests.',
+  'advice.chain-gap': 'An earlier change of the author is missing. Usually OneDrive has not synced all files yet. Wait. If the gap stays for more than a day, restore the missing file from the OneDrive recycle bin or from the OneDrive version history.',
+  'advice.chain-broken': 'The chain of changes of the author is broken: a file changed or was replaced, or the chain forked. The app does not use the later changes of this author. Restore the original file from the OneDrive version history. If the author also has a fork, follow the advice for the fork.',
+  'advice.fork': 'The author has 2 different changes with the same sequence number. Possible cause: the same key on 2 computers at the same time, or a restored backup. The app does not use the later changes of this author. Ask the user for a new key, approve the request and revoke the old key.',
+  'advice.revoked': 'The change is signed with a key that was revoked. The app does not use it. Make sure that nobody without authorization uses the old key.',
+  'advice.unauthorized': 'The author did not have permission for this change. The app does not use it. Possible cause: someone removed the permission of the author in the meantime, or the author uses an older version of the app. Find the cause.',
+  'advice.invalid-payload': 'The content of the change does not have a valid format. Possible cause: a different version of the app, or a manual edit of the file. The app does not use the change. Make sure that all users use the same version of the app.',
+  'advice.future-clock': "The time of the change is in the future: the clock of the author's computer is wrong. The app has already applied the change. Because of the future time, this change can overwrite current changes of other users. Check the affected data in the audit, and ask the author to correct the clock settings.",
+  'advice.bad-checkpoint': 'The checkpoint is invalid, and the app does not use it. This is no risk for the data; the data only loads more slowly. Create a new checkpoint.',
+  'advice.domain': 'The app reported an internal error for this change. The app does not use the change. Send the technical details to the technical support of the app.',
+  'integrity.intro': 'The problems are sorted by kind. Each kind has a description and the recommended steps.',
+  'integrity.author': 'author',
+  'integrity.more': 'and others ({n})',
+  'ent.task': 'Task',
+  'ent.subtask': 'Subtask',
+  'ent.ofTask': '(task {title})',
+  'ent.comment': 'Comment',
+  'ent.attachment': 'Attachment',
+  'ent.link': 'Link',
+  'ent.assignee': 'Assignee',
+  'ent.taskTag': 'Tag',
+  'ent.tag': 'Tag',
+  'ent.blob': 'File',
+  'ent.user': 'User',
+  'ent.key': 'Key',
+  'ent.setting': 'Setting',
+  'audit.intro': "All changes in the shared folder, newest first. Click a change to see the details. The time is from the author's computer.",
+  'audit.search': 'Search the audit',
+  'audit.fUser': 'Author',
+  'audit.fType': 'Change',
+  'audit.fStatus': 'Status',
+  'audit.fTask': 'Task',
+  'audit.fTaskRemove': 'Clear the task filter',
+  'audit.any': 'all',
+  'audit.from': 'From',
+  'audit.to': 'To',
+  'audit.none': 'No changes match the filter.',
+  'audit.revertOf': 'reverts the change {id}…',
+  'audit.onlyTask': 'this task only',
+  'audit.notes': 'notes: {n}',
+  'audit.scope': 'Area',
+  'audit.scopeData': 'tasks',
+  'audit.scopeRoles': 'users and settings',
+  'audit.key': 'key',
+  'audit.seq': 'sequence',
+  'audit.sigOk': '✓ valid signature',
+  'audit.reason': 'Reason',
+  'audit.colEntity': 'What',
+  'audit.colField': 'Field',
+  'audit.colBefore': 'Before',
+  'audit.colAfter': 'After',
+  'audit.payload': 'Content of the change (technical)',
+  'revert.button': 'Revert',
+  'revert.title': 'Revert a change',
+  'revert.what': 'Revert the change "{what}" that {who} made on {when}.',
+  'revert.do': 'Revert the change',
+  'revert.adminOnly': 'Only an administrator can revert a change.',
+  'revert.notApplied': 'This change was not applied, so there is nothing to revert.',
+  'revert.notRevertible': 'You cannot revert this kind of change. Use the opposite action (for example the removal of the user, or a new key).',
+  'revert.notPossible': 'You cannot revert the change now.',
+  'revert.rejected': 'The app would reject the revert.',
+  'revert.overwritten': 'Caution: a later change has changed these fields since then. The revert overwrites these later changes.',
+  'revert.changed': 'The data changed in the meantime. The tables show the current state. Check them again.',
+  'revert.noConflict': 'Nobody has changed these fields since then.',
+  'revert.result': 'After the revert, the fields will have these values:',
+  'revert.colNow': 'Now',
+  'revert.colTarget': 'Value from the reverted change',
+  'revert.colNew': 'New value',
   'footer.author': '© 2026 Lukáš Czerner',
   'footer.license': 'MIT License',
   'footer.licenseTitle': 'License',
   'footer.notices': 'Libraries used and their licenses',
-  'admin.techDetail': 'Technical details',
-  'top.changeFolder': 'Change folder',
-  'dlg.cancel': 'Cancel',
-  'file.keyDescription': 'Úkoly app key',
-  'help.user': 'Help (in Czech)',
-  'task.close': 'Close',
+  'help.title': 'Help',
+  'help.user': 'Help',
+  'help.admin': 'Admin guide',
+  'help.toc': 'Contents',
+  'help.czechOnly': 'The guides are available in Czech only.',
+  // ---- Misc ----
+  'common.yes': 'yes',
+  'common.no': 'no',
+  'common.none': '—',
+  'common.unknownUser': 'unknown user',
+  'common.selfReported': "time from the author's computer",
 };
 
-export function t(key: Key, params: Record<string, string | number> = {}, lang: Lang = 'cs'): string {
-  const s = (lang === 'en' ? (en as Partial<Record<Key, string>>)[key] : undefined) ?? cs[key];
+const DICTS: Record<Lang, Record<Key, string>> = { cs, en };
+
+let current: Lang = 'cs';
+/** The language of the UI. `src/ui/lang.tsx` sets it from the saved choice and the language button. */
+export const getLang = (): Lang => current;
+export function setLang(lang: Lang): void {
+  current = lang;
+}
+
+export function t(key: Key, params: Record<string, string | number> = {}, lang: Lang = current): string {
+  const s = DICTS[lang][key];
   return s.replace(/\{(\w+)\}/g, (_, p: string) => (p in params ? String(params[p]) : `{${p}}`));
 }
 
 export const statusLabel = (s: Status): string => t(`status.${s}` as Key);
 
-/** Czech names of op types (history and audit). */
-export const OP_LABEL: Record<string, string> = {
-  GrantUser: 'Schválení uživatele', UpdateUser: 'Změna jména uživatele', SetRole: 'Změna role', SetVerifier: 'Změna práva kontroly', AddKey: 'Nový klíč', RevokeKey: 'Odvolání klíče', RemoveUser: 'Odebrání uživatele', SetSetting: 'Změna nastavení',
-  CreateTask: 'Vytvoření úkolu', UpdateTask: 'Úprava úkolu', PostponeTask: 'Odložení', ResumeTask: 'Pokračování', CompleteTask: 'Dokončení', VerifyTask: 'Potvrzení kontroly', ReturnTask: 'Vrácení k přepracování', ReopenTask: 'Znovuotevření', DeleteTask: 'Smazání', RestoreTask: 'Obnovení z koše',
-  AddAssignee: 'Přidání řešitele', RemoveAssignee: 'Odebrání řešitele', CreateTag: 'Nový štítek', AddTaskTag: 'Přidání štítku', RemoveTaskTag: 'Odebrání štítku', RenameTag: 'Přejmenování štítku', MergeTag: 'Sloučení štítků', DeleteTag: 'Smazání štítku',
-  AddSubtask: 'Nový podúkol', EditSubtask: 'Úprava podúkolu', CheckSubtask: 'Změna splnění podúkolu', MoveSubtask: 'Přesun podúkolu', RemoveSubtask: 'Odebrání podúkolu',
-  AddAttachment: 'Nová příloha', RemoveAttachment: 'Odebrání přílohy', PurgeBlob: 'Trvalé odstranění souboru', AddLink: 'Nový odkaz', EditLink: 'Úprava odkazu', RemoveLink: 'Odebrání odkazu',
-  AddComment: 'Nový komentář', EditComment: 'Úprava komentáře', DeleteComment: 'Smazání komentáře', Batch: 'Více změn najednou', Revert: 'Vrácení změny',
-};
-export const opLabel = (type: string): string => OP_LABEL[type] ?? type;
+/** A text in quotation marks: „…“ in Czech, "…" in English. */
+export const quote = (s: string): string => (current === 'cs' ? `„${s}“` : `"${s}"`);
 
-/** Czech names of task fields (history). */
-export const nFiles = (n: number) => plu(n, ['soubor změn', 'soubory změn', 'souborů změn']);
-/** "1 otevřeném úkolu", "3 otevřených úkolech" (locative after "v"). */
-export const nOpenTasksLoc = (n: number) => `${n} ${n === 1 ? 'otevřeném úkolu' : 'otevřených úkolech'}`;
+/** The names of op types (history and audit). */
+const OP_LABEL: Record<Lang, Record<string, string>> = {
+  cs: {
+    GrantUser: 'Schválení uživatele', UpdateUser: 'Změna jména uživatele', SetRole: 'Změna role', SetVerifier: 'Změna práva kontroly', AddKey: 'Nový klíč', RevokeKey: 'Odvolání klíče', RemoveUser: 'Odebrání uživatele', SetSetting: 'Změna nastavení',
+    CreateTask: 'Vytvoření úkolu', UpdateTask: 'Úprava úkolu', PostponeTask: 'Odložení', ResumeTask: 'Pokračování', CompleteTask: 'Dokončení', VerifyTask: 'Potvrzení kontroly', ReturnTask: 'Vrácení k přepracování', ReopenTask: 'Znovuotevření', DeleteTask: 'Smazání', RestoreTask: 'Obnovení z koše',
+    AddAssignee: 'Přidání řešitele', RemoveAssignee: 'Odebrání řešitele', CreateTag: 'Nový štítek', AddTaskTag: 'Přidání štítku', RemoveTaskTag: 'Odebrání štítku', RenameTag: 'Přejmenování štítku', MergeTag: 'Sloučení štítků', DeleteTag: 'Smazání štítku',
+    AddSubtask: 'Nový podúkol', EditSubtask: 'Úprava podúkolu', CheckSubtask: 'Změna splnění podúkolu', MoveSubtask: 'Přesun podúkolu', RemoveSubtask: 'Odebrání podúkolu',
+    AddAttachment: 'Nová příloha', RemoveAttachment: 'Odebrání přílohy', PurgeBlob: 'Trvalé odstranění souboru', AddLink: 'Nový odkaz', EditLink: 'Úprava odkazu', RemoveLink: 'Odebrání odkazu',
+    AddComment: 'Nový komentář', EditComment: 'Úprava komentáře', DeleteComment: 'Smazání komentáře', Batch: 'Více změn najednou', Revert: 'Vrácení změny',
+  },
+  en: {
+    GrantUser: 'User approved', UpdateUser: 'User name changed', SetRole: 'Role changed', SetVerifier: 'Verification right changed', AddKey: 'Key added', RevokeKey: 'Key revoked', RemoveUser: 'User removed', SetSetting: 'Setting changed',
+    CreateTask: 'Task created', UpdateTask: 'Task edited', PostponeTask: 'Task postponed', ResumeTask: 'Task resumed', CompleteTask: 'Task completed', VerifyTask: 'Task verified', ReturnTask: 'Task returned for rework', ReopenTask: 'Task reopened', DeleteTask: 'Task deleted', RestoreTask: 'Task restored from trash',
+    AddAssignee: 'Assignee added', RemoveAssignee: 'Assignee removed', CreateTag: 'Tag created', AddTaskTag: 'Tag added', RemoveTaskTag: 'Tag removed', RenameTag: 'Tag renamed', MergeTag: 'Tags merged', DeleteTag: 'Tag deleted',
+    AddSubtask: 'Subtask added', EditSubtask: 'Subtask edited', CheckSubtask: 'Subtask checked or unchecked', MoveSubtask: 'Subtask moved', RemoveSubtask: 'Subtask removed',
+    AddAttachment: 'Attachment added', RemoveAttachment: 'Attachment removed', PurgeBlob: 'File permanently removed', AddLink: 'Link added', EditLink: 'Link edited', RemoveLink: 'Link removed',
+    AddComment: 'Comment added', EditComment: 'Comment edited', DeleteComment: 'Comment deleted', Batch: 'Several changes at once', Revert: 'Change reverted',
+  },
+};
+export const opLabel = (type: string): string => OP_LABEL[current][type] ?? type;
+
+/** "1 otevřeném úkolu", "3 otevřených úkolech" (locative after "v"). English: "1 open task". */
+export const nOpenTasksLoc = (n: number) => (current === 'cs' ? `${n} ${n === 1 ? 'otevřeném úkolu' : 'otevřených úkolech'}` : en1(n, 'open task', 'open tasks'));
+export const nFiles = (n: number) => (current === 'cs' ? plu(n, ['soubor změn', 'soubory změn', 'souborů změn']) : en1(n, 'change file', 'change files'));
 
 // ---- Audit: field names and values ------------------------------------------------------------------
 
-/** Czech field names of the audit and the history. Empty = a technical field that the UI does not show. */
-export const FIELD_TEXT: Record<string, string> = {
-  title: 'název', description: 'popis', status: 'stav', due: 'termín', createdAt: 'vytvořeno', createdBy: 'vytvořil(a)', completedAt: 'dokončeno', completedBy: 'dokončil(a)',
-  verifiedAt: 'zkontrolováno', verifiedBy: 'zkontroloval(a)', postponedAt: 'odloženo', postponedBy: 'odložil(a)', deletedAt: 'smazáno', deletedBy: 'smazal(a)', statusBeforeDelete: 'stav před smazáním',
-  text: 'text', pos: 'pořadí', done: 'splněno', doneBy: 'splnil(a)', doneAt: 'čas splnění', name: 'název', mime: 'typ', size: 'velikost', uploadedBy: 'nahrál(a)', uploadedAt: 'nahráno',
-  url: 'adresa', on: 'zapnuto', by: 'změnil(a)', at: 'čas', mentions: 'zmínky', editedAt: 'upraveno', kind: 'druh', mergedInto: 'sloučeno do', purged: 'odstraněno', purgedBy: 'odstranil(a)', purgedAt: 'čas odstranění', reason: 'důvod',
-  displayName: 'jméno', role: 'role', verifier: 'kontroluje úkoly', revoked: 'odvolán', cutoff: 'hranice platnosti', value: 'hodnota', sha256: 'otisk souboru',
-  // Technical or derived fields: not shown.
-  completeRef: '', assigneeCount: '', norm: '', order: '', taskId: '', userId: '', tagId: '', root: '', publicKey: '', alg: '',
+/** Field names of the audit and the history. Empty = a technical field that the UI does not show. */
+const FIELD_TEXT: Record<Lang, Record<string, string>> = {
+  cs: {
+    title: 'název', description: 'popis', status: 'stav', due: 'termín', createdAt: 'vytvořeno', createdBy: 'vytvořil(a)', completedAt: 'dokončeno', completedBy: 'dokončil(a)',
+    verifiedAt: 'zkontrolováno', verifiedBy: 'zkontroloval(a)', postponedAt: 'odloženo', postponedBy: 'odložil(a)', deletedAt: 'smazáno', deletedBy: 'smazal(a)', statusBeforeDelete: 'stav před smazáním',
+    text: 'text', pos: 'pořadí', done: 'splněno', doneBy: 'splnil(a)', doneAt: 'čas splnění', name: 'název', mime: 'typ', size: 'velikost', uploadedBy: 'nahrál(a)', uploadedAt: 'nahráno',
+    url: 'adresa', on: 'zapnuto', by: 'změnil(a)', at: 'čas', mentions: 'zmínky', editedAt: 'upraveno', kind: 'druh', mergedInto: 'sloučeno do', purged: 'odstraněno', purgedBy: 'odstranil(a)', purgedAt: 'čas odstranění', reason: 'důvod',
+    displayName: 'jméno', role: 'role', verifier: 'kontroluje úkoly', revoked: 'odvolán', cutoff: 'hranice platnosti', value: 'hodnota', sha256: 'otisk souboru',
+    // Technical or derived fields: not shown.
+    completeRef: '', assigneeCount: '', norm: '', order: '', taskId: '', userId: '', tagId: '', root: '', publicKey: '', alg: '',
+  },
+  en: {
+    title: 'title', description: 'description', status: 'status', due: 'due date', createdAt: 'created', createdBy: 'created by', completedAt: 'completed', completedBy: 'completed by',
+    verifiedAt: 'verified', verifiedBy: 'verified by', postponedAt: 'postponed', postponedBy: 'postponed by', deletedAt: 'deleted', deletedBy: 'deleted by', statusBeforeDelete: 'status before the deletion',
+    text: 'text', pos: 'position', done: 'done', doneBy: 'done by', doneAt: 'time done', name: 'name', mime: 'type', size: 'size', uploadedBy: 'uploaded by', uploadedAt: 'uploaded',
+    url: 'address', on: 'on', by: 'changed by', at: 'time', mentions: 'mentions', editedAt: 'edited', kind: 'kind', mergedInto: 'merged into', purged: 'removed', purgedBy: 'removed by', purgedAt: 'time removed', reason: 'reason',
+    displayName: 'name', role: 'role', verifier: 'verifies tasks', revoked: 'revoked', cutoff: 'validity limit', value: 'value', sha256: 'file hash',
+    completeRef: '', assigneeCount: '', norm: '', order: '', taskId: '', userId: '', tagId: '', root: '', publicKey: '', alg: '',
+  },
 };
-/** Status values of entities other than a task. */
-export const STATUS_OTHER: Record<string, string> = { active: 'aktivní', removed: 'odebráno', merged: 'sloučeno', comment: 'komentář', return: 'vrácení' };
-export const AUDIT_TEXT = {
-  onField: 'stav',
-  assigneeOn: 'přiřazen(a)',
-  assigneeOff: 'odebrán(a)',
-  tagOn: 'přidán',
-  tagOff: 'odebrán',
-  kB: 'kB',
-};
+/** The name of a field ('' = technical, not shown), or undefined for an unknown field. */
+export const fieldName = (f: string): string | undefined => (Object.hasOwn(FIELD_TEXT[current], f) ? FIELD_TEXT[current][f] : undefined);
 
-// ---- Plurals (Czech: 1 = one, 2–4 = few, 5+ and 0 = other/many) ----------------------------
+/** Status values of entities other than a task. */
+const STATUS_OTHER: Record<Lang, Record<string, string>> = {
+  cs: { active: 'aktivní', removed: 'odebráno', merged: 'sloučeno', comment: 'komentář', return: 'vrácení' },
+  en: { active: 'active', removed: 'removed', merged: 'merged', comment: 'comment', return: 'return' },
+};
+export const otherStatus = (s: string): string => (Object.hasOwn(STATUS_OTHER[current], s) ? STATUS_OTHER[current][s] : s);
+
+const AUDIT_TEXT = {
+  cs: { onField: 'stav', assigneeOn: 'přiřazen(a)', assigneeOff: 'odebrán(a)', tagOn: 'přidán', tagOff: 'odebrán', kB: 'kB' },
+  en: { onField: 'state', assigneeOn: 'assigned', assigneeOff: 'removed', tagOn: 'added', tagOff: 'removed', kB: 'kB' },
+};
+export const auditText = (k: keyof (typeof AUDIT_TEXT)['cs']): string => AUDIT_TEXT[current][k];
+
+/** All tables of both languages (tests: the same keys and placeholders in each language). */
+export const TABLES = { text: DICTS, ops: OP_LABEL, fields: FIELD_TEXT, statusOther: STATUS_OTHER, audit: AUDIT_TEXT };
+
+// ---- Plurals (Czech: 1 = one, 2–4 = few, 5+ and 0 = other/many; English: 1 = one) --------------------
 
 const plural = new Intl.PluralRules('cs');
+const en1 = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
 
-/** "Zobrazena 1 změna z 5", "Zobrazeny 3 změny z 5", "Zobrazeno 40 změn z 40". */
+/** "Zobrazena 1 změna z 5", "Zobrazeny 3 změny z 5", "Zobrazeno 40 změn z 40". English: "Showing 3 changes of 5". */
 export const nShownChanges = (n: number, total: number): string => {
+  if (current === 'en') return `Showing ${en1(n, 'change', 'changes')} of ${total}`;
   const c = plural.select(n);
   return `${c === 'one' ? 'Zobrazena' : c === 'few' ? 'Zobrazeny' : 'Zobrazeno'} ${plu(n, ['změna', 'změny', 'změn'])} z ${total}`;
 };
-/** "Zobrazit další 1", "Zobrazit další 3", "Zobrazit dalších 200". */
-export const nShowMore = (n: number): string => `Zobrazit ${plural.select(n) === 'many' || plural.select(n) === 'other' ? 'dalších' : 'další'} ${n}`;
-/** "a další 1 zápis", "a další 3 zápisy", "a dalších 7 zápisů". */
-export const nMoreWrites = (n: number): string => `a ${plural.select(n) === 'one' || plural.select(n) === 'few' ? 'další' : 'dalších'} ${plu(n, ['zápis', 'zápisy', 'zápisů'])}`;
+/** "Zobrazit další 1", "Zobrazit další 3", "Zobrazit dalších 200". English: "Show 3 more". */
+export const nShowMore = (n: number): string => (current === 'en' ? `Show ${n} more` : `Zobrazit ${plural.select(n) === 'many' || plural.select(n) === 'other' ? 'dalších' : 'další'} ${n}`);
+/** "a další 1 zápis", "a další 3 zápisy", "a dalších 7 zápisů". English: "and 3 more writes". */
+export const nMoreWrites = (n: number): string =>
+  current === 'en' ? `and ${n} more ${n === 1 ? 'write' : 'writes'}` : `a ${plural.select(n) === 'one' || plural.select(n) === 'few' ? 'další' : 'dalších'} ${plu(n, ['zápis', 'zápisy', 'zápisů'])}`;
 
-/** "u 1 přílohy", "u 3 příloh" (genitive after "u"). */
-export const nAttachmentsGen = (n: number): string => plu(n, ['přílohy', 'příloh', 'příloh']);
+/** "u 1 přílohy", "u 3 příloh" (genitive after "u"). English: "3 attachments". */
+export const nAttachmentsGen = (n: number): string => (current === 'en' ? en1(n, 'attachment', 'attachments') : plu(n, ['přílohy', 'příloh', 'příloh']));
 
-/** "1 nepřečtené", "2 nepřečtená", "5 nepřečtených". */
-export const nUnread = (n: number): string => plu(n, ['nepřečtené', 'nepřečtená', 'nepřečtených']);
+/** "1 nepřečtené", "2 nepřečtená", "5 nepřečtených". English: "3 unread". */
+export const nUnread = (n: number): string => (current === 'en' ? `${n} unread` : plu(n, ['nepřečtené', 'nepřečtená', 'nepřečtených']));
 
-/** "1 úkol čeká", "2 úkoly čekají", "5 úkolů čeká" na kontrolu. */
+/** "1 úkol čeká", "2 úkoly čekají", "5 úkolů čeká" na kontrolu. English: "2 tasks wait for verification". */
 export function nVerifyWaiting(n: number): string {
+  if (current === 'en') return `${en1(n, 'task waits', 'tasks wait')} for verification`;
   return `${plu(n, ['úkol', 'úkoly', 'úkolů'])} ${plural.select(n) === 'few' ? 'čekají' : 'čeká'} na kontrolu`;
 }
 
@@ -548,27 +910,39 @@ export function plu(n: number, forms: [string, string, string]): string {
   return `${n} ${w}`;
 }
 
-export const nTasks = (n: number) => plu(n, ['úkol', 'úkoly', 'úkolů']);
+export const nTasks = (n: number) => (current === 'en' ? en1(n, 'task', 'tasks') : plu(n, ['úkol', 'úkoly', 'úkolů']));
 
-// ---- Dates ----------------------------------------------------------------------------------------
+// ---- Dates (always in Europe/Prague) ----------------------------------------------------------------
 
-const dateFmt = new Intl.DateTimeFormat(LOCALE, { timeZone: TZ, day: 'numeric', month: 'numeric', year: 'numeric' });
-const timeFmt = new Intl.DateTimeFormat(LOCALE, { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false });
-const rel = new Intl.RelativeTimeFormat('cs', { numeric: 'auto' });
+const FMT: Record<Lang, { date: Intl.DateTimeFormat; time: Intl.DateTimeFormat; rel: Intl.RelativeTimeFormat; now: string }> = {
+  cs: {
+    date: new Intl.DateTimeFormat('cs-CZ', { timeZone: TZ, day: 'numeric', month: 'numeric', year: 'numeric' }),
+    time: new Intl.DateTimeFormat('cs-CZ', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false }),
+    rel: new Intl.RelativeTimeFormat('cs', { numeric: 'auto' }),
+    now: 'právě teď',
+  },
+  en: {
+    date: new Intl.DateTimeFormat('en-GB', { timeZone: TZ, day: 'numeric', month: 'short', year: 'numeric' }),
+    time: new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false }),
+    rel: new Intl.RelativeTimeFormat('en', { numeric: 'auto' }),
+    now: 'just now',
+  },
+};
 
-/** "19. 11. 2026" (Intl gives "19. 11. 2026"; non-breaking spaces become normal spaces for stable tests). */
-export const fmtDate = (iso: string): string => dateFmt.format(new Date(iso)).replace(/ /g, ' ');
-export const fmtTime = (iso: string): string => timeFmt.format(new Date(iso));
+/** "19. 11. 2026" (Intl gives non-breaking spaces; they become normal spaces for stable tests). English: "19 Nov 2026". */
+export const fmtDate = (iso: string): string => FMT[current].date.format(new Date(iso)).replace(/ /g, ' ');
+export const fmtTime = (iso: string): string => FMT[current].time.format(new Date(iso));
 /** "19. 11. 2026 14:30", or only the date for an all-day due date. */
 export const fmtDateTime = (iso: string, allDay = false): string => (allDay ? fmtDate(iso) : `${fmtDate(iso)} ${fmtTime(iso)}`);
 
-/** "za 2 dny", "před 3 hodinami", "právě teď". */
+/** "za 2 dny", "před 3 hodinami", "právě teď". English: "in 2 days", "3 hours ago", "just now". */
 export function fmtRelative(iso: string, now: number): string {
   const d = Date.parse(iso) - now;
   if (!Number.isFinite(d)) return '';
+  const { rel } = FMT[current];
   const a = Math.abs(d);
   const min = 60_000;
-  if (a < min) return 'právě teď';
+  if (a < min) return FMT[current].now;
   if (a < 60 * min) return rel.format(Math.round(d / min), 'minute');
   if (a < 24 * 60 * min) return rel.format(Math.round(d / (60 * min)), 'hour');
   if (a < 30 * 24 * 60 * min) return rel.format(Math.round(d / (24 * 60 * min)), 'day');

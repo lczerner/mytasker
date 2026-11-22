@@ -6,7 +6,7 @@ import type { Status } from '../domain/constants';
 import { matches, queryTerms } from '../domain/search';
 import { dueState, type TaskView } from '../domain/view';
 import { href, useApp } from './ctx';
-import { collator, fmtDate, nTasks, statusLabel, t, type Key, nShowMore } from './i18n';
+import { collator, fmtDate, nTasks, quote, statusLabel, t, type Key, nShowMore } from './i18n';
 import { Avatar, DueLabel, StatusBadge, TagChip } from './widgets';
 
 export type ListKind = 'all' | 'mine' | 'review' | 'created';
@@ -83,7 +83,7 @@ export function TaskList({ kind }: { kind: ListKind }) {
       </div>
       {active > 0 && (
         <div class="chips" role="group" aria-label={t('filter.active')}>
-          {q.q && <FilterChip label={`„${q.q}“`} onRemove={() => setQuery({ q: undefined })} />}
+          {q.q && <FilterChip label={quote(q.q)} onRemove={() => setQuery({ q: undefined })} />}
           {fTags.map((id) => (
             <FilterChip key={id} label={app.tags.find((x) => x.id === id)?.name ?? id} onRemove={() => setQuery({ tags: fTags.filter((x) => x !== id).join(',') || undefined })} />
           ))}

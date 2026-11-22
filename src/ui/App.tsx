@@ -14,6 +14,7 @@ import { NewTaskDialog } from './dialogs';
 import { Footer } from './Footer';
 import { Bell, StartBanner, useNotifications, type UserData } from './Notifications';
 import { collator, fmtRelative, t, type Key } from './i18n';
+import { LangButton, useLang } from './lang';
 import { baseTasks, TaskList, type ListKind } from './TaskList';
 import { TaskPanel } from './TaskPanel';
 
@@ -49,6 +50,7 @@ export interface AppProps {
 
 export function App(props: AppProps) {
   const { engine, storage, me, demo } = props;
+  const { lang } = useLang();
   const [version, setVersion] = useState(0);
   const [hash, setHash] = useState(location.hash);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -146,6 +148,7 @@ export function App(props: AppProps) {
     storage,
     me,
     version,
+    lang,
     now,
     isAdmin,
     isVerifier,
@@ -305,7 +308,7 @@ function Shell(props: ShellProps) {
 
   useEffect(() => {
     document.title = unreadN > 0 ? `(${unreadN}) ${t('appName')}` : t('appName');
-  }, [unreadN]);
+  }, [unreadN, ctx.lang]);
 
   return (
     <>
@@ -362,6 +365,7 @@ function Shell(props: ShellProps) {
           ) : (
             <span>{myName}</span>
           )}
+          <LangButton small />
           {!demo && (
             <button type="button" class="link small" onClick={props.onLock}>
               {t('top.lock')}
