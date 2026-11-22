@@ -14,7 +14,7 @@ Tasks ("Úkoly" in the Czech UI, repository `mytasker`) is a task manager for a 
 4. **Desktop Edge or Chrome 137 or later.** File System Access API, WebCrypto Ed25519.
 5. **No real user data in git.** Tests, docs, fixtures and screenshots use synthetic data only.
 6. Runtime dependencies: Preact and `oplog-core` only. A new runtime dependency needs the owner's approval.
-7. The UI is in Czech. All strings are in `src/ui/i18n.ts`.
+7. The UI is in Czech. The start screens also have English (`docs/architecture.md` §8). All strings are in `src/ui/i18n.ts`.
 
 ## 3. Invariants
 

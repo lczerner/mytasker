@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
-// All visible texts of the UI (Czech). The structure permits more languages later.
+// All visible texts of the UI (Czech). The start screens and their information bar also have English (`en`).
 // Dates: Europe/Prague, cs-CZ. Plurals: Intl.PluralRules('cs'). Sorting: Intl.Collator('cs').
 
 import type { Status } from '../domain/constants';
@@ -56,6 +56,7 @@ const cs = {
   'gate.removed': 'Váš přístup byl ukončen. Obraťte se na správce.',
   'gate.fingerprint': 'Otisk kořene důvěry',
   'gate.loading': 'Načítám data…',
+  'gate.language': 'English',
   // ---- Shell ----
   'nav.all': 'Všechny úkoly',
   'nav.mine': 'Moje úkoly',
@@ -396,13 +397,81 @@ const cs = {
 } as const;
 
 export type Key = keyof typeof cs;
-type Dict = Record<Key, string>;
+export type Lang = 'cs' | 'en';
 
-const DICTS: Record<'cs', Dict> = { cs };
-export type Lang = keyof typeof DICTS;
+/** The keys of the start screens (`Gate.tsx`) and of the information bar (`Footer.tsx`). They have English texts. */
+export type StartKey = Extract<Key, `gate.${string}` | `footer.${string}`> | 'appName' | 'admin.techDetail' | 'top.changeFolder' | 'dlg.cancel' | 'file.keyDescription' | 'help.user' | 'task.close';
+
+/** English texts of the start screens. The app after the start is in Czech only. */
+const en: Record<StartKey, string> = {
+  appName: 'Úkoly',
+  'gate.unsupported.title': 'This browser does not support the Úkoly app',
+  'gate.unsupported.text': 'Open the file in a current Microsoft Edge or Google Chrome (version 137 or later).',
+  'gate.unsupported.fsa': 'Access to folders (File System Access API) is missing.',
+  'gate.unsupported.secure': 'The page does not run in a secure context.',
+  'gate.unsupported.idb': 'The browser storage (IndexedDB) is missing.',
+  'gate.unsupported.ed25519': 'Support for Ed25519 electronic signatures is missing.',
+  'gate.embedded.title': 'Open the app from the folder on your computer',
+  'gate.embedded.text': 'The Úkoly app does not work in the SharePoint web preview: the browser does not let you select a folder there. Open the file app/index.html from the shared folder that is synced to this computer:',
+  'gate.embedded.sync': 'On the SharePoint web, open the Úkoly folder and click "Sync". The folder appears in File Explorer.',
+  'gate.embedded.keep': 'In File Explorer, right-click the Úkoly folder and select "Always keep on this device".',
+  'gate.embedded.open': 'In the Úkoly folder, open the file app/index.html in Edge or Chrome.',
+  'gate.embedded.pick': 'Click "Select folder" and select the main Úkoly folder.',
+  'gate.pick.title': 'Select the shared Úkoly folder',
+  'gate.pick.text': 'Select the Úkoly folder from OneDrive on this computer (the folder that contains the subfolders app, roles and data).',
+  'gate.pick.button': 'Select folder',
+  'gate.permission': 'Allow access to the folder {name}',
+  'gate.wrongFolder': 'The selected folder has no app subfolder. Select the main Úkoly folder.',
+  'gate.newInstall.title': 'New installation',
+  'gate.newInstall.text': 'The folder has no trust root yet. If you are the first administrator, create the installation. Otherwise, select the correct folder.',
+  'gate.newInstall.button': 'Create a new installation',
+  'gate.key.title': 'Your key',
+  'gate.key.new': 'I am a new user / I have a new computer',
+  'gate.key.open': 'Open the key file',
+  'gate.key.inside': 'The key file must not be in the shared folder. Save it in your personal folder.',
+  'gate.key.notKey': 'This file is not a key of the Úkoly app.',
+  'gate.create.title': 'New key',
+  'gate.create.name': 'Your name',
+  'gate.create.pass': 'Key password (at least 12 characters)',
+  'gate.create.pass2': 'Password again',
+  'gate.create.passShort': 'The password must have at least 12 characters.',
+  'gate.create.passDiff': 'The passwords are not the same.',
+  'gate.create.save': 'Create and save the key',
+  'gate.create.saveHint': 'Save the key file in your personal folder (not in the shared folder). Without it and without the password, you cannot get into the app.',
+  'gate.unlock.title': 'Unlock',
+  'gate.unlock.pass': 'Password',
+  'gate.unlock.button': 'Unlock',
+  'gate.unlock.wrong': 'Incorrect password or damaged key file.',
+  'gate.unlock.other': 'Use a different key',
+  'gate.enroll.title': 'Access request',
+  'gate.enroll.sent': 'The request is saved. Tell the administrator this fingerprint (by phone or in person):',
+  'gate.enroll.waiting': 'Waiting for approval. The app checks this automatically (every {s} s).',
+  'gate.enroll.send': 'Send the access request',
+  'gate.removed': 'Your access has ended. Contact the administrator.',
+  'gate.fingerprint': 'Fingerprint of the trust root',
+  'gate.loading': 'Loading data…',
+  'gate.language': 'Česky',
+  'gate.key.saveCancelled': 'The key file was not saved. Without it, you cannot get into the app if the browser data is lost. Please save it.',
+  'gate.retry': 'Try again',
+  'gate.reset.button': 'Delete the app data in this browser',
+  'gate.reset.confirm': 'The browser forgets the selected folder, the saved copy of the key and the read notifications. The shared folder and the tasks stay unchanged. Then you select the folder again and open your key file. Without the key file, you need a new key and an approval by the administrator.',
+  'gate.reset.do': 'Delete and reload',
+  'gate.reset.failed': 'The data could not be deleted. Close the other tabs with the Úkoly app. In this tab, press F12, open Application → IndexedDB → mytasker and click Delete database. Then reload the page.',
+  'gate.errorGeneric': 'The operation failed. Please try again.',
+  'footer.author': '© 2026 Lukáš Czerner',
+  'footer.license': 'MIT License',
+  'footer.licenseTitle': 'License',
+  'footer.notices': 'Libraries used and their licenses',
+  'admin.techDetail': 'Technical details',
+  'top.changeFolder': 'Change folder',
+  'dlg.cancel': 'Cancel',
+  'file.keyDescription': 'Úkoly app key',
+  'help.user': 'Help (in Czech)',
+  'task.close': 'Close',
+};
 
 export function t(key: Key, params: Record<string, string | number> = {}, lang: Lang = 'cs'): string {
-  const s = DICTS[lang][key] ?? key;
+  const s = (lang === 'en' ? (en as Partial<Record<Key, string>>)[key] : undefined) ?? cs[key];
   return s.replace(/\{(\w+)\}/g, (_, p: string) => (p in params ? String(params[p]) : `{${p}}`));
 }
 

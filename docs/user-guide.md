@@ -16,7 +16,7 @@ Potřebujete:
 
 ## 2. První spuštění: žádost o přístup
 
-1. Ve sdílené složce na tomto počítači otevřete soubor `app/index.html` v Edge nebo Chrome. Neotevírejte ho na webu SharePoint: tam aplikace nefunguje.
+1. Ve sdílené složce na tomto počítači otevřete soubor `app/index.html` v Edge nebo Chrome. Neotevírejte ho na webu SharePoint: tam aplikace nefunguje. Texty úvodních obrazovek můžete tlačítkem **English** přepnout do angličtiny. Aplikace po odemknutí je jen v češtině.
 2. Klikněte na **Vybrat složku** a vyberte hlavní složku Úkoly (tu, která obsahuje podsložky `app`, `roles` a `data`). Prohlížeč se zeptá na povolení přístupu. Povolte ho.
 3. Klikněte na **Jsem nový uživatel / mám nový počítač**.
 4. Zadejte své jméno a heslo ke klíči (alespoň 12 znaků). Heslo zadejte dvakrát.

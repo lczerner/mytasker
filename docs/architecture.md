@@ -203,6 +203,8 @@ See `docs/data-model.md` §9 for the diagram and the transition table.
 
 The UI is Preact (ADR 0004) with hand-written CSS. All strings are in `src/ui/i18n.ts`. See `docs/ui-wireframes.md`.
 
+The UI is in Czech. The start screens (`src/ui/Gate.tsx`) and their information bar also have English: the button **English** (**Česky** back) changes the language, and `localStorage` keeps the choice. The English table in `i18n.ts` must have a text for each start-screen key (a compile error otherwise). After the unlock, the app is in Czech only.
+
 ## 9. Test strategy
 
 | Level | Content |

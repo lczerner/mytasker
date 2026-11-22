@@ -191,7 +191,7 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
   };
   return (
     <Dialog title={t('help.user')} onClose={onClose} wide>
-      <div class="help-dialog" ref={box}>
+      <div class="help-dialog" lang="cs" ref={box}>
         <DocView guide="user" onLocal={onLocal} />
       </div>
       <div class="row end">

@@ -105,6 +105,8 @@ Click a column header to sort. Click again to reverse. The sort uses Czech colla
 
 ## 5. Start screens
 
+Each start screen has the button **English** (**Česky** back) next to the app name (`docs/architecture.md` §8).
+
 ```text
 ┌ Úkoly ─────────────────────────────────────────┐   ┌ Odemknout ───────────────────────────┐
 │ Vyberte sdílenou složku Úkoly na OneDrive.     │   │ Eva Nová                             │

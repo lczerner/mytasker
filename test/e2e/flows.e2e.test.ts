@@ -274,6 +274,22 @@ describe('more flows (demo over file://)', () => {
     await page.close();
   }, 60_000);
 
+  it('the start screen changes to English and back, and keeps the choice after a reload', async () => {
+    const page = await browser.newPage();
+    await page.goto(`file://${DIST}`);
+    await page.waitForSelector('.gate h1:has-text("Vyberte sdílenou složku Úkoly")');
+    await page.click('.gate-top button:has-text("English")');
+    await page.waitForSelector('.gate h1:has-text("Select the shared Úkoly folder")');
+    expect(await page.textContent('footer.footer')).toContain('MIT License');
+    await page.waitForFunction(() => document.documentElement.lang === 'en', null, { timeout: 5000 });
+    await page.reload();
+    await page.waitForSelector('.gate h1:has-text("Select the shared Úkoly folder")');
+    await page.click('.gate-top button:has-text("Česky")');
+    await page.waitForSelector('.gate h1:has-text("Vyberte sdílenou složku Úkoly")');
+    await page.waitForFunction(() => document.documentElement.lang === 'cs', null, { timeout: 5000 });
+    await page.close();
+  }, 60_000);
+
   it('notifications: the bell count, the page title, the start banner, mark as read, open a task', async () => {
     const { page, errors } = await open('vera');
     await page.waitForSelector('.bell-n');

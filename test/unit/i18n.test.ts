@@ -32,6 +32,12 @@ describe('Czech formats', () => {
   it('fills parameters', () => {
     expect(t('task.fileTooBig', { mb: 25 })).toBe('Soubor je větší než povolený limit 25 MB.');
   });
+
+  it('has English for the start screens only', () => {
+    expect(t('gate.enroll.waiting', { s: 30 }, 'en')).toBe('Waiting for approval. The app checks this automatically (every 30 s).');
+    expect(t('gate.language', {}, 'en')).toBe('Česky');
+    expect(t('nav.all', {}, 'en')).toBe('Všechny úkoly'); // no English text: Czech
+  });
 });
 
 describe('nVerifyWaiting', () => {
