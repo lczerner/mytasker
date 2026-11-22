@@ -16,7 +16,7 @@ Potřebujete:
 
 ## 2. První spuštění: žádost o přístup
 
-1. Ve sdílené složce otevřete soubor `app/index.html` v Edge nebo Chrome.
+1. Ve sdílené složce na tomto počítači otevřete soubor `app/index.html` v Edge nebo Chrome. Neotevírejte ho na webu SharePoint: tam aplikace nefunguje.
 2. Klikněte na **Vybrat složku** a vyberte hlavní složku Úkoly (tu, která obsahuje podsložky `app`, `roles` a `data`). Prohlížeč se zeptá na povolení přístupu. Povolte ho.
 3. Klikněte na **Jsem nový uživatel / mám nový počítač**.
 4. Zadejte své jméno a heslo ke klíči (alespoň 12 znaků). Heslo zadejte dvakrát.
@@ -178,6 +178,7 @@ Správce může změnu vrátit tlačítkem **Vrátit**.
 - **Nevidím změny kolegy:** počkejte na synchronizaci OneDrive a klikněte na **↻**. Zkontrolujte ikonu OneDrive na hlavním panelu: musí ukazovat, že je vše aktuální.
 - **Moje změna se neuložila:** aplikace zobrazí chybové hlášení. Obvykle chybí přístup ke složce: obnovte stránku a přístup znovu povolte.
 - **„Váš přístup byl ukončen“:** správce vám odebral přístup. Obraťte se na správce.
+- **Aplikace zůstane hned po otevření na „Načítám data…“:** po 15 sekundách aplikace zobrazí chybu. Klikněte na **Zkusit znovu**. Pokud to nepomůže, klikněte na **Vymazat data aplikace v tomto prohlížeči** a potom na **Vymazat a načíst znovu**. Sdílená složka a úkoly zůstanou beze změny. Potom vyberte složku znovu a otevřete svůj soubor s klíčem. Pokud ani to nepomůže, zavřete ostatní karty s aplikací. V kartě s aplikací stiskněte F12, otevřete **Application** → **IndexedDB** → **mytasker** (v české verzi prohlížeče mohou mít položky české názvy) a klikněte na **Delete database**. Nepoužívejte **Clear site data**: vymaže také data jiných stránek otevřených ze souboru. Potom stránku obnovte.
 
 ## 14. Licence
 

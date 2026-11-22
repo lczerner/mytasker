@@ -29,6 +29,13 @@ export async function checkSupport(): Promise<Support> {
   return { ok: problems.length === 0, problems };
 }
 
+/**
+ * True if the page runs inside a frame or as a sandboxed web page (for example the file preview of
+ * SharePoint on the web), not from a file. The browser blocks the folder picker there,
+ * and the storage access can throw.
+ */
+export const isEmbedded = (): boolean => window.top !== window || (location.protocol !== 'file:' && window.origin === 'null');
+
 // ---- Shared folder (the handle is stored: accepted risk, Q-22) ------------------------------
 
 const ROOT = 'rootHandle';

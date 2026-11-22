@@ -20,7 +20,14 @@ function openDb(): Promise<IDBDatabase> {
   return new Promise((res, rej) => {
     const r = indexedDB.open(DB, 1);
     r.onupgradeneeded = () => r.result.createObjectStore(STORE);
-    r.onsuccess = () => res(r.result);
+    r.onsuccess = () => {
+      // Another tab deletes the database (deleteDb): close, so that the delete is not blocked.
+      r.result.onversionchange = () => {
+        r.result.close();
+        conn = null;
+      };
+      res(r.result);
+    };
     r.onerror = () => rej(r.error);
   });
 }
@@ -51,5 +58,18 @@ export async function idbDel(key: string): Promise<void> {
     t.objectStore(STORE).delete(key);
     t.oncomplete = () => res();
     t.onerror = () => rej(t.error);
+  });
+}
+
+/**
+ * Deletes the database: all data of the app in this browser (the folder handle, the wrapped key,
+ * the cache). Call it before any other access in this page. Open connections in other tabs close
+ * on the versionchange event.
+ */
+export function deleteDb(): Promise<void> {
+  return new Promise((res, rej) => {
+    const r = indexedDB.deleteDatabase(DB);
+    r.onsuccess = () => res();
+    r.onerror = () => rej(r.error);
   });
 }
