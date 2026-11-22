@@ -22,6 +22,7 @@ dist/
 coverage/
 release/app/
 release/sbom/
+release/*.zip
 test-results/
 playwright-report/
 .vite/

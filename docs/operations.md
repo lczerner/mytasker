@@ -26,9 +26,10 @@ make demo             # build, then print the URL of the demo mode
    - `LICENSE` and `THIRD-PARTY-NOTICES.md`.
    - `VERSION`: the version and the commit, for example `0.1.0 (a44e002)`.
    - `SHA256SUMS`: the SHA-256 of the files above.
+   - `release/mytasker-<version>.zip`: the full installation. It has the folder `Ukoly` with the folder skeleton (`release/create-folders.sh`) and the files above in `app/`. It has no `trust-root.json` and no data.
    - `release/sbom/runtime.cdx.json` and `release/sbom/build.cdx.json`: the SBOMs of this release (`make sbom`, AGENTS.md §7.2). Give them to the admins with the package if they ask for them.
 4. If `VERSION` shows `-dirty`, the build used uncommitted changes: a changed tracked file, or an untracked file in a path that the build reads (`src/`, `docs/img/`, `public/`, `index.html` and the config files at the root). Other untracked files do not count. Do not distribute such a package.
-5. Give the content of `release/app/` to the admins. The admin guide, chapter 9, describes the update.
+5. Attach the archive and the files of `release/app/` to the GitHub release. The admin guide, chapter 2, describes the installation, and chapter 9 describes the update.
 
 `app/index.html` in the shared folder is the supply-chain point of the system (`docs/security-model.md`). Copy the release only from a trusted computer, and compare `SHA256SUMS` before the copy.
 
@@ -36,8 +37,8 @@ make demo             # build, then print the URL of the demo mode
 
 The admin guide, chapter 2, describes the installation in Czech. Short form:
 
-1. Make the folder skeleton: `release/create-folders.sh <root>` (or make the folders by hand: `app`, `roles/ops`, `roles/checkpoints`, `data/ops`, `data/checkpoints`, `data/files`, `enroll`).
-2. Copy `release/app/*` to `<root>/app/`.
+1. Extract `release/mytasker-<version>.zip` into OneDrive or SharePoint. Or make the folder skeleton: `release/create-folders.sh <root>` (or make the folders by hand: `app`, `roles/ops`, `roles/checkpoints`, `data/ops`, `data/checkpoints`, `data/files`, `enroll`).
+2. Without the archive: copy `release/app/*` to `<root>/app/`.
 3. Set the OneDrive permissions (`docs/architecture.md` §3).
 4. The first admin opens `app/index.html` and clicks **Vytvořit novou instalaci**. The app writes `app/trust-root.json`.
 5. Approve a second admin as soon as possible. Then make that admin a second root admin (§4.1).

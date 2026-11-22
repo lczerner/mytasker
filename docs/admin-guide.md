@@ -17,9 +17,9 @@ Obrazovky pro správu najdete v levém panelu pod nadpisem **Správa**. Ostatní
 
 ### Složka a oprávnění na OneDrive
 
-1. Vytvořte na OneDrive (nebo SharePointu) složku, například `Úkoly`.
-2. Vytvořte v ní podsložky: `app`, `roles/ops`, `roles/checkpoints`, `data/ops`, `data/checkpoints`, `data/files` a `enroll`.
-3. Do `app` zkopírujte obsah balíčku vydání: `index.html`, `LICENSE`, `THIRD-PARTY-NOTICES.md`, `VERSION` a `SHA256SUMS`.
+1. Rozbalte archiv vydání `mytasker-<verze>.zip`. Jako cíl zvolte svou složku OneDrive (nebo synchronizovanou složku SharePointu), ne novou složku podle názvu archivu. Vznikne složka `Ukoly`. Můžete ji přejmenovat, například na `Úkoly`.
+2. Zkontrolujte, že složka obsahuje podsložky `app`, `roles/ops`, `roles/checkpoints`, `data/ops`, `data/checkpoints`, `data/files` a `enroll`. Bez archivu je vytvořte ručně.
+3. Ve složce `app` musí být soubory vydání: `index.html`, `LICENSE`, `THIRD-PARTY-NOTICES.md`, `VERSION` a `SHA256SUMS`. Archiv je obsahuje. Bez archivu je tam zkopírujte.
 4. Nastavte oprávnění podle seznamu pod tímto postupem.
 5. Sdílejte složku s týmem. Každý si ji musí synchronizovat na svůj počítač.
 
@@ -163,7 +163,7 @@ Nejčastější případy:
 
 ## 9. Aktualizace aplikace
 
-1. Získejte nový balíček vydání (složka `release/app` z nového vydání).
+1. Získejte soubory nového vydání: složku `Ukoly/app` z archivu `mytasker-<verze>.zip`, nebo jednotlivé soubory vydání.
 2. Ověřte kontrolní součty podle souboru `SHA256SUMS`, například příkazem `sha256sum -c SHA256SUMS` (Linux, macOS) nebo `Get-FileHash` (Windows PowerShell).
 3. Zkopírujte soubory do `app/` ve sdílené složce a přepište staré. **Soubor `trust-root.json` nemažte ani nepřepisujte.** Balíček ho neobsahuje.
 4. Uživatelé načtou novou verzi, když stránku obnoví (F5). Verze je vidět v dolní liště.

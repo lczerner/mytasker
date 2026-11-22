@@ -42,7 +42,7 @@ perf: ## Measure cold start and refresh time
 
 check: oplog-core-check typecheck test build sbom ## Run the checks before each commit (add "make e2e" for UI changes)
 
-release: ## Build release/app/ (index.html, LICENSE, THIRD-PARTY-NOTICES.md, VERSION, SHA256SUMS) and release/sbom/
+release: ## Build release/app/ (index.html, LICENSE, THIRD-PARTY-NOTICES.md, VERSION, SHA256SUMS), release/mytasker-<version>.zip and release/sbom/
 	npm run release
 
 sbom: ## Write the SBOMs to release/sbom/ (runtime + build, SBOM_FORMAT=cyclonedx|spdx) and check them
@@ -69,5 +69,5 @@ audit: ## Check npm dependencies for known vulnerabilities (all: moderate; the C
 	npm audit --audit-level=moderate
 	npm audit --omit=dev --audit-level=low
 
-clean: ## Remove build output (dist/, release/app/, release/sbom/)
-	rm -rf dist release/app release/sbom
+clean: ## Remove build output (dist/, release/app/, release/*.zip, release/sbom/)
+	rm -rf dist release/app release/*.zip release/sbom

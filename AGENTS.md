@@ -34,8 +34,8 @@ Tasks ("Úkoly" in the Czech UI, repository `mytasker`) is a task manager for a 
 | `src/ui/` | Preact UI: start screens (`Gate.tsx`), shell (`App.tsx`), task list, task panel, dialogs, admin screens (`admin.tsx`), audit, revert and integrity (`audit.tsx`), notifications (`Notifications.tsx`), built-in guides (`Help.tsx`, parser `docs.ts`), information bar (`Footer.tsx`), safe Markdown (`markdown.ts`), `i18n.ts` (all texts), `styles.css`. |
 | `test/` | `unit` (state machine and `authorize` matrices, domain rules), `property` (convergence), `simulation` (multi-user on disk, attacks), `e2e`, `perf`, `fixtures` (synthetic only). `helpers.ts` makes a synthetic team. |
 | `docs/` | User guide and admin guide (Czech, built into the app), operations, architecture, data model, security model, wireframes, review checklist, ADRs, open questions. |
-| `scripts/` | `check-build.mjs` (build check, also the third-party notices), `release.mjs` (release package), `sbom.mjs` (SBOM and its checks), `oplog-core-ref.mjs` (the pinned oplog-core commit), `commit.mjs` (the commit of a build), `screenshots.mjs` (guide images and the README image). |
-| `release/` | `create-folders.sh` (empty folder skeleton). `release/app/` and `release/sbom/` are generated and git-ignored. |
+| `scripts/` | `check-build.mjs` (build check, also the third-party notices), `release.mjs` (release package and archive), `zip.mjs` (ZIP writer of the archive), `sbom.mjs` (SBOM and its checks), `oplog-core-ref.mjs` (the pinned oplog-core commit), `commit.mjs` (the commit of a build), `screenshots.mjs` (guide images and the README image). |
+| `release/` | `create-folders.sh` (empty folder skeleton). `release/app/`, `release/*.zip` and `release/sbom/` are generated and git-ignored. |
 | `.claude/agents/mt-reviewer.md` | Claude Code subagent for the expert review (uses `docs/review-checklist.md`). |
 | `Makefile` | Wrapper targets. `make help` lists them. |
 | `.github/` | `workflows/ci.yml` (CI for pull requests and `master`), `dependabot.yml` (§7.2). |
@@ -53,7 +53,7 @@ npm run typecheck
 npm run build          # dist/index.html + build check (needs Chromium, SKIP_BROWSER=1 skips it)
 npm run simulate
 npm run test:e2e       # build + browser tests (CHROMIUM=/path/to/chromium)
-npm run release        # release/app/: index.html, LICENSE, THIRD-PARTY-NOTICES.md, VERSION, SHA256SUMS
+npm run release        # release/app/: index.html, LICENSE, THIRD-PARTY-NOTICES.md, VERSION, SHA256SUMS; release/mytasker-<version>.zip
 ```
 
 `npm run test:e2e` runs the demo flows, the real flow with OPFS (new installation, enrollment, approval) and the layout test. `make demo` builds and prints the URL of the demo mode (`?demo`, `?demo=petr`, `?demo=large`). `npm run perf` measures 5 000 tasks with about 100 000 ops (`docs/performance.md`); `dist/index.html?demo=perf` measures the UI. `node scripts/screenshots.mjs` (after a build) makes the guide images `docs/img/*.jpg` and the README image `docs/readme/app.jpg` from the demo. Build from a clean commit first, or the footer in the images shows "-dirty". The build bundles `docs/img/` but not `docs/readme/`. `SIM_SEED` and `SIM_ROUNDS` change the simulation run.
