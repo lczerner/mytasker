@@ -38,9 +38,9 @@ make help         # all targets
 
 ## Deploy to OneDrive
 
-1. Run `make release` on a trusted computer. The package is in `release/app/`: `index.html`, `LICENSE`, `THIRD-PARTY-NOTICES.md`, `VERSION`, `SHA256SUMS`.
-2. Make a folder on OneDrive or SharePoint, for example `Úkoly`, with these subfolders: `app`, `roles/ops`, `roles/checkpoints`, `data/ops`, `data/checkpoints`, `data/files`, `enroll` (`release/create-folders.sh <root>` makes them).
-3. Copy the content of `release/app/` to `app/`.
+1. Get the release files: `index.html`, `LICENSE`, `THIRD-PARTY-NOTICES.md`, `VERSION`, `SHA256SUMS`, and the archive `mytasker-<version>.zip` with the full installation (the folder `Ukoly` with all subfolders and these files in `app/`). Download them from the GitHub release, or run `make release` on a trusted computer (the files are then in `release/app/` and `release/`).
+2. Extract the archive on OneDrive or SharePoint. Or make a folder, for example `Úkoly`, with these subfolders: `app`, `roles/ops`, `roles/checkpoints`, `data/ops`, `data/checkpoints`, `data/files`, `enroll` (`release/create-folders.sh <root>` makes them).
+3. Without the archive: copy the content of `release/app/` to `app/`.
 4. Set the permissions:
 
 | Folder | Write | Read | Content |
