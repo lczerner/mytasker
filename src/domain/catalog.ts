@@ -61,7 +61,18 @@ function liveChild(ctx: EffectCtx, e: string, id: string, allowVerified = false)
 
 const exists = (ctx: EffectCtx, e: string, id: string): boolean => ctx.get(e, id) !== undefined;
 
-/** Reference of the current op item: "<opId>" for a plain op, "<opId>/<index>" for a Batch item (data-model §12). */
+/**
+ * Reference of an op item for a notification ID: "<authorKeyId>/<opId>" for a plain op,
+ * "<authorKeyId>/<opId>/<index>" for a Batch item (data-model §12). An opId is unique only for
+ * 1 author key, so the reference has the key.
+ */
+export const itemRef = (authorKeyId: string, opId: string, item: number | null): string => (item === null ? `${authorKeyId}/${opId}` : `${authorKeyId}/${opId}/${item}`);
+
+/**
+ * The value of `task.completeRef`: "<opId>" for a plain op, "<opId>/<index>" for a Batch item
+ * (data-model §3). Keep this format: it is replayed state, and the inverse of existing Revert ops
+ * contains it. The verify notification makes it unique with the user (notifications.ts).
+ */
 export const opRef = (ctx: EffectCtx): string => (ctx.op.envType === 'Batch' ? `${ctx.op.opId}/${ctx.op.item}` : ctx.op.opId);
 
 /**

@@ -7,7 +7,7 @@ import { DATA, ENROLL_FORMAT, LIMITS, ROLES, SETTING_RANGES, type Settings } fro
 import { href, useApp } from './ctx';
 import { collator, fmtDateTime, fmtRelative, nFiles, nOpenTasksLoc, nTasks, opLabel, t, type Key } from './i18n';
 import { AuditPage, IntegrityPage } from './audit';
-import { Dialog, TagChip, useBusy } from './widgets';
+import { Dialog, safeName, TagChip, useBusy } from './widgets';
 
 export function AdminPage({ page }: { page: string }) {
   const app = useApp();
@@ -236,11 +236,15 @@ function EnrollItem({ e, done, users }: { e: EnrollmentEntry; done: boolean; use
   };
   return (
     <li class={`enroll ${done ? 'done' : ''}`}>
+      {/* The fingerprint first, in its own element: a name cannot look like a fingerprint or move it. */}
       <div>
-        <strong>{r.displayName}</strong> <span class="muted small">({fmtRelative(r.createdAt, app.now)})</span>
-      </div>
-      <div class="fingerprint" aria-label={t('admin.fingerprint')}>
-        {fingerprint(r.keyId)}
+        <code class="fingerprint" dir="ltr" aria-label={t('admin.fingerprint')}>
+          {fingerprint(r.keyId)}
+        </code>{' '}
+        <bdi>
+          <strong>{safeName(r.displayName)}</strong>
+        </bdi>{' '}
+        <span class="muted small">({fmtRelative(r.createdAt, app.now)})</span>
       </div>
       {done ? (
         <span class="muted">{t('admin.enrollDone')}</span>

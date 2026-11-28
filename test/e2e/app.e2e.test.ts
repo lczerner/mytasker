@@ -286,6 +286,109 @@ describe('real flow with a folder (OPFS instead of the native dialogs, http://12
     await ctx.close();
   }, 120_000);
 
+  it('a changed trust root stays an issue after a reload until the admin confirms it; a damaged trust root stops the start', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    await ctx.addInitScript(STUBS);
+    const page = await ctx.newPage();
+    const errors = watch(page);
+    await page.goto(url);
+    await page.click('button:has-text("Vybrat složku")');
+    await page.click('button:has-text("Vytvořit novou instalaci")');
+    await page.fill('label:has-text("Vaše jméno") input', 'Alena Adminová');
+    await page.fill('label:has-text("alespoň 12") input', 'heslo-pro-test-1');
+    await page.fill('label:has-text("Heslo znovu") input', 'heslo-pro-test-1');
+    await page.click('button:has-text("Vytvořit novou instalaci")');
+    await page.waitForSelector('main .page h1:has-text("Všechny úkoly")');
+    // The number of root admins in the known trust root that the browser stored for the folder.
+    const knownRoots = () =>
+      page.evaluate(
+        () =>
+          new Promise<number>((res, rej) => {
+            const r = indexedDB.open('mytasker');
+            r.onerror = () => rej(r.error);
+            r.onsuccess = () => {
+              const q = r.result.transaction('kv').objectStore('kv').get('knownTrustRoots');
+              q.onsuccess = () => {
+                r.result.close();
+                res((q.result as { trustRoot: { roots: unknown[] } }[] | undefined)?.[0]?.trustRoot.roots.length ?? 0);
+              };
+            };
+          }),
+      );
+    // The first start in this browser stores the known trust root.
+    await vi.waitFor(async () => expect(await knownRoots()).toBe(1), { timeout: 10_000 });
+    const setTrustRoot = (text: string | null) =>
+      page.evaluate(async (t) => {
+        const app = await (await (await navigator.storage.getDirectory()).getDirectoryHandle('shared')).getDirectoryHandle('app');
+        if (t === null) {
+          const tr = JSON.parse(await (await (await app.getFileHandle('trust-root.json')).getFile()).text());
+          tr.roots.push({ userId: 'u-druhy', displayName: 'Druhý Správce', keyId: 'kaaaaaaaaaaaaaaaaaaaaaaaa', alg: 'Ed25519', publicKey: 'x', cutoffs: null });
+          t = JSON.stringify(tr, null, 2);
+        }
+        await app.removeEntry('trust-root.json');
+        const w = await (await app.getFileHandle('trust-root.json', { create: true })).createWritable();
+        await w.write(t);
+        await w.close();
+      }, text);
+    const unlock = async () => {
+      await page.evaluate(() => localStorage.setItem('e2e-open', 'alena-adminova.ukoly-key.json'));
+      await page.reload();
+      // Always open the key file of Alena: the stored key can be the key of another user.
+      await page.click('button:has-text("Použít jiný klíč")');
+      await page.click('button:has-text("Otevřít soubor s klíčem")');
+      await page.fill('input[type=password]', 'heslo-pro-test-1');
+      await page.click('button:has-text("Odemknout")');
+      await page.waitForSelector('main .page h1');
+    };
+    const good = await page.evaluate(async () => (await (await (await (await (await navigator.storage.getDirectory()).getDirectoryHandle('shared')).getDirectoryHandle('app')).getFileHandle('trust-root.json')).getFile()).text());
+    await setTrustRoot(null);
+    // A reload finds no cache (its ID depends on the file), but the known trust root of the folder.
+    await page.evaluate(() => (location.hash = '#/all'));
+    await unlock();
+    // The admin sees a notice on each page, and the issue in the integrity view.
+    await page.waitForSelector('.trust-banner a[href="#/admin/integrity"]');
+    await page.click('.trust-banner a');
+    await page.waitForSelector('.issue-group h2:has-text("Kořen důvěry")');
+    await page.waitForSelector('.trust-diff tr.trust-added:has-text("Druhý Správce"):has-text("u-druhy")');
+    await page.waitForSelector('.trust-diff tr.trust-same:has-text("Alena Adminová")');
+    await unlock();
+    await page.waitForSelector('.trust-banner');
+
+    // A new user in this browser (the same folder) sees the change in the waiting step.
+    await page.reload();
+    await page.click('button:has-text("Použít jiný klíč")');
+    await page.click('button:has-text("Jsem nový uživatel")');
+    await page.fill('label:has-text("Vaše jméno") input', 'Petr Dvořák');
+    await page.fill('label:has-text("alespoň 12") input', 'heslo-petr-12345');
+    await page.fill('label:has-text("Heslo znovu") input', 'heslo-petr-12345');
+    await page.click('button:has-text("Vytvořit a uložit klíč")');
+    await page.waitForSelector('.fingerprint.big');
+    await page.waitForSelector('[role=alert]:has-text("Nevytvářejte nový klíč")');
+    expect(await page.textContent('[role=alert]')).toContain('Druhý Správce');
+
+    // The admin confirms. The known trust root is saved at once.
+    await page.evaluate(() => (location.hash = '#/admin/integrity'));
+    await unlock();
+    await page.click('.issue-group button:has-text("Potvrdit kořen důvěry")');
+    await page.waitForSelector('text=Žádné problémy.');
+    expect(await page.locator('.trust-banner').count()).toBe(0);
+    await vi.waitFor(async () => expect(await knownRoots()).toBe(2), { timeout: 10_000 });
+    await unlock();
+    await page.waitForSelector('text=Žádné problémy.');
+    expect(await page.locator('.trust-banner').count()).toBe(0);
+
+    // An empty file (for example of a write that failed) is not a new installation.
+    await setTrustRoot('');
+    await page.reload();
+    await page.waitForSelector('h1:has-text("Kořen důvěry je poškozený")');
+    expect(await page.locator('button:has-text("Vytvořit novou instalaci")').count()).toBe(0);
+    await setTrustRoot(good);
+    await page.click('button:has-text("Zkusit znovu")');
+    await page.waitForSelector('input[type=password]');
+    expect(errors).toEqual([]);
+    await ctx.close();
+  }, 180_000);
+
   it('a start that hangs in IndexedDB shows the error screen after 15 s; the reset deletes the saved data', async () => {
     const ctx = await browser.newContext();
     // While "e2e-hang" is set, indexedDB.open never ends (as seen in Edge). While "e2e-hang-delete"

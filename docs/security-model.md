@@ -47,6 +47,12 @@ On 2026-11-19 I tested Chromium 155: all local HTML files share 1 storage origin
 2. The signing key is a non-extractable `CryptoKey` in the memory of the app page only.
 3. **The app stores the folder handle** in IndexedDB, so the user does not select the folder at each start. **Accepted risk** (owner, 2026-11-19, Q-22): any local HTML file can read the handle and ask for write permission to the shared folder. The dialog then shows the name of our folder. If the user grants it, that page can change or delete files in the shared folder, and on an admin computer it can replace `app/index.html`. Item 5 of §3 decreases the risk: the app does not let users attach or download files that run as pages. A residual path stays: an HTML file inside a ZIP attachment, or an HTML file from another source, such as email or the web.
 4. `localStorage` contains only view settings (filters, board or table, the language of the UI).
+5. **The known trust root of each folder** is in IndexedDB, not encrypted (it is public data, `docs/operations.md` §4). It lets the app report a changed trust root also after a reload. A local HTML file can change, replace or delete this record. Effects:
+   - A false `trust-root` issue.
+   - Only while `app/trust-root.json` is missing: the client uses the changed record as the trust root.
+   - A deleted or replaced record: a later change of the trust root shows no issue in that browser.
+   A page that can do this can also ask for write permission to the shared folder (item 3), so the risk does not increase much.
+6. **Limits of the detection of a changed trust root.** The app detects a change only in a browser that has a known trust root for the folder. There is no detection on a new computer, in a new browser profile, after **Vymazat data aplikace v tomto prohlížeči**, or after a local HTML file deleted the record. The users must compare the fingerprints on the start screen with an admin (§2.5). Only an admin sees the notice and can confirm the change. A user who is not approved sees a notice in the waiting step. Other non-admin users see no notice.
 
 ## 5. Known limitations
 

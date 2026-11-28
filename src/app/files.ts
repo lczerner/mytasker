@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
 // Files chosen by the user, attachment blobs and downloads (no network, ADR 0011).
-import { FileExistsError, sha256Hex, type Storage } from 'oplog-core';
+import { FileExistsError, FileTooLargeError, sha256Hex, type Storage } from 'oplog-core';
 import { downloadName } from '../domain/text';
 
 export type SaveResult = { saved: true } | { saved: false; reason: 'cancelled' | 'forbidden' };
@@ -59,18 +59,50 @@ export class PurgedBlobError extends Error {
 }
 
 /**
+ * The blob file exists, but its content does not have its hash (for example a write that failed
+ * and left an empty or partial file). Nobody can overwrite it: a person must delete the file.
+ */
+export class BrokenBlobError extends Error {
+  constructor(readonly sha256: string) {
+    super(`the file ${blobPath(sha256)} exists, but its content is damaged`);
+  }
+}
+
+/**
+ * Checks an existing blob file. Returns null if the file does not exist, else true if its
+ * content has the hash. A file that is larger than `size` cannot have the content.
+ */
+async function blobIsGood(storage: Storage, sha256: string, size: number): Promise<boolean | null> {
+  let b: Uint8Array | null;
+  try {
+    b = await storage.readBytes(blobPath(sha256), { maxBytes: size });
+  } catch (e) {
+    if (e instanceof FileTooLargeError) return false;
+    throw e;
+  }
+  return b === null ? null : (await sha256Hex(b)) === sha256;
+}
+
+/**
  * Writes the blob if it does not exist yet (deduplication by content). Returns its SHA-256.
  * `isPurged` refuses the content of a purged file BEFORE the write (data-model §11).
+ * If the file exists, its hash must be correct. Else the function throws BrokenBlobError.
  */
 export async function storeBlob(storage: Storage, bytes: Uint8Array, isPurged: (sha256: string) => boolean = () => false): Promise<string> {
   const sha = await sha256Hex(bytes);
   if (isPurged(sha)) throw new PurgedBlobError(sha);
-  if ((await storage.readBytes(blobPath(sha))) !== null) return sha;
-  try {
-    await storage.writeNewBytes(blobPath(sha), bytes);
-  } catch (e) {
-    if (!(e instanceof FileExistsError)) throw e; // written by another client at the same time: the same content
+  let good = await blobIsGood(storage, sha, bytes.length);
+  if (good === null) {
+    try {
+      await storage.writeNewBytes(blobPath(sha), bytes);
+      return sha;
+    } catch (e) {
+      if (!(e instanceof FileExistsError)) throw e;
+      // Another client wrote the file at the same time, or an earlier write failed: check the content.
+      good = await blobIsGood(storage, sha, bytes.length);
+    }
   }
+  if (good !== true) throw new BrokenBlobError(sha);
   return sha;
 }
 
@@ -83,11 +115,23 @@ export async function purgeBlobFile(storage: Storage, sha256: string): Promise<'
   return (await storage.readBytes(blobPath(sha256))) === null ? 'missing' : 'failed';
 }
 
+/** The read limit of a blob from the `size` of its attachment (undefined if the size is not valid). */
+export const blobLimit = (size: unknown): number | undefined => (Number.isSafeInteger(size) && (size as number) >= 0 ? (size as number) : undefined);
+
 export type BlobResult = { ok: true; bytes: Uint8Array } | { ok: false; reason: 'missing' | 'bad' };
 
-/** Reads a blob and checks its hash. */
-export async function loadBlob(storage: Storage, sha256: string): Promise<BlobResult> {
-  const bytes = await storage.readBytes(blobPath(sha256));
+/**
+ * Reads a blob and checks its hash. `maxBytes` is the size of the attachment: a larger file cannot
+ * have the content, and the function does not read it into memory.
+ */
+export async function loadBlob(storage: Storage, sha256: string, maxBytes?: number): Promise<BlobResult> {
+  let bytes: Uint8Array | null;
+  try {
+    bytes = await storage.readBytes(blobPath(sha256), maxBytes === undefined ? undefined : { maxBytes });
+  } catch (e) {
+    if (e instanceof FileTooLargeError) return { ok: false, reason: 'bad' };
+    throw e;
+  }
   if (bytes === null) return { ok: false, reason: 'missing' };
   return (await sha256Hex(bytes)) === sha256 ? { ok: true, bytes } : { ok: false, reason: 'bad' };
 }

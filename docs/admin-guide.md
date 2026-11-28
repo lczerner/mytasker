@@ -158,6 +158,8 @@ Nejčastější případy:
 - **Neplatný podpis, přerušený řetězec změn:** soubor se po zápisu změnil. Obnovte původní verzi z historie verzí OneDrive (klikněte na soubor pravým tlačítkem a zvolte **Historie verzí**). Zjistěte, kdo soubor měnil.
 - **Rozvětvení:** autor má 2 různé změny se stejným pořadovým číslem (stejný klíč na 2 počítačích najednou nebo obnovená záloha). Pozdější změny autora se nepoužijí. Odvolejte klíč (kapitola 4) a nechte uživatele požádat o nový.
 - **Změna bez oprávnění, změna po odvolání klíče:** aplikace změnu nepoužila. Když se problém opakuje, zjistěte příčinu.
+- **Kořen důvěry je nečitelný nebo neplatný, nebo se změnil:** soubor `app/trust-root.json` chybí, je poškozený, nebo ho někdo změnil. Když soubor chybí nebo je poškozený, spuštěná aplikace dál používá poslední platnou kopii. Při změně aplikace správcům ukáže upozornění nahoře na každé stránce. Obnovte soubor z historie verzí OneDrive. U změny aplikace ukáže tabulku hlavních správců: co je přidané, odebrané nebo změněné, ID uživatelů, otisky a hranice platnosti. Otisky porovnejte telefonem nebo osobně. Zkontrolujte také ID uživatelů, odebrané klíče a hranice platnosti. Když souhlasí, klikněte na **Potvrdit kořen důvěry**. Potvrzení platí jen pro tento počítač. Bez potvrzení upozornění zůstane, i když aplikaci zavřete a znovu otevřete. Když otisky nesouhlasí, změnu nepotvrzujte, obnovte soubor z historie verzí a zjistěte, kdo ho změnil.
+- **Poškozený soubor po nedokončeném zápisu:** když se zápis souboru nedokončí (například při výpadku sítě), může ve sdílené složce zůstat prázdný nebo neúplný soubor. Aplikace existující soubor nikdy nepřepíše. Když uživatel nahlásí poškozenou žádost (složka `enroll`) nebo poškozenou přílohu (složka `data/files`), smažte soubor, jehož cestu aplikace ukázala. Uživatel pak akci zopakuje. Soubory změn v `roles/ops` a `data/ops` nikdy nemažte.
 
 > Kromě změny s časem v budoucnosti aplikace vadnou změnu nepoužije, takže nepoškodí data ostatních uživatelů. Zdroj problému ale vždy zjistěte.
 
@@ -175,6 +177,7 @@ Nejčastější případy:
 - OneDrive uchovává historii verzí a koš. To pokryje většinu nehod: smazaný nebo změněný soubor obnovíte.
 - Doporučení: jednou za měsíc zkopírujte celou sdílenou složku na jiné bezpečné místo.
 - **Ztráta klíče hlavního správce:** kořen důvěry (`app/trust-root.json`) nejde změnit v aplikaci. Je potřeba ho upravit ručně: přidat nový kořenový klíč a starému nastavit hranici platnosti. Postup je v technické dokumentaci (`docs/operations.md`). Postup funguje i tehdy, když ztratíte klíč jako jediný správce. Ruční úprava souboru je ale náročná. Proto mějte vždy aspoň dva hlavní správce (postup je také v `docs/operations.md`).
+- **Úvodní obrazovka „Kořen důvěry je poškozený“:** soubor `app/trust-root.json` je prázdný, poškozený nebo neplatný. Nebo chybí, ale ve složce už jsou data. Aplikace bez něj sdílenou složku neotevře. Obnovte soubor z historie verzí OneDrive. Nevytvářejte novou instalaci. Po ruční změně souboru informujte uživatele, ať si porovnají otisky na úvodní obrazovce.
 
 ## 11. Pravidelná kontrola
 

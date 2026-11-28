@@ -178,6 +178,10 @@ Správce může změnu vrátit tlačítkem **Vrátit**.
 - **Nevidím změny kolegy:** počkejte na synchronizaci OneDrive a klikněte na **↻**. Zkontrolujte ikonu OneDrive na hlavním panelu: musí ukazovat, že je vše aktuální.
 - **Moje změna se neuložila:** aplikace zobrazí chybové hlášení. Obvykle chybí přístup ke složce: obnovte stránku a přístup znovu povolte.
 - **„Váš přístup byl ukončen“:** správce vám odebral přístup. Obraťte se na správce.
+- **„Kořen důvěry je poškozený“:** soubor `app/trust-root.json` ve sdílené složce chybí nebo je poškozený. Nevytvářejte novou instalaci ani nový klíč. Obraťte se na správce. Po opravě souboru klikněte na **Zkusit znovu**.
+- **„Pozor: kořen důvěry této složky … se změnil“ při čekání na schválení:** nevytvářejte nový klíč. Obraťte se na správce telefonem nebo osobně a porovnejte s ním otisky, které aplikace ukazuje.
+- **„Ve složce enroll už je soubor vaší žádosti, ale je poškozený“:** zápis žádosti se nedokončil. Požádejte správce, ať soubor smaže (aplikace ukáže jeho cestu). Potom klikněte na **Odeslat žádost o přístup**.
+- **Příloha nejde přidat, protože soubor se stejným obsahem je poškozený:** požádejte správce, ať soubor smaže (aplikace ukáže jeho cestu). Potom přílohu přidejte znovu.
 - **Aplikace zůstane hned po otevření na „Načítám data…“:** po 15 sekundách aplikace zobrazí chybu. Klikněte na **Zkusit znovu**. Pokud to nepomůže, klikněte na **Vymazat data aplikace v tomto prohlížeči** a potom na **Vymazat a načíst znovu**. Sdílená složka a úkoly zůstanou beze změny. Potom vyberte složku znovu a otevřete svůj soubor s klíčem. Pokud ani to nepomůže, zavřete ostatní karty s aplikací. V kartě s aplikací stiskněte F12, otevřete **Application** → **IndexedDB** → **mytasker** (v české verzi prohlížeče mohou mít položky české názvy) a klikněte na **Delete database**. Nepoužívejte **Clear site data**: vymaže také data jiných stránek otevřených ze souboru. Potom stránku obnovte.
 
 ## 14. Licence

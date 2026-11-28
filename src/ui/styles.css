@@ -217,6 +217,17 @@ fieldset {
 }
 
 /* ---- Shell ---- */
+.trust-banner {
+  margin: 0;
+  border-radius: 0;
+  text-align: center;
+  font-weight: 600;
+}
+.root-list {
+  list-style: none;
+  margin: 0.25rem 0;
+  padding: 0;
+}
 .demo-banner {
   background: #ffd84d;
   color: #3d2e00;
@@ -856,6 +867,11 @@ dialog h2 {
   font-size: 1.25rem;
   letter-spacing: 0.06em;
   font-weight: 700;
+}
+.fingerprint.big code {
+  font: inherit;
+  background: none;
+  padding: 0;
 }
 .fingerprint.big {
   font-size: 1.6rem;

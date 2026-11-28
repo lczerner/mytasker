@@ -3,7 +3,7 @@
 // Browser session: shared folder handle, signing key, encrypted cache (ADR 0006).
 import {
   decryptJson, encryptJson, generateAesKey, generateSigningKey, isEd25519Supported, sha256Hex, signBytes, unwrapAesKey, unwrapSigningKey,
-  wrapAesKey, wrapSigningKey, type Engine, type EngineCache, type KeyFile, type Signer,
+  wrapAesKey, wrapSigningKey, type Engine, type EngineCache, type KeyFile, type Signer, type TrustRoot,
 } from 'oplog-core';
 import { KEY_FILE_FORMAT } from '../domain/constants';
 import { idbDel, idbGet, idbSet } from './idb';
@@ -130,10 +130,66 @@ export async function loadCache(engine: Engine, u: Unlocked, rootName: string): 
   }
 }
 
-export async function saveCache(engine: Engine, u: Unlocked, rootName: string): Promise<void> {
+/**
+ * Saves the encrypted cache. With `knownRoot`, it also stores the known trust root of the engine as
+ * the known trust root of that folder: only after the first start in this browser, and after an
+ * admin confirmed the trust root in this session (a debounced save of another tab must not write
+ * back an older known trust root).
+ */
+export async function saveCache(engine: Engine, u: Unlocked, rootName: string, knownRoot?: FileSystemDirectoryHandle): Promise<void> {
   const key = await generateAesKey(true);
-  const rec: CacheRecord = { keyId: u.keyFile.keyId, wrapped: await wrapAesKey(key, u.kek), box: await encryptJson(key, engine.exportCache()) };
+  const cache = engine.exportCache();
+  const rec: CacheRecord = { keyId: u.keyFile.keyId, wrapped: await wrapAesKey(key, u.kek), box: await encryptJson(key, cache) };
   await idbSet(cacheId(rootName, u.keyFile.keyId), rec);
+  if (knownRoot && cache.trustRoot) await saveKnownTrustRoot(knownRoot, cache.trustRoot);
+}
+
+// ---- Known trust roots of the folders (public data: not encrypted) ------------------------------
+
+/**
+ * The trust root that this browser knows for a folder: the first one that it read, or the one
+ * that an admin confirmed (Engine.acknowledgeTrustRoot). The cache ID depends on the content of
+ * app/trust-root.json (installIdOf), so after a change of the file the app finds no cache, or an
+ * older cache. These records keep the known trust root, so that the engine also reports a change
+ * after a reload (start.ts prepareEngine). 1 record for each folder, matched with isSameEntry.
+ */
+const KNOWN_TRUST_ROOTS = 'knownTrustRoots';
+/** The maximum number of folders with a known trust root (the oldest goes first). */
+const KNOWN_MAX = 20;
+
+interface KnownTrustRoot {
+  root: FileSystemDirectoryHandle;
+  trustRoot: TrustRoot;
+}
+
+async function knownList(): Promise<KnownTrustRoot[]> {
+  const l = await idbGet<KnownTrustRoot[]>(KNOWN_TRUST_ROOTS);
+  return Array.isArray(l) ? l : [];
+}
+
+async function indexOfRoot(l: KnownTrustRoot[], root: FileSystemDirectoryHandle): Promise<number> {
+  for (let i = 0; i < l.length; i++) if (await l[i].root.isSameEntry(root).catch(() => false)) return i;
+  return -1;
+}
+
+/** The known trust root of the folder `root`, or null (first start in this browser for this folder). */
+export async function loadKnownTrustRoot(root: FileSystemDirectoryHandle): Promise<TrustRoot | null> {
+  try {
+    const l = await knownList();
+    const i = await indexOfRoot(l, root);
+    return i < 0 ? null : l[i].trustRoot;
+  } catch {
+    return null;
+  }
+}
+
+/** Stores the known trust root of the folder `root`. It replaces only the record of that folder. */
+export async function saveKnownTrustRoot(root: FileSystemDirectoryHandle, trustRoot: TrustRoot): Promise<void> {
+  const l = await knownList();
+  const i = await indexOfRoot(l, root);
+  if (i >= 0) l.splice(i, 1);
+  l.push({ root, trustRoot });
+  await idbSet(KNOWN_TRUST_ROOTS, l.slice(-KNOWN_MAX));
 }
 
 export const clearCache = (rootName: string, keyId: string) => idbDel(cacheId(rootName, keyId));

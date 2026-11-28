@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
 // Start screens for a real shared folder: browser check, folder, trust root, key, enrollment.
-import { createEnrollment, enrollmentPath, Engine, FileExistsError, fingerprint, FsaStorage, TRUST_ROOT_PATH, uuidv7, WrongPassphraseError, type KeyFile, type TrustRoot } from 'oplog-core';
+import { createEnrollment, enrollmentPath, Engine, fingerprint, FsaStorage, isValidDisplayName, TRUST_ROOT_PATH, uuidv7, WrongPassphraseError, type EnrollmentRequest, type KeyFile, type TrustRoot } from 'oplog-core';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { openTextFile, saveTextFile } from '../app/files';
 import { deleteDb } from '../app/idb';
+import { folderState, newKeyProblem, prepareEngine, readTrustRoot, requestState, writeRequest } from '../app/start';
 import {
   checkSupport,
   createKey,
@@ -14,6 +15,7 @@ import {
   isEmbedded,
   isInside,
   loadCache,
+  loadKnownTrustRoot,
   loadUserData,
   parseKeyFile,
   pickRoot,
@@ -33,6 +35,7 @@ import { App } from './App';
 import { Footer } from './Footer';
 import { t, type Key } from './i18n';
 import { LangButton, useLang } from './lang';
+import { RootList } from './widgets';
 
 type Root = FileSystemDirectoryHandle;
 
@@ -50,9 +53,10 @@ type Step =
   | { s: 'pick'; error?: string; errorKey?: Key }
   | { s: 'permission'; root: Root }
   | { s: 'install'; root: Root }
+  | { s: 'badTrustRoot'; root: Root; reason: string }
   | { s: 'key'; root: Root; stored?: KeyFile }
   | { s: 'create'; root: Root; bootstrap: boolean }
-  | { s: 'waiting'; root: Root; u: Unlocked; engine: Engine; sent: boolean }
+  | { s: 'waiting'; root: Root; u: Unlocked; engine: Engine; sent: boolean; problem: 'broken' | 'badName' | null }
   | { s: 'removed'; root: Root }
   | { s: 'app'; root: Root; u: Unlocked; engine: Engine; installId: string };
 
@@ -115,14 +119,24 @@ export function Gate() {
     guard(async () => {
       setStep({ s: 'loading' });
       const storage = new FsaStorage(root);
-      const installId = await installIdOf((await storage.read(TRUST_ROOT_PATH)) ?? '');
+      const tr = await readTrustRoot(storage);
+      if (tr.error !== null) return setStep({ s: 'badTrustRoot', root, reason: tr.error });
+      const installId = await installIdOf(tr.text ?? '');
       const engine = new Engine(storage, domain);
-      await loadCache(engine, u, installId);
+      // The known trust root of this folder first, then the cache: a changed trust root (also a
+      // rollback to an older file with an older cache) shows as a 'trust-root' issue.
+      const known = await loadKnownTrustRoot(root);
+      await prepareEngine(engine, known, () => loadCache(engine, u, installId));
       await engine.scan('full');
       const owner = domain.keyOwner(engine.state, u.keyFile.keyId);
-      if (owner === null) return setStep({ s: 'waiting', root, u, engine, sent: (await storage.read(enrollmentPath(u.keyFile.displayName, u.keyFile.keyId))) !== null });
+      if (owner === null) {
+        const req = await requestState(storage, u.keyFile);
+        return setStep({ s: 'waiting', root, u, engine, sent: req === 'ok', problem: req === 'broken' || req === 'badName' ? req : null });
+      }
       if (!userIsActive(engine.state, owner)) return setStep({ s: 'removed', root });
-      void saveCache(engine, u, installId).catch(() => undefined); // the cache is only an optimization
+      // The cache is only an optimization. On the first start in this browser, also keep the trust
+      // root that the engine read first as the known trust root of the folder.
+      void saveCache(engine, u, installId, known ? undefined : root).catch(() => undefined);
       setStep({ s: 'app', root, u, engine, installId });
     })();
 
@@ -231,6 +245,24 @@ export function Gate() {
           </div>
         </Screen>
       );
+    case 'badTrustRoot':
+      return (
+        <Screen title={t('gate.badTrustRoot.title')}>
+          <p class="error">{t('gate.badTrustRoot.text')}</p>
+          <details class="small">
+            <summary>{t('admin.techDetail')}</summary>
+            <code>{step.reason}</code>
+          </details>
+          <div class="row wrap">
+            <button type="button" class="primary" onClick={guard(() => afterRoot(step.root))}>
+              {t('gate.retry')}
+            </button>
+            <button type="button" onClick={async () => (await forgetRoot().catch(() => undefined), setStep({ s: 'pick' }))}>
+              {t('top.changeFolder')}
+            </button>
+          </div>
+        </Screen>
+      );
     case 'key':
       return <KeyStep step={step} onUnlocked={(u) => start(step.root, u)} onCreate={() => setStep({ s: 'create', root: step.root, bootstrap: false })} setStep={setStep} />;
     case 'create':
@@ -258,7 +290,8 @@ export function Gate() {
           storage={step.engine.storage}
           me={{ userId: domain.keyOwner(step.engine.state, step.u.keyFile.keyId)!, keyId: step.u.keyFile.keyId, signer: step.u.signer }}
           demo={false}
-          onChange={debounce(() => void saveCache(step.engine, step.u, step.installId), 3000)}
+          onChange={debounce(() => void saveCache(step.engine, step.u, step.installId).catch(() => undefined), 3000)}
+          saveCache={(withKnownTrustRoot) => saveCache(step.engine, step.u, step.installId, withKnownTrustRoot ? step.root : undefined)}
           onLock={() => location.reload()}
           userData={{ load: (name) => loadUserData(step.u, step.installId, name), save: (name, value) => saveUserData(step.u, step.installId, name, value) }}
         />
@@ -299,7 +332,10 @@ async function rootStep(root: Root, mark: (step: string) => void = () => undefin
   const storage = new FsaStorage(root);
   mark('shared folder read');
   if ((await storage.list('app')) === null) return { s: 'pick', errorKey: 'gate.wrongFolder' };
-  if ((await storage.read(TRUST_ROOT_PATH)) === null) return { s: 'install', root };
+  // An empty or damaged trust root, or a missing one in a folder with op data, is not a new installation.
+  const f = await folderState(storage, await loadKnownTrustRoot(root));
+  if (f.s === 'bad') return { s: 'badTrustRoot', root, reason: f.reason };
+  if (f.s === 'install') return { s: 'install', root };
   mark('saved key (IndexedDB)');
   return { s: 'key', root, stored: await storedKeyFile() };
 }
@@ -333,24 +369,18 @@ function ResetBrowserData() {
 
 /** The fingerprints of the root admins (security-model §2.5): users compare them with the admin. */
 function TrustRootInfo({ root }: { root: Root }) {
-  const [fps, setFps] = useState<string[]>([]);
+  const [tr, setTr] = useState<TrustRoot | null>(null);
   useEffect(() => {
-    void new FsaStorage(root)
-      .read(TRUST_ROOT_PATH)
-      .then((txt) => {
-        const tr = JSON.parse(txt ?? 'null') as TrustRoot | null;
-        setFps((tr?.roots ?? []).filter((r) => typeof r.keyId === 'string').map((r) => `${String(r.displayName).slice(0, 80)}: ${fingerprint(r.keyId)}`));
-      })
-      .catch(() => setFps([]));
+    void readTrustRoot(new FsaStorage(root))
+      .then(({ text, error }) => setTr(error === null ? (JSON.parse(text ?? 'null') as TrustRoot | null) : null))
+      .catch(() => setTr(null));
   }, [root]);
-  if (!fps.length) return null;
+  if (!tr?.roots.length) return null;
   return (
-    <p class="muted small">
-      {t('gate.fingerprint')}:{' '}
-      {fps.map((f) => (
-        <code key={f}>{f}</code>
-      ))}
-    </p>
+    <div class="muted small">
+      {t('gate.fingerprint')}:
+      <RootList trustRoot={tr} />
+    </div>
   );
 }
 
@@ -455,7 +485,8 @@ function CreateStep({ root, bootstrap, onDone }: { root: Root; bootstrap: boolea
       await storage.writeNew(TRUST_ROOT_PATH, JSON.stringify(tr, null, 2));
     } else {
       const req = await createEnrollment(ENROLL_FORMAT, m.u.keyFile.displayName, m.u.keyFile.keyId, m.publicKey, new Date(), m.u.signer.sign);
-      await storage.writeNew(enrollmentPath(req.displayName, req.keyId), JSON.stringify(req, null, 2));
+      // A damaged request file of an earlier try: the waiting screen shows the error (requestState).
+      await writeRequest(storage, req);
     }
     onDone(m.u);
   };
@@ -463,8 +494,9 @@ function CreateStep({ root, bootstrap, onDone }: { root: Root; bootstrap: boolea
   const submit = async () => {
     setErr(null);
     if (!made) {
-      if (p1.length < 12) return setErr('gate.create.passShort');
-      if (p1 !== p2) return setErr('gate.create.passDiff');
+      // The name rule of the access request (oplog-core) is checked before the key is made.
+      const problem = newKeyProblem(name, p1, p2);
+      if (problem) return setErr(`gate.create.${problem}`);
     }
     setBusy(true);
     try {
@@ -518,11 +550,33 @@ function CreateStep({ root, bootstrap, onDone }: { root: Root; bootstrap: boolea
   );
 }
 
+/**
+ * The notice in the waiting step after a change of the trust root. An attack that replaces the
+ * root admins sends all users to this step: they must not make a new key, but call an admin.
+ */
+function TrustRootChanged({ known, current }: { known: TrustRoot | null; current: TrustRoot | null }) {
+  return (
+    <div class="warn" role="alert">
+      <p>{t('trust.changedWaiting')}</p>
+      {known && (
+        <div class="small">
+          {t('trust.knownRoots')}:
+          <RootList trustRoot={known} />
+        </div>
+      )}
+      <div class="small">
+        {t('trust.currentRoots')}:
+        <RootList trustRoot={current} />
+      </div>
+    </div>
+  );
+}
+
 function Waiting({ step, onApproved }: { step: Extract<Step, { s: 'waiting' }>; onApproved: () => void }) {
   const secs = settingsOf(step.engine.state).pollSeconds;
   const timer = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const [sent, setSent] = useState(step.sent);
-  const [err, setErr] = useState<Key | null>(null);
+  const [err, setErr] = useState<Key | null>(step.problem === 'broken' ? 'gate.enroll.broken' : step.problem === 'badName' ? 'gate.enroll.nameInvalid' : null);
   useEffect(() => {
     timer.current = setInterval(async () => {
       try {
@@ -538,16 +592,17 @@ function Waiting({ step, onApproved }: { step: Extract<Step, { s: 'waiting' }>; 
     }, secs * 1000);
     return () => clearInterval(timer.current);
   }, []);
+  const k = step.u.keyFile;
   const send = async () => {
+    setErr(null);
+    // The name in an older key file can have characters that the request does not permit.
+    if (!isValidDisplayName(k.displayName)) return setErr('gate.enroll.nameInvalid');
     try {
-      const k = step.u.keyFile;
-      const req = await createEnrollment(ENROLL_FORMAT, k.displayName, k.keyId, k.publicKey, new Date(), step.u.signer.sign);
-      try {
-        await step.engine.storage.writeNew(enrollmentPath(req.displayName, req.keyId), JSON.stringify(req, null, 2));
-      } catch (e) {
-        if (!(e instanceof FileExistsError)) throw e; // the request exists already: that is fine
-      }
-      setSent(true);
+      const req: EnrollmentRequest = await createEnrollment(ENROLL_FORMAT, k.displayName, k.keyId, k.publicKey, new Date(), step.u.signer.sign);
+      // An existing request file must be a valid request of this key (a failed write can leave a damaged file).
+      const r = await writeRequest(step.engine.storage, req);
+      if (r === 'ok') setSent(true);
+      else setErr(r === 'badName' ? 'gate.enroll.nameInvalid' : 'gate.enroll.broken');
     } catch (e) {
       console.warn(e);
       setErr('gate.errorGeneric');
@@ -555,10 +610,13 @@ function Waiting({ step, onApproved }: { step: Extract<Step, { s: 'waiting' }>; 
   };
   return (
     <Screen title={t('gate.enroll.title')}>
+      {step.engine.trustRootChanged && <TrustRootChanged known={step.engine.knownTrustRoot} current={step.engine.trustRoot} />}
       {sent ? (
         <>
           <p>{t('gate.enroll.sent')}</p>
-          <p class="fingerprint big">{fingerprint(step.u.keyFile.keyId)}</p>
+          <p class="fingerprint big">
+            <code dir="ltr">{fingerprint(step.u.keyFile.keyId)}</code>
+          </p>
           <p class="muted">{t('gate.enroll.waiting', { s: secs })}</p>
         </>
       ) : (
@@ -567,6 +625,7 @@ function Waiting({ step, onApproved }: { step: Extract<Step, { s: 'waiting' }>; 
         </button>
       )}
       {err && <p class="error">{t(err)}</p>}
+      {err === 'gate.enroll.broken' && <code class="small wrap-anywhere">{enrollmentPath(k.displayName, k.keyId)}</code>}
       <TrustRootInfo root={step.root} />
     </Screen>
   );

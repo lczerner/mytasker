@@ -3,7 +3,7 @@
 // Task detail panel (drawer). Each change is 1 op at once.
 import { uuidv7, type AuditEntry, type Entity } from 'oplog-core';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { downloadBytes, imageUrl, loadBlob, purgeBlobFile, PurgedBlobError, storeBlob } from '../app/files';
+import { blobLimit, blobPath, BrokenBlobError, downloadBytes, imageUrl, loadBlob, purgeBlobFile, PurgedBlobError, storeBlob } from '../app/files';
 import { LIMITS, type Status } from '../domain/constants';
 import { comparePos, keyBetween, planMove } from '../domain/fractional';
 import { TRANSITIONS, STATUS_OPS, type StatusOp } from '../domain/status';
@@ -335,6 +335,7 @@ function Files({ v, ro }: { v: TaskView; ro: boolean }) {
       await app.act('AddAttachment', { id: uuidv7(), taskId: v.id, sha256, name: f.name.slice(0, LIMITS.fileName), mime: (f.type || 'application/octet-stream').slice(0, LIMITS.mime), size: f.size });
     } catch (e) {
       if (e instanceof PurgedBlobError) app.toast(t('task.filePurgedUpload'), 'error');
+      else if (e instanceof BrokenBlobError) app.toast(t('task.fileBroken', { path: blobPath(e.sha256) }), 'error');
       else app.toast(t('msg.writeFailed', { reason: (e as Error).message }), 'error');
     }
   };
@@ -420,7 +421,7 @@ function Attachment({ a, ro }: { a: Entity; ro: boolean }) {
     if (purged || !/^image\/(png|jpeg|gif|webp)$/.test(String(a.mime)) || Number(a.size) > 5 * 1024 * 1024) return;
     let url: string | null = null;
     let live = true;
-    void loadBlob(app.storage, String(a.sha256)).then((r) => {
+    void loadBlob(app.storage, String(a.sha256), blobLimit(a.size)).then((r) => {
       if (!r.ok) return;
       url = imageUrl(r.bytes);
       if (live) setThumb(url);
@@ -432,7 +433,7 @@ function Attachment({ a, ro }: { a: Entity; ro: boolean }) {
     };
   }, [a.sha256, purged]);
   const download = async () => {
-    const r = await loadBlob(app.storage, String(a.sha256));
+    const r = await loadBlob(app.storage, String(a.sha256), blobLimit(a.size));
     if (!r.ok) return setProblem(r.reason);
     downloadBytes(r.bytes, name);
   };
@@ -747,14 +748,14 @@ function History({ entries, taskId }: { entries: AuditEntry[]; taskId: string })
       <ol class="history">
         {entries.map((a) => {
           const lines = changeLines(app, a, taskId);
-          const isOpen = open === a.opId;
+          const isOpen = open === a.hash;
           return (
-            <li key={a.opId} class={a.status}>
+            <li key={a.hash} class={a.status}>
               <span class="muted small" title={t('common.selfReported')}>
                 {fmtDateTime(a.wallTime)}
               </span>{' '}
               <strong>{app.userName(a.userId ?? '')}</strong> ·{' '}
-              <button type="button" class="link" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : a.opId)}>
+              <button type="button" class="link" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : a.hash)}>
                 {changeLabel(a)}
               </button>
               {a.status !== 'applied' && <span class={`hist-status ${a.status}`}> · {t(`audit.${a.status}` as Key)}</span>}

@@ -71,6 +71,8 @@ export async function team() {
 export const task = (a: Actor, id: string) => a.engine.state.scopes.data?.task?.[id];
 export const view = (a: Actor, id: string) => buildTaskViews(a.engine.state).get(id)!;
 export const lastAudit = (a: Actor) => a.engine.audit[a.engine.audit.length - 1];
+/** The audit entry of the op `env`. An opId is unique only for 1 author key, so the key is compared too. */
+export const auditOf = (a: Actor, env: Pick<Envelope, 'opId' | 'authorKeyId'>) => a.engine.audit.find((x) => x.opId === env.opId && x.authorKeyId === env.authorKeyId);
 
 /** Writes a hand-made op (for tests of order and integrity). Takes seq and prevHash from the files of the author. */
 export async function rawOp(storage: Storage, a: Pick<Actor, 'name' | 'keyId' | 'signer'>, scope: string, type: string, payload: Record<string, unknown>, hlc: Hlc, wallTime = new Date(hlc.t).toISOString()): Promise<Envelope> {

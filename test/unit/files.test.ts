@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
-import { MemoryStorage, sha256Hex } from 'oplog-core';
-import { blobPath, loadBlob, purgeBlobFile, PurgedBlobError, sniffImage, storeBlob } from '../../src/app/files';
+import { FileExistsError, MemoryStorage, sha256Hex } from 'oplog-core';
+import { blobPath, BrokenBlobError, loadBlob, purgeBlobFile, PurgedBlobError, sniffImage, storeBlob } from '../../src/app/files';
 
 const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
 const enc = (s: string) => new TextEncoder().encode(s);
@@ -28,6 +28,30 @@ describe('attachment blobs', () => {
     s.files.set(blobPath(a), enc('změněno'));
     expect(await loadBlob(s, a)).toEqual({ ok: false, reason: 'bad' });
     expect(await loadBlob(s, 'f'.repeat(64))).toEqual({ ok: false, reason: 'missing' });
+    // With the size of the attachment: a larger file is "bad" (not read into memory).
+    s.files.set(blobPath(a), enc('obsah přílohy'));
+    expect(await loadBlob(s, a, enc('obsah přílohy').length)).toEqual({ ok: true, bytes: enc('obsah přílohy') });
+    s.files.set(blobPath(a), enc('obsah přílohy a ještě víc'));
+    expect(await loadBlob(s, a, enc('obsah přílohy').length)).toEqual({ ok: false, reason: 'bad' });
+  });
+
+  it('refuses an existing blob file with a wrong content (an empty or partial file of a failed write)', async () => {
+    const s = new MemoryStorage();
+    const bytes = enc('obsah přílohy');
+    const sha = await sha256Hex(bytes);
+    for (const bad of [new Uint8Array(0), bytes.slice(0, 5), enc('obsah přílohy a ještě víc')]) {
+      s.files.set(blobPath(sha), bad);
+      await expect(storeBlob(s, bytes)).rejects.toBeInstanceOf(BrokenBlobError);
+    }
+    // A file of another client with the same content (FileExistsError after the check) is good.
+    s.files.delete(blobPath(sha));
+    const race = Object.assign(Object.create(s), {
+      writeNewBytes: async (p: string, b: Uint8Array) => {
+        s.files.set(p, b);
+        throw new FileExistsError(p);
+      },
+    }) as MemoryStorage;
+    expect(await storeBlob(race, bytes)).toBe(sha);
   });
 });
 

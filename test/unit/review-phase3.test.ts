@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
 // Tests for the findings of the review of the Phase 3 domain. Synthetic data only.
-import { keyBetween, planMove, POS_RE, spreadKeys } from '../../src/domain';
+import type { AuditEntry } from 'oplog-core';
+import { computeNotifications, keyBetween, planMove, POS_RE, spreadKeys } from '../../src/domain';
 import { actor, lastAudit, task, team, view } from '../helpers';
 
 describe('composite keys', () => {
@@ -137,7 +138,7 @@ describe('rules without tests before', () => {
     expect(lastAudit(eva).status).toBe('superseded');
   });
 
-  it('notification and completion references: the op ID for a plain op, "<opId>/<index>" in a Batch', async () => {
+  it('completion references: the op ID for a plain op, "<opId>/<index>" in a Batch (replayed state: the format must not change)', async () => {
     const { admin } = await team();
     await admin.w('CreateTask', { id: 't1', title: 'x' });
     const c = await admin.w('CompleteTask', { id: 't1', from: 'new' });
@@ -145,5 +146,25 @@ describe('rules without tests before', () => {
     await admin.w('CreateTask', { id: 't2', title: 'y' });
     const b = await admin.w('Batch', { ops: [{ type: 'AddComment', payload: { id: 'c9', taskId: 't2', text: 'x', mentions: [] } }, { type: 'CompleteTask', payload: { id: 't2', from: 'new' } }] });
     expect(task(admin, 't2')!.completeRef).toBe(`${b.opId}/1`);
+  });
+
+  it('2 authors with the same opId give different notification IDs (an opId is unique only for 1 author key)', () => {
+    const entry = (authorKeyId: string, superseded = false): AuditEntry => ({
+      opId: 'same',
+      hash: `h-${authorKeyId}`,
+      scope: 'data',
+      type: 'AddComment',
+      authorKeyId,
+      userId: superseded ? 'me' : `u-${authorKeyId}`,
+      seq: 1,
+      hlc: { t: 1, c: 0 },
+      wallTime: '2026-11-19T10:00:00.000Z',
+      status: superseded ? 'superseded' : 'applied',
+      writes: [],
+      notes: [],
+      payload: { id: `c-${authorKeyId}`, taskId: 't1', text: 'x', mentions: ['me'] },
+    });
+    const n = computeNotifications({ state: { scopes: {} }, audit: [entry('ka'), entry('kb'), entry('kc', true), entry('kd', true)], views: new Map(), me: 'me', now: Date.parse('2026-11-19T12:00:00Z') });
+    expect(n.map((x) => x.id).sort()).toEqual(['mention:ka/same', 'mention:kb/same', 'superseded:kc/same', 'superseded:kd/same']);
   });
 });
