@@ -10,14 +10,22 @@ TEST_DIR ?= $(HOME)/mytasker-test
 CHROMIUM ?= /usr/bin/chromium
 export CHROMIUM
 SBOM_FORMAT ?= cyclonedx
+# The oplog-core repository, relative to this folder. package.json and the CI use ../oplog-core.
+# Use another folder (for example a git worktree of oplog-core) for local work only, and run
+# "make oplog-core-link" with the same value (scripts/oplog-core-ref.mjs).
+OPLOG_CORE_DIR ?= ../oplog-core
+ifeq ($(strip $(OPLOG_CORE_DIR)),)
+OPLOG_CORE_DIR := ../oplog-core
+endif
+export OPLOG_CORE_DIR
 
 .PHONY: help install typecheck test simulate build e2e perf check release sbom \
-        oplog-core-ref oplog-core-check test-folder demo outdated audit clean
+        oplog-core-ref oplog-core-check oplog-core-link check-sbom test-folder demo outdated audit clean
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*## "; printf "Usage: make <target> [VAR=value]\n\nTargets:\n"} \
 		/^[a-zA-Z0-9_-]+:.*## / {printf "  \033[36m%-17s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-	@printf "\nVariables:\n  TEST_DIR=%s\n  CHROMIUM=%s\n  SBOM_FORMAT=%s\n" "$(TEST_DIR)" "$(CHROMIUM)" "$(SBOM_FORMAT)"
+	@printf "\nVariables:\n  TEST_DIR=%s\n  CHROMIUM=%s\n  SBOM_FORMAT=%s\n  OPLOG_CORE_DIR=%s\n" "$(TEST_DIR)" "$(CHROMIUM)" "$(SBOM_FORMAT)" "$(OPLOG_CORE_DIR)"
 
 install: ## Install the npm dependencies (npm ci)
 	npm ci
@@ -40,7 +48,13 @@ e2e: ## Build and run the browser tests (Chromium, see CHROMIUM)
 perf: ## Measure cold start and refresh time
 	npm run perf
 
-check: oplog-core-check typecheck test build sbom ## Run the checks before each commit (add "make e2e" for UI changes)
+check: oplog-core-check typecheck test build check-sbom ## Run the checks before each commit (add "make e2e" for UI changes)
+
+# npm sbom accepts only the folder of package.json (../oplog-core). If node_modules/oplog-core
+# links to a different folder (OPLOG_CORE_DIR), "make check" skips the SBOM checks with a
+# warning. The CI always runs them.
+check-sbom:
+	node scripts/sbom.mjs $(SBOM_FORMAT) --skip-other-oplog-core
 
 release: ## Build release/app/ (index.html, LICENSE, THIRD-PARTY-NOTICES.md, VERSION, SHA256SUMS), release/mytasker-<version>.zip and release/sbom/
 	npm run release
@@ -48,11 +62,14 @@ release: ## Build release/app/ (index.html, LICENSE, THIRD-PARTY-NOTICES.md, VER
 sbom: ## Write the SBOMs to release/sbom/ (runtime + build, SBOM_FORMAT=cyclonedx|spdx) and check them
 	node scripts/sbom.mjs $(SBOM_FORMAT)
 
-oplog-core-ref: ## Pin the HEAD of ../oplog-core in .oplog-core-ref (the commit that the CI uses)
+oplog-core-ref: ## Pin the HEAD of OPLOG_CORE_DIR in .oplog-core-ref (the commit that the CI uses)
 	node scripts/oplog-core-ref.mjs update
 
-oplog-core-check: ## Check that ../oplog-core is clean and at the commit of .oplog-core-ref
+oplog-core-check: ## Check that OPLOG_CORE_DIR is clean, at the commit of .oplog-core-ref and linked in node_modules
 	node scripts/oplog-core-ref.mjs check
+
+oplog-core-link: ## Link node_modules/oplog-core to OPLOG_CORE_DIR (again after npm ci)
+	node scripts/oplog-core-ref.mjs link
 
 test-folder: release ## Make a local test "shared folder" in TEST_DIR with the current release
 	./release/create-folders.sh "$(TEST_DIR)"

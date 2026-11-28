@@ -36,6 +36,19 @@ make help         # all targets
 
 `make test-folder` makes a local test folder (`~/mytasker-test`) with the current release.
 
+### A different oplog-core folder
+
+To use oplog-core from a different folder (for example a git worktree of oplog-core), set `OPLOG_CORE_DIR`. The path is relative to this folder. Use it for local work only, because `package.json` and the CI use `../oplog-core`. Do these steps after `make install`:
+
+```sh
+export OPLOG_CORE_DIR=../oplog-core-my-branch
+npm ci --prefix "$OPLOG_CORE_DIR"   # if the folder has no node_modules (a new worktree)
+make oplog-core-link   # link node_modules/oplog-core to OPLOG_CORE_DIR (again after each npm ci)
+make check             # the oplog-core check uses OPLOG_CORE_DIR
+```
+
+`npm sbom` accepts only `../oplog-core`. Thus `make check` skips the SBOM checks with a warning, and `make sbom` and `make release` fail. The CI runs the SBOM checks. Before a release, run `unset OPLOG_CORE_DIR` and `make oplog-core-link`.
+
 ## Deploy to OneDrive
 
 1. Get the release files: `index.html`, `LICENSE`, `THIRD-PARTY-NOTICES.md`, `VERSION`, `SHA256SUMS`, and the archive `mytasker-<version>.zip` with the full installation (the folder `Ukoly` with all subfolders and these files in `app/`). Download them from the GitHub release, or run `make release` on a trusted computer (the files are then in `release/app/` and `release/`).

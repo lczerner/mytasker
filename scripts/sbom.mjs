@@ -7,7 +7,7 @@
 //   release/sbom/runtime.<ext>.json  packages that ship in app/index.html (no dev dependencies)
 //   release/sbom/build.<ext>.json    all packages, including the build and test toolchain
 //
-// Usage: node scripts/sbom.mjs [cyclonedx|spdx]   (default: cyclonedx)
+// Usage: node scripts/sbom.mjs [cyclonedx|spdx] [--skip-other-oplog-core]   (default: cyclonedx)
 //
 // Checks (exit 1 on a failure):
 //  - each runtime dependency of package.json is in the runtime SBOM,
@@ -17,19 +17,37 @@
 // cdx:npm:package:development=true, and all packages without it are runtime packages.
 // oplog-core is a local link (file:../oplog-core): the SBOM lists it with the version of its
 // package.json. The exact commit is in .oplog-core-ref and in the metadata of the SBOM.
+// `npm sbom` refuses a link to a different folder (OPLOG_CORE_DIR, scripts/oplog-core-ref.mjs).
+// Thus this script stops if node_modules/oplog-core is not a link to ../oplog-core. With
+// --skip-other-oplog-core ("make check"), it writes a warning and exits with 0 in this case.
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 
-const format = process.argv[2] ?? 'cyclonedx';
-if (!['cyclonedx', 'spdx'].includes(format)) {
-  console.error('usage: sbom.mjs [cyclonedx|spdx]');
+const args = process.argv.slice(2);
+const skipOther = args.includes('--skip-other-oplog-core');
+const positional = args.filter((a) => a !== '--skip-other-oplog-core');
+const format = positional[0] ?? 'cyclonedx';
+if (!['cyclonedx', 'spdx'].includes(format) || positional.length > 1) {
+  console.error('usage: sbom.mjs [cyclonedx|spdx] [--skip-other-oplog-core]');
   process.exit(2);
 }
 const fail = (m) => {
   console.error(`SBOM check failed: ${m}`);
   process.exit(1);
 };
+let linked = null;
+try {
+  linked = realpathSync('node_modules/oplog-core');
+} catch {}
+if (linked === null) fail('node_modules/oplog-core is missing: run npm ci');
+if (!existsSync('../oplog-core') || linked !== realpathSync('../oplog-core')) {
+  if (skipOther) {
+    console.log(`WARNING: no SBOM checks: node_modules/oplog-core links to ${linked}, not to ../oplog-core (OPLOG_CORE_DIR). npm sbom accepts only the folder of package.json. The CI runs the SBOM checks.`);
+    process.exit(0);
+  }
+  fail(`node_modules/oplog-core links to ${linked}, not to ../oplog-core (package.json). npm sbom accepts only the folder of package.json. Run unset OPLOG_CORE_DIR, then make oplog-core-link`);
+}
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 // Not --package-lock-only: the linked oplog-core declares dev dependencies that are not in this
 // lock file, and npm then refuses the lock file alone (ESBOMPROBLEMS).

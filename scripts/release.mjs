@@ -7,12 +7,20 @@
 // Copy the CONTENT of release/app/ into <SharedRoot>/app/ (admins only), or extract the archive.
 import { createHash } from 'node:crypto';
 import { execFileSync, execSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { gitCommit } from './commit.mjs';
 import { zip } from './zip.mjs';
 
+// A release uses only ../oplog-core, the folder of package.json: npm sbom refuses a link to a
+// different folder (OPLOG_CORE_DIR). Stop here, before the build, and not later in sbom.mjs.
+const real = (p) => (existsSync(p) ? realpathSync(p) : null);
+const linked = real('node_modules/oplog-core');
+if (linked === null || linked !== real('../oplog-core') || real(process.env.OPLOG_CORE_DIR || '../oplog-core') !== linked) {
+  console.error('release: a release uses only ../oplog-core. Run unset OPLOG_CORE_DIR, then make oplog-core-link.');
+  process.exit(1);
+}
 // The release and its SBOM must use exactly the pinned oplog-core code (.oplog-core-ref).
 execSync('node scripts/oplog-core-ref.mjs check', { stdio: 'inherit' });
 execSync('npm run build', { stdio: 'inherit' });
