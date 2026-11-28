@@ -2,13 +2,14 @@
 // Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
 // Audit, revert and integrity: the admin pages, and the description of a change
 // (also for the history of a task).
-import { canonicalize, planRevert, type AppliedWrite, type AuditEntry, type Issue, type OpMeta, type RevertPlan, type State, type Write } from 'oplog-core';
+import { canonicalize, fingerprint, planRevert, type AppliedWrite, type AuditEntry, type Issue, type OpMeta, type RevertPlan, type State, type Write } from 'oplog-core';
 import { Fragment } from 'preact';
 import { useMemo, useRef, useState } from 'preact/hooks';
+import { trustRootDiff } from '../app/start';
 import { DATA, ROLES, type Status } from '../domain/constants';
 import { href, useApp, type AppCtx } from './ctx';
 import { auditText, fieldName, fmtDateTime, nMoreWrites, nShowMore, nShownChanges, opLabel, otherStatus, pragueToIso, quote, statusLabel, t, type Key } from './i18n';
-import { Dialog, useBusy } from './widgets';
+import { Dialog, safeName, useBusy } from './widgets';
 
 // ---- Description of a change ----------------------------------------------------------------------
 
@@ -148,7 +149,8 @@ export function revertPlan(app: AppCtx, a: AuditEntry): RevertPlan | { error: st
   if (a.status !== 'applied') return { error: t('revert.notApplied') };
   const now = Date.now();
   const meta: OpMeta = { opId: 'plan', scope: a.scope, authorKeyId: app.me.keyId, userId: app.me.userId, seq: 1, hlc: { t: now, c: 0 }, wallTime: new Date(now).toISOString(), envType: 'Revert', item: 0 };
-  const p = planRevert(app.engine.result, a.opId, app.engine.domain, meta, app.engine.validKeyBindings);
+  // The audit entry identifies the target: its hash finds the op, and its opId must match.
+  const p = planRevert(app.engine.result, a, app.engine.domain, meta, app.engine.validKeyBindings);
   if ('error' in p) return { error: /cannot be reverted/.test(p.error) ? t('revert.notRevertible') : t('revert.notPossible'), tech: p.error };
   return p;
 }
@@ -256,6 +258,18 @@ export function RevertDialog({ entry, onClose }: { entry: AuditEntry; onClose: (
   );
 }
 
+/** The first 12 hex characters of an op hash ("sha256:<hex>"), for display. */
+const shortHash = (h: string): string => h.replace(/^sha256:/, '').slice(0, 12);
+
+/**
+ * The target of a Revert in the audit list. The hash identifies the target exactly (an opId is
+ * unique only for 1 author key). If the target is not in the audit log, the text shows the hash.
+ */
+function revertTargetText(target: AuditEntry | undefined, hash: string, userName: (id: string) => string): string {
+  if (!target) return t('audit.revertOf', { id: shortHash(hash) });
+  return t('audit.revertOfEntry', { change: changeLabel(target), user: userName(target.userId ?? ''), time: fmtDateTime(target.wallTime) });
+}
+
 // ---- Details of 1 change (audit and task history) -----------------------------------------------
 
 /** The detail of 1 op: technical data and a table of the writes (before → after). */
@@ -270,6 +284,10 @@ export function ChangeDetail({ a }: { a: AuditEntry }) {
         {t('audit.scope')}: {a.scope === ROLES ? t('audit.scopeRoles') : t('audit.scopeData')} · {t('audit.key')} <span class="mono">{a.authorKeyId.slice(0, 12)}…</span> · {t('audit.seq')} {a.seq} ·{' '}
         <span class="mono" title={a.opId}>
           {a.opId.slice(0, 13)}…
+        </span>{' '}
+        · {t('audit.hash')}{' '}
+        <span class="mono" title={a.hash}>
+          {shortHash(a.hash)}…
         </span>{' '}
         · {t('audit.sigOk')}
       </p>
@@ -337,12 +355,15 @@ export function AuditPage() {
   const types = useMemo(() => [...new Set(all.flatMap((a) => [a.type, ...(a.itemTypes && a.type === 'Batch' ? a.itemTypes : [])]))].sort((a, b) => opLabel(a).localeCompare(opLabel(b), 'cs')), [all, app.lang]);
   const text = (q.q ?? '').trim().toLocaleLowerCase('cs');
   // The search text of each change, computed 1 time for each version of the audit (not on each key press).
+  // The key is the hash: an opId is unique only for 1 author key.
   const hay = useMemo(() => new Map<string, string>(), [all, app.lang]);
+  // The applied ops by hash: a Revert shows its exact target (revertOfHash).
+  const byHash = useMemo(() => new Map(all.map((a) => [a.hash, a])), [all]);
   const hayOf = (a: AuditEntry) => {
-    let h = hay.get(a.opId);
+    let h = hay.get(a.hash);
     if (h === undefined) {
-      h = [a.opId, changeLabel(a), app.userName(a.userId ?? ''), ...entitiesOf(a).map((x) => entityLabel(st, a.scope, x.e, x.id, app.userName))].join(' ').toLocaleLowerCase('cs');
-      hay.set(a.opId, h);
+      h = [a.opId, a.hash, changeLabel(a), app.userName(a.userId ?? ''), ...entitiesOf(a).map((x) => entityLabel(st, a.scope, x.e, x.id, app.userName))].join(' ').toLocaleLowerCase('cs');
+      hay.set(a.hash, h);
     }
     return h;
   };
@@ -436,17 +457,17 @@ export function AuditPage() {
             <tbody>
               {list.slice(0, limit).map((a) => {
                 const ents = entitiesOf(a);
-                const isOpen = open === a.opId;
+                const isOpen = open === a.hash;
                 const tasks = [...tasksOf(st, a)];
                 return (
-                  <Fragment key={a.opId}>
+                  <Fragment key={a.hash}>
                     <tr class={a.status}>
                       <td class="nowrap" title={t('common.selfReported')}>
                         {fmtDateTime(a.wallTime)}
                       </td>
                       <td>{app.userName(a.userId ?? '')}</td>
                       <td>
-                        <button type="button" class="link" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : a.opId)}>
+                        <button type="button" class="link" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : a.hash)}>
                           {changeLabel(a)}
                         </button>
                         <div class="small muted wrap-anywhere">
@@ -456,7 +477,7 @@ export function AuditPage() {
                             .join('; ')}
                           {ents.length > 3 ? ` … +${ents.length - 3}` : ''}
                         </div>
-                        {a.revertOf && <div class="small muted">{t('audit.revertOf', { id: a.revertOf.slice(0, 13) })}</div>}
+                        {a.revertOfHash && <div class="small muted">{revertTargetText(byHash.get(a.revertOfHash), a.revertOfHash, app.userName)}</div>}
                         {tasks.length === 1 && app.views.has(tasks[0]) && (
                           <a class="small" href={href(['admin', 'audit'], { ...q, task: tasks[0] })}>
                             {t('audit.onlyTask')}
@@ -501,6 +522,74 @@ export function AuditPage() {
 
 // ---- Integrity page -------------------------------------------------------------------------------
 
+/**
+ * The confirmation of a changed trust root (docs/operations.md §4). The admin compares the
+ * fingerprints of the root admins out of band before the confirmation.
+ */
+function TrustRootConfirm({ hash }: { hash: string }) {
+  const app = useApp();
+  const [busy, setBusy, isBusy] = useBusy();
+  // `hash` and these rows come from the same render: the confirmation accepts only this trust root.
+  const rows = trustRootDiff(app.engine.knownTrustRoot, app.engine.trustRoot);
+  // The hash of a trust root that changed again before the confirmation.
+  const [changedAgain, setChangedAgain] = useState<string | null>(null);
+  const confirm = async () => {
+    if (isBusy()) return;
+    setBusy(true);
+    try {
+      await app.acknowledgeTrustRoot(hash);
+      setChangedAgain(null);
+    } catch (e) {
+      console.warn(e);
+      if (app.engine.trustRootHash === hash) app.toast(t('msg.error', { reason: (e as Error).message }), 'error');
+      else setChangedAgain(hash);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div class="stack">
+      {changedAgain !== null && changedAgain !== hash && <p class="error">{t('integrity.trustRootChangedAgain')}</p>}
+      <p class="note">{t('integrity.trustRootCompare')}</p>
+      <div class="table-box">
+        <table class="small trust-diff">
+          <thead>
+            <tr>
+              <th scope="col">{t('trust.colChange')}</th>
+              <th scope="col">{t('trust.colName')}</th>
+              <th scope="col">{t('trust.colUserId')}</th>
+              <th scope="col">{t('trust.colFingerprint')}</th>
+              <th scope="col">{t('trust.colCutoffs')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ root: r, change }, i) => (
+              <tr key={i} class={`trust-${change}`}>
+                <td>{t(`trust.${change}` as Key)}</td>
+                <td>
+                  <bdi>{safeName(r.displayName)}</bdi>
+                </td>
+                <td class="mono wrap-anywhere" dir="ltr">
+                  {String(r.userId)}
+                </td>
+                <td>
+                  <code dir="ltr">{fingerprint(r.keyId)}</code>
+                </td>
+                <td class="mono">{r.cutoffs ? Object.entries(r.cutoffs).map(([scope, seq]) => `${scope} ≤ ${seq}`).join(', ') : t('trust.noCutoffs')}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div class="row wrap">
+        <button type="button" class="primary" disabled={busy} onClick={() => void confirm()}>
+          {t('integrity.trustRootConfirm')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function IntegrityPage() {
   const app = useApp();
   const issues = app.engine.issues;
@@ -528,6 +617,7 @@ export function IntegrityPage() {
                 {t(`issue.${kind}` as Key)} <span class="count">({list.length})</span>
               </h2>
               <p class="advice">{t(`advice.${kind}` as Key)}</p>
+              {kind === 'trust-root' && app.isAdmin && app.engine.trustRootChanged && app.engine.trustRootHash && <TrustRootConfirm hash={app.engine.trustRootHash} />}
               <ul class="issues">
                 {list.slice(0, 50).map((i, n) => (
                   <li key={n}>

@@ -35,7 +35,7 @@ async function buildOpSet() {
   await sync();
   await vera.w('VerifyTask', { id: 't2', from: 'done' });
   const target = admin.engine.audit.find((a) => a.type === 'UpdateTask' && a.status === 'applied')!;
-  const p = planRevert(admin.engine.result, target.opId, domain, { opId: 'x', scope: 'data', authorKeyId: admin.keyId, userId: admin.userId, seq: 1, hlc: { t: 0, c: 0 }, wallTime: '', envType: 'Revert', item: 0 }, admin.engine.validKeyBindings);
+  const p = planRevert(admin.engine.result, target, domain, { opId: 'x', scope: 'data', authorKeyId: admin.keyId, userId: admin.userId, seq: 1, hlc: { t: 0, c: 0 }, wallTime: '', envType: 'Revert', item: 0 }, admin.engine.validKeyBindings);
   if ('error' in p) throw new Error(p.error);
   await admin.w('Revert', p.payload);
   await admin.r('RevokeKey', { keyId: eva.keyId, cutoff: { roles: 0, data: 3 } });
@@ -52,7 +52,7 @@ describe('convergence of the domain (property)', async () => {
   const refState = canonicalize(ref.state);
   const summary = (e: Engine) => canonicalize({ audit: e.audit.map((a) => [a.opId, a.status, a.reason ?? null]), issues: e.result.issues.map((i) => [i.kind, i.opId ?? null]) });
   const refSummary = summary(ref);
-  const verified = ref.audit.map((a) => ({ env: ref.knownOps().find((e) => e.opId === a.opId)!, hash: a.hash }));
+  const verified = ref.audit.map((a) => ({ env: ref.knownOps().find((e) => e.opId === a.opId && e.authorKeyId === a.authorKeyId)!, hash: a.hash }));
 
   it('the op set has applied, superseded and rejected ops', () => {
     expect(new Set(ref.audit.map((a) => a.status))).toEqual(new Set(['applied', 'superseded', 'rejected']));

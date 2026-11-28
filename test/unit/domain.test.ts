@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
 // Domain rules of docs/data-model.md. Synthetic data only.
-import { planRevert, type OpMeta } from 'oplog-core';
+import { planRevert, type Envelope, type OpMeta } from 'oplog-core';
 import {
   buildSearchIndex, buildTaskViews, comparePos, computeNotifications, domain, downloadName, isBlockedFileName, keyBetween, matches, queryTerms, resolveTag, spreadKeys, unread,
 } from '../../src/domain';
@@ -9,8 +9,11 @@ import { actor, lastAudit, rawOp, task, team, view, type Actor } from '../helper
 
 const SHA = 'a'.repeat(64);
 const meta = (a: Actor): OpMeta => ({ opId: 'plan', scope: 'data', authorKeyId: a.keyId, userId: a.userId, seq: 1, hlc: { t: 0, c: 0 }, wallTime: '2026-11-19T12:00:00.000Z', envType: 'Revert', item: 0 });
-const plan = (a: Actor, opId: string) => {
-  const p = planRevert(a.engine.result, opId, domain, meta(a), a.engine.validKeyBindings);
+/** Plans a Revert of the op `env`. The audit entry gives the hash: an opId is unique only for 1 author key. */
+const plan = (a: Actor, env: Pick<Envelope, 'opId' | 'authorKeyId'>) => {
+  const target = a.engine.audit.find((x) => x.opId === env.opId && x.authorKeyId === env.authorKeyId);
+  if (!target) throw new Error('the op is not in the audit log');
+  const p = planRevert(a.engine.result, target, domain, meta(a), a.engine.validKeyBindings);
   if ('error' in p) throw new Error(p.error);
   return p;
 };
@@ -72,7 +75,7 @@ describe('Revert', () => {
     await admin.w('CreateTask', { id: 't1', title: 'x' });
     const add = await admin.w('AddAssignee', { taskId: 't1', userId: petr.userId });
     expect(task(admin, 't1')).toMatchObject({ status: 'assigned', assigneeCount: 1 });
-    await admin.w('Revert', plan(admin, add.opId).payload);
+    await admin.w('Revert', plan(admin, add).payload);
     expect(task(admin, 't1')).toMatchObject({ status: 'new', assigneeCount: 0 });
     expect(view(admin, 't1').assignees).toEqual([]);
   });
@@ -82,17 +85,33 @@ describe('Revert', () => {
     await admin.w('CreateTask', { id: 't1', title: 'x' });
     const done = await admin.w('CompleteTask', { id: 't1', from: 'new' });
     await admin.w('VerifyTask', { id: 't1', from: 'done' });
-    const p = plan(admin, done.opId);
+    const p = plan(admin, done);
     expect(p.overwritten.map((o) => o.f)).toEqual(['status']);
     await admin.w('Revert', p.payload);
     expect(task(admin, 't1')).toMatchObject({ status: 'new', completedAt: null, completedBy: null, verifiedAt: null, verifiedBy: null });
+  });
+
+  it('an existing Revert of ReturnTask (written by an earlier version) still applies: completeRef keeps the format "<opId>"', async () => {
+    const { admin } = await team();
+    await admin.w('CreateTask', { id: 't1', title: 'x' });
+    const done = await admin.w('CompleteTask', { id: 't1', from: 'new' });
+    const back = await admin.w('ReturnTask', { id: 't1', from: 'done', commentId: 'c1', text: 'Oprav to' });
+    // The payload as an earlier version wrote it: the inverse writes the old completeRef back.
+    const target = admin.engine.audit.find((x) => x.opId === back.opId && x.authorKeyId === back.authorKeyId)!;
+    const old = { target: { opId: back.opId, hash: target.hash }, inverse: plan(admin, back).payload.inverse };
+    expect(old.inverse).toContainEqual({ e: 'task', id: 't1', f: 'completeRef', v: done.opId });
+    const rv = await rawOp(admin.engine.storage, admin, 'data', 'Revert', old as unknown as Record<string, unknown>, { t: admin.engine.clock.peek().t + 1000, c: 0 });
+    const fresh = await actor('fresh', admin.engine.storage, Date.now);
+    await fresh.engine.scan('full');
+    expect(fresh.engine.audit.find((x) => x.opId === rv.opId && x.authorKeyId === admin.keyId)?.status).toBe('applied');
+    expect(fresh.engine.state.scopes.data?.task?.t1).toMatchObject({ status: 'done', completeRef: done.opId });
   });
 
   it('reverts CreateTask as a soft delete that RestoreTask can undo', async () => {
     const { admin, petr } = await team();
     const c = await admin.w('CreateTask', { id: 't1', title: 'x' });
     await admin.w('AddAssignee', { taskId: 't1', userId: petr.userId });
-    const p = plan(admin, c.opId);
+    const p = plan(admin, c);
     expect(p.payload.inverse).toEqual([{ e: 'task', id: 't1', f: 'status', v: 'deleted' }]);
     await admin.w('Revert', p.payload);
     expect(task(admin, 't1')).toMatchObject({ status: 'deleted', statusBeforeDelete: 'assigned' });
@@ -104,7 +123,7 @@ describe('Revert', () => {
     const { admin } = await team();
     const c = await admin.w('CreateTask', { id: 't1', title: 'x' });
     await admin.w('PostponeTask', { id: 't1', from: 'new' });
-    const p = plan(admin, c.opId);
+    const p = plan(admin, c);
     await admin.w('DeleteTask', { id: 't1', from: 'postponed' });
     await admin.w('Revert', p.payload);
     expect(lastAudit(admin).status).toBe('superseded');
@@ -116,9 +135,9 @@ describe('Revert', () => {
     await admin.w('CreateTag', { id: 'A', name: 'faktury' });
     await admin.w('CreateTag', { id: 'B', name: 'smlouvy' });
     const m1 = await admin.w('MergeTag', { id: 'A', into: 'B' });
-    const r1 = await admin.w('Revert', plan(admin, m1.opId).payload);
+    const r1 = await admin.w('Revert', plan(admin, m1).payload);
     await admin.w('MergeTag', { id: 'B', into: 'A' });
-    const p2 = plan(admin, r1.opId);
+    const p2 = plan(admin, r1);
     await admin.w('Revert', p2.payload);
     expect(lastAudit(admin)).toMatchObject({ status: 'superseded', reason: 'the tag merge would make a cycle' });
     expect(resolveTag(admin.engine.state, 'A')!.id).toBe('A');

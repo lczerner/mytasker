@@ -40,6 +40,11 @@ export interface AppProps {
   demo: boolean;
   /** Called after each change of the known ops (to save the encrypted cache). */
   onChange?: () => void;
+  /**
+   * Saves the encrypted cache at once (not debounced). `withKnownTrustRoot`: also store the known
+   * trust root of the folder (after a confirmation of the trust root in this session).
+   */
+  saveCache?: (withKnownTrustRoot: boolean) => Promise<void>;
   onLock(): void;
   /** Small per-user data (read state of notifications). Real folder: encrypted. Demo: in memory. */
   userData: UserData;
@@ -168,7 +173,8 @@ export function App(props: AppProps) {
     act: async (type, payload, scope = DATA): Promise<AuditStatus> => {
       try {
         const env = await engine.write(me.signer, scope, type, payload, { allowSuperseded: true });
-        const a = engine.audit.find((x) => x.opId === env.opId);
+        // An opId is unique only for 1 author key: compare the key too.
+        const a = engine.audit.find((x) => x.opId === env.opId && x.authorKeyId === env.authorKeyId);
         bump();
         if (a?.status === 'superseded') toast(t('msg.superseded'), 'info');
         else if (a?.status === 'applied') toast(t('task.saved'), 'ok');
@@ -184,6 +190,17 @@ export function App(props: AppProps) {
       }
     },
     refresh,
+    acknowledgeTrustRoot: async (expectedHash) => {
+      try {
+        await engine.acknowledgeTrustRoot(expectedHash);
+      } catch (e) {
+        bump(); // the trust root changed again: show the new fingerprints
+        throw e;
+      }
+      bump();
+      // Save at once: the cache and the known trust root of the folder hold the confirmed trust root.
+      await props.saveCache?.(true).catch((e) => console.warn(e));
+    },
     toast,
     userName: (id) => (id ? (model.users.get(id)?.name ?? t('common.unknownUser')) : t('common.none')),
     lock: props.onLock,
@@ -316,6 +333,11 @@ function Shell(props: ShellProps) {
         {t('nav.skip')}
       </a>
       {demo && <div class="demo-banner">{t('demo.banner')}</div>}
+      {isAdmin && ctx.engine.trustRootChanged && (
+        <p class="warn trust-banner" role="alert">
+          {t('trust.changedAdmin')} <a href="#/admin/integrity">{t('admin.integrity')}</a>
+        </p>
+      )}
       <header class="top">
         <a class="brand" href="#/all">
           <span aria-hidden="true">✓</span> {t('appName')}

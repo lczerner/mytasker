@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
 // Small shared components.
+import { fingerprint, isValidDisplayName, type TrustRoot } from 'oplog-core';
 import type { ComponentChildren } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { Status } from '../domain/constants';
@@ -167,5 +168,28 @@ export function Picker({ items, onPick, label, create, onClose }: { items: PickI
         )}
       </ul>
     </div>
+  );
+}
+
+/**
+ * A display name for display next to a fingerprint (root admins, access requests). A name that the
+ * access request rule refuses (for example with bidirectional or control characters) shows as a
+ * fixed text: it could change the visible order. Show the name in <bdi>, after the fingerprint.
+ */
+export const safeName = (displayName: unknown): string => (isValidDisplayName(displayName) ? displayName.slice(0, 80) : t('common.badName'));
+
+/**
+ * The root admins of a trust root: 1 line for each entry, the fingerprint first (left to right),
+ * then the name isolated in <bdi>. Thus a name cannot look like a fingerprint or move it.
+ */
+export function RootList({ trustRoot }: { trustRoot: TrustRoot | null }) {
+  return (
+    <ul class="root-list small">
+      {(trustRoot?.roots ?? []).map((r, i) => (
+        <li key={i}>
+          <code dir="ltr">{typeof r.keyId === 'string' ? fingerprint(r.keyId) : '?'}</code> <bdi>{safeName(r.displayName)}</bdi>
+        </li>
+      ))}
+    </ul>
   );
 }

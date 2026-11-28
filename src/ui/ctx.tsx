@@ -62,6 +62,12 @@ export interface AppCtx extends Model {
   /** The status that the op would have now (authorize + effects), with no write. */
   check(type: string, payload: Record<string, unknown>, scope?: string): AuditStatus;
   refresh(mode?: 'quick' | 'full'): Promise<void>;
+  /**
+   * Accepts the trust root with the hash `expectedHash` after an admin compared the fingerprints of
+   * the root admins out of band (oplog-core acknowledgeTrustRoot). Then renders again and saves the
+   * cache. Throws if the trust root changed after the check: then it only renders again.
+   */
+  acknowledgeTrustRoot(expectedHash: string): Promise<void>;
   toast(text: string, kind?: Toast['kind']): void;
   userName(id: string | null | undefined): string;
   lock(): void;

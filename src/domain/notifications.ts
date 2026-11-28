@@ -5,6 +5,7 @@
 
 import type { AuditEntry, State } from 'oplog-core';
 import { BATCH } from 'oplog-core';
+import { itemRef } from './catalog';
 import { settingsOf, userIsAdmin, userIsVerifier } from './state';
 import { dueState, type TaskView } from './view';
 
@@ -31,10 +32,10 @@ export interface NotificationInput {
   now: number;
 }
 
-/** The items of an audit entry with their notification reference "<opId>/<index>". */
+/** The items of an audit entry with their notification reference (itemRef: author key, opId and index). */
 function items(a: AuditEntry): { ref: string; type: string; payload: Record<string, any>; index: number }[] {
-  if (a.type === BATCH && Array.isArray(a.payload.ops)) return (a.payload.ops as { type: string; payload: Record<string, any> }[]).map((it, i) => ({ ref: `${a.opId}/${i}`, type: it.type, payload: it.payload, index: i }));
-  return [{ ref: a.opId, type: a.type, payload: a.payload, index: 0 }];
+  if (a.type === BATCH && Array.isArray(a.payload.ops)) return (a.payload.ops as { type: string; payload: Record<string, any> }[]).map((it, i) => ({ ref: itemRef(a.authorKeyId, a.opId, i), type: it.type, payload: it.payload, index: i }));
+  return [{ ref: itemRef(a.authorKeyId, a.opId, null), type: a.type, payload: a.payload, index: 0 }];
 }
 
 /** True if this item had an effect (the op is applied and the item is not in the notes). */
@@ -49,13 +50,13 @@ export function computeNotifications({ state, audit, views, me, now }: Notificat
   for (const v of views.values()) {
     const ds = dueState(v, now, dueSoonDays);
     if (ds && mine(v)) out.push({ id: `${ds}:${v.id}:${v.due!.at}`, kind: ds === 'soon' ? 'due' : 'overdue', taskId: v.id, at: v.due!.at, by: null });
-    if (isVerifier && v.status === 'done' && v.completeRef) out.push({ id: `verify:${v.completeRef}`, kind: 'verify', taskId: v.id, at: v.completedAt ?? '', by: v.completedBy });
+    if (isVerifier && v.status === 'done' && v.completeRef) out.push({ id: `verify:${v.completedBy}/${v.completeRef}`, kind: 'verify', taskId: v.id, at: v.completedAt ?? '', by: v.completedBy });
   }
 
   for (const a of audit) {
     if (a.userId === me) {
-      if (a.status === 'superseded') out.push({ id: `superseded:${a.opId}`, kind: 'superseded', taskId: taskOf(a.payload), at: a.wallTime, by: null, detail: a.reason });
-      else for (const n of a.notes) if (n.status === 'superseded') out.push({ id: `superseded:${a.type === BATCH ? `${a.opId}/${n.item}` : a.opId}`, kind: 'superseded', taskId: taskOf(items(a)[n.item]?.payload ?? {}), at: a.wallTime, by: null, detail: n.reason });
+      if (a.status === 'superseded') out.push({ id: `superseded:${itemRef(a.authorKeyId, a.opId, null)}`, kind: 'superseded', taskId: taskOf(a.payload), at: a.wallTime, by: null, detail: a.reason });
+      else for (const n of a.notes) if (n.status === 'superseded') out.push({ id: `superseded:${itemRef(a.authorKeyId, a.opId, a.type === BATCH ? n.item : null)}`, kind: 'superseded', taskId: taskOf(items(a)[n.item]?.payload ?? {}), at: a.wallTime, by: null, detail: n.reason });
       continue;
     }
     if (a.status !== 'applied') continue;

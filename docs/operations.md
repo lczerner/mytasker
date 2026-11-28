@@ -65,8 +65,22 @@ Rules for each change:
 - After the change, each user must reload the app (F5). The app reads the file again on the next full scan.
 - A change of the file changes the fingerprints on the start screen. Tell the users about the change, so that they can compare the fingerprints with you.
 - The encrypted cache and the read state of the notifications use a hash of the file as their ID. After the change, each computer reads all ops 1 time again. The old event notifications (comments, assignments) count as read. The state notifications (due, overdue, to verify) show again as unread.
+- After the change, each client shows the issue "Kořen důvěry je nečitelný nebo neplatný, nebo se změnil" (`trust-root`) in **Správa → Integrita**. A running client shows it after its next full scan (each 8th poll or the button **↻**), and a client that starts again shows it at once. The browser keeps the known trust root of each folder in IndexedDB (not encrypted: it is public data). At the start, the app gives it to the engine before the cache. Thus the issue stays also after a reload, and also after a rollback of the file to an older version (with an older cache). An admin sees a notice at the top of each page. A user who waits for approval sees a notice in the waiting step. The issue stays until an admin confirms the trust root on that computer:
+  1. Open **Správa → Integrita**. The group of the issue shows a table of the root entries: each entry of the new file, and each removed entry, with the change against the known trust root (added, removed, changed, no change), the user ID, the fingerprint and the cutoffs.
+  2. Compare each fingerprint out of band, for example by phone or in person. Also check the user IDs, the removed entries and the cutoffs.
+  3. If all fingerprints are correct, click **Potvrdit kořen důvěry**. The app saves the confirmed trust root as the known trust root of this computer.
+  4. If a fingerprint is not correct, do not confirm. Restore the file from the OneDrive version history and find out who changed it.
+- A non-admin client cannot confirm the change. It keeps the issue, but it does not show the integrity view.
+- The app writes the known trust root only on the first start in a browser and after a confirmation. Known limit: if 2 tabs of the same browser confirm different trust roots, the last write wins.
+- The limits of the detection are in `docs/security-model.md` §4.
+- A browser that opens the folder for the first time (or after **Vymazat data aplikace v tomto prohlížeči**) has no known trust root. It takes the current file and shows no issue. Thus tell the users about each change, so that they compare the fingerprints on the start screen.
+- If the file is missing, empty, too large (more than 1 MiB) or not valid, a running client keeps the known trust root and shows a `trust-root` issue.
+- At the start, the app checks the file first:
+  - An empty, damaged, too large or not valid file: the app does not open the shared folder. The start screen "Kořen důvěry je poškozený" asks an admin to repair the file.
+  - A missing file: a browser with a known trust root opens the folder with the known copy and shows a `trust-root` issue. A browser with no known trust root offers a new installation only if the folder has no op data (`roles/ops` and `data/ops` are empty). Else it shows the start screen "Kořen důvěry je poškozený".
+- To repair the file, restore it from the OneDrive version history. Do not create a new installation.
 
-`test/unit/operations.test.ts` tests the procedures of §4.1 and §4.2 (with a second root admin, and for the only admin).
+`test/unit/operations.test.ts` tests the procedures of §4.1 and §4.2 (with a second root admin, and for the only admin), and the `trust-root` issue of a changed or missing file after a reload.
 
 ### 4.1 Make a second root admin
 

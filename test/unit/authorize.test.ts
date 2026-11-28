@@ -2,7 +2,7 @@
 // Copyright 2026, Lukáš Czerner <lukas@czerner.cz>
 // authorize(): every role × every op type. The expected rights are written here
 // again (docs/data-model.md §6), independent of src/domain/permissions.ts.
-import { makeCtx, type State } from 'oplog-core';
+import { makeCtx, NO_KEY_BINDINGS, type State } from 'oplog-core';
 import { authorize, CATALOG, PERMISSIONS } from '../../src/domain';
 import { lastAudit, task, team } from '../helpers';
 
@@ -33,7 +33,7 @@ function state(role: Role): State {
   };
 }
 
-const ctxFor = (role: Role) => makeCtx(state(role), { opId: 'x', scope: 'data', authorKeyId: 'k', userId: 'u1', seq: 1, hlc: { t: 1, c: 0 }, wallTime: '', envType: 'x', item: 0 }, new Set());
+const ctxFor = (role: Role) => makeCtx(state(role), { opId: 'x', scope: 'data', authorKeyId: 'k', userId: 'u1', seq: 1, hlc: { t: 1, c: 0 }, wallTime: '', envType: 'x', item: 0 }, NO_KEY_BINDINGS);
 
 describe('authorize: role × op type', () => {
   it('every catalogue op type has a permission rule, and every rule has an op type', () => {

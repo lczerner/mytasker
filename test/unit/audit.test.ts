@@ -56,7 +56,7 @@ describe('audit texts', () => {
   });
 
   it('every integrity issue kind has a Czech label and advice', () => {
-    const kinds: IssueKind[] = ['unknown-file', 'parse-error', 'misplaced', 'bad-signature', 'unknown-key', 'chain-gap', 'chain-broken', 'fork', 'revoked', 'unauthorized', 'invalid-payload', 'future-clock', 'bad-checkpoint', 'domain'];
+    const kinds: IssueKind[] = ['unknown-file', 'parse-error', 'misplaced', 'bad-signature', 'unknown-key', 'chain-gap', 'chain-broken', 'fork', 'revoked', 'unauthorized', 'invalid-payload', 'future-clock', 'bad-checkpoint', 'trust-root', 'domain'];
     for (const k of kinds) {
       expect(t(`issue.${k}` as Key)).not.toBe(`issue.${k}`);
       expect(t(`advice.${k}` as Key)).not.toBe(`advice.${k}`);
