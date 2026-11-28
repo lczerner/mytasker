@@ -30,7 +30,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## oplog-core 0.1.0
+## oplog-core 0.2.0
 
 License: MIT. `oplog-core` is a separate repository of the same author.
 
