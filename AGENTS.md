@@ -34,7 +34,7 @@ Tasks ("Úkoly" in the Czech UI, repository `mytasker`) is a task manager for a 
 | `src/ui/` | Preact UI: start screens (`Gate.tsx`), shell (`App.tsx`), task list, task panel, dialogs, admin screens (`admin.tsx`), audit, revert and integrity (`audit.tsx`), notifications (`Notifications.tsx`), built-in guides (`Help.tsx`, parser `docs.ts`), information bar (`Footer.tsx`), safe Markdown (`markdown.ts`), `i18n.ts` (all texts, Czech and English), `lang.tsx` (the language switch), `styles.css`. |
 | `test/` | `unit` (state machine and `authorize` matrices, domain rules), `property` (convergence), `simulation` (multi-user on disk, attacks), `e2e`, `perf`, `fixtures` (synthetic only). `helpers.ts` makes a synthetic team. |
 | `docs/` | User guide and admin guide (Czech, built into the app), operations, architecture, data model, security model, wireframes, review checklist, ADRs, open questions. |
-| `scripts/` | `check-build.mjs` (build check, also the third-party notices), `release.mjs` (release package and archive), `zip.mjs` (ZIP writer of the archive), `sbom.mjs` (SBOM and its checks), `oplog-core-ref.mjs` (the pinned oplog-core commit), `commit.mjs` (the commit of a build), `screenshots.mjs` (guide images and the README image). |
+| `scripts/` | `check-build.mjs` (build check, also the third-party notices), `release.mjs` (release package and archive), `zip.mjs` (ZIP writer of the archive), `sbom.mjs` (SBOM and its checks), `oplog-core-ref.mjs` (the pinned oplog-core commit, the oplog-core folder `OPLOG_CORE_DIR` and its link in `node_modules`), `commit.mjs` (the commit of a build), `screenshots.mjs` (guide images and the README image). |
 | `release/` | `create-folders.sh` (empty folder skeleton). `release/app/`, `release/*.zip` and `release/sbom/` are generated and git-ignored. |
 | `.claude/agents/mt-reviewer.md` | Claude Code subagent for the expert review (uses `docs/review-checklist.md`). |
 | `Makefile` | Wrapper targets. `make help` lists them. |
@@ -44,7 +44,7 @@ Tasks ("Úkoly" in the Czech UI, repository `mytasker`) is a task manager for a 
 
 ## 5. Commands
 
-`make help` lists all targets. `make check` runs the checks before each commit. `make sbom` writes the SBOMs (§7.2). `make oplog-core-ref` pins the oplog-core commit (§7.1).
+`make help` lists all targets. `make check` runs the checks before each commit. `make sbom` writes the SBOMs (§7.2). `make oplog-core-ref` pins the oplog-core commit (§7.1). `make oplog-core-link` links `node_modules/oplog-core` to `OPLOG_CORE_DIR` (§7.1).
 
 ```sh
 npm install            # or make install (npm ci)
@@ -101,10 +101,17 @@ Remote: `github.com/lczerner/mytasker`. The default branch `master` is protected
 
 mytasker uses the repository `lczerner/oplog-core` as `file:../oplog-core`. `.oplog-core-ref` pins the commit that the CI checks out.
 
+For local work, you can use a different oplog-core folder, for example a git worktree of oplog-core:
+
+- Set `OPLOG_CORE_DIR` (relative to the mytasker folder) and run `make oplog-core-link`. Do not change the path in `package.json` or in the CI.
+- `npm install` and `npm ci` link `node_modules/oplog-core` to `../oplog-core` again. Then run `make oplog-core-link` again.
+- `make oplog-core-check` fails if `node_modules/oplog-core` is not a link to `OPLOG_CORE_DIR`.
+- `npm sbom` accepts only `../oplog-core`. Thus `make check` skips the SBOM checks with a warning (the CI runs them). `make sbom` and `make release` fail.
+
 1. A change in oplog-core is a separate pull request in oplog-core, with its own rules (its `AGENTS.md`).
-2. After the oplog-core commit: `make oplog-core-ref` in mytasker, and commit `.oplog-core-ref` on the mytasker branch. `make check` and `make release` fail if the code of `../oplog-core` differs from the pinned commit.
+2. After the oplog-core commit: `make oplog-core-ref` in mytasker, and commit `.oplog-core-ref` on the mytasker branch. `make oplog-core-ref` uses `OPLOG_CORE_DIR` if you set it. `make check` and `make release` fail if the code of the oplog-core folder differs from the pinned commit.
 3. The CI can check out only a pushed commit. Push the oplog-core branch (on the owner's command) before the mytasker pull request. The owner merges the oplog-core pull request first.
-4. After that merge, pin the commit on oplog-core `master`: `git -C ../oplog-core switch master && git -C ../oplog-core pull --ff-only`, then `make oplog-core-ref`, and commit `.oplog-core-ref` on the mytasker branch before the owner merges it. Reason: a squash merge or a rebase merge makes a new commit, and the commit of the branch is then not on `master`.
+4. After that merge, pin the commit on oplog-core `master`: `git -C ../oplog-core switch master && git -C ../oplog-core pull --ff-only`, then `OPLOG_CORE_DIR=../oplog-core make oplog-core-ref`, and commit `.oplog-core-ref` on the mytasker branch before the owner merges it. This step always uses `../oplog-core`, because a git worktree cannot check out `master` while `../oplog-core` has it. Reason for the step: a squash merge or a rebase merge makes a new commit, and the commit of the branch is then not on `master`.
 5. `lczerner/oplog-core` is a public repository. The CI checks it out at the pinned commit with no key and no secret. Thus the CI also runs for pull requests from forks and for Dependabot pull requests.
 
 ### 7.2 CI, SBOM and Dependabot

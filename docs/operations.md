@@ -8,6 +8,8 @@ The admins use the Czech admin guide for the daily work. It is part of the app (
 
 Requirements: Node.js 22 or later, Chromium for the build check and the e2e tests, and the repository `oplog-core` in `../oplog-core` at the commit of `.oplog-core-ref` (README, "Quick start").
 
+For local work, `OPLOG_CORE_DIR` can select a different oplog-core folder, for example a git worktree. Run `make oplog-core-link` after you set it, and again after each `npm ci`. `make check` stops if `node_modules/oplog-core` is not a link to `OPLOG_CORE_DIR`. `npm sbom` accepts only `../oplog-core`. Thus `make check` skips the SBOM checks with a warning, and `make sbom` fails. `make release` stops at the start if `OPLOG_CORE_DIR` or `node_modules/oplog-core` is not `../oplog-core`.
+
 ```sh
 make install          # npm ci
 make check            # oplog-core check, typecheck, unit + property + simulation tests, build check, SBOM
@@ -21,7 +23,7 @@ make demo             # build, then print the URL of the demo mode
 
 1. Make sure that the CI of `master` is green, and that the local `master` is clean and up to date (`git switch master && git pull --ff-only`). Then run `make check` and `npm run test:e2e`.
 2. If the release has changes for the users, increase `version` in `package.json` first, in a pull request (AGENTS.md §7).
-3. Run `make release`. It stops if the code of `../oplog-core` is not clean or not at the pinned commit (`.oplog-core-ref`). The result is in `release/app/`:
+3. Run `make release`. It stops if `node_modules/oplog-core` or `OPLOG_CORE_DIR` is not `../oplog-core`, and if the code of `../oplog-core` is not clean or not at the pinned commit (`.oplog-core-ref`). The result is in `release/app/`:
    - `index.html`: the app, with all code, styles and guides inside.
    - `LICENSE` and `THIRD-PARTY-NOTICES.md`.
    - `VERSION`: the version and the commit, for example `0.1.0 (a44e002)`.
